@@ -1,0 +1,6 @@
+id,name,level,life,attack,defence,dodge
+3000001,pig,1,50,3,2,0
+3000002,dog,2,30,5,3,10
+3000003,cat,2,20,6,2,20
+3000004,sheep,1,40,2,2,5
+3000005,elephant,3,100,10,10,0
