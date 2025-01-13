@@ -54,7 +54,7 @@ func (s *Story) Init() {
 func (s *Story) Start() {
 	s.ticker = time.NewTicker(1 * time.Minute)
 
-	go s.runTimeEvents()
+	go s.runTimeline()
 
 	// Start main loop
 	for {
@@ -74,7 +74,7 @@ func (s *Story) Start() {
 	}
 }
 
-func (s *Story) runTimeEvents() {
+func (s *Story) runTimeline() {
 	if len(s.timeEvents) == 0 {
 		return
 	}
