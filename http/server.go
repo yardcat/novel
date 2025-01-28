@@ -16,22 +16,10 @@ func StartServer(ctx context.Context) {
 	router := newGinRouter()
 	server := http.Server{Addr: address, Handler: router}
 
-	var (
-		netDone = make(chan struct{}, 1)
-	)
-
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			netDone <- struct{}{}
+			print("net error")
 		}
 	}()
-
-	select {
-	case <-netDone:
-		close(netDone)
-		return
-	default:
-		return
-	}
 }

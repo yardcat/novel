@@ -13,5 +13,8 @@ func newUser() *User {
 }
 
 func (u *User) Register(c *gin.Context) {
+}
+
+func (u *User) GetUserInfo(c *gin.Context) {
 
 }

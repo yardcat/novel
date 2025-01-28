@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"my_test/http"
 	"my_test/scene"
-	"my_test/user"
+	"my_test/world"
+	"my_test/world/island"
 )
 
 type Message struct {
@@ -16,13 +19,19 @@ type Config struct {
 func main() {
 	loadConfig()
 	scene.LoadDataFromCSV()
-	group := []*user.Player{
-		user.NewPlayer(1, "player1"),
-	}
-	scene := scene.CreateScene(5000001, group)
-	scene.DoCombat()
+
+	ctx := context.Background()
+	http.StartServer(ctx)
+
+	world := &island.Story{}
+	world.Init()
+	world.Start()
+}
+
+func GetCurrentWorld() world.World {
+	return nil
+
 }
 
 func loadConfig() {
 }
-

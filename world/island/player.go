@@ -49,3 +49,7 @@ func (p *Player) Update() {
 		p.Health -= 5
 	}
 }
+
+func (p *Player) GetInfoAsJSON() string {
+	return nil
+}

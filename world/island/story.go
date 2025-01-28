@@ -150,3 +150,12 @@ func (s *Story) update() error {
 func (s *Story) Stop() {
 	s.done <- true
 }
+
+func (s *Story) GetUserInfo(id string) string {
+	for _, p in range s.players {
+		if p.Id == id {
+			return p.GetInfoAsJSON()
+		}
+	}
+	return nil
+}

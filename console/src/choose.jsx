@@ -35,7 +35,7 @@ const options = [
   },
 ];
 const onChange = (value) => {
-  console.log(value);
+  //fetch()
 };
 const Choose = () => {
   return (
