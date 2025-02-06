@@ -1,27 +1,29 @@
 package island
 
 import (
+	"context"
 	"encoding/json"
+	"my_test/log"
+	"my_test/world"
 	"os"
 	"path/filepath"
 	"time"
 )
 
 type Story struct {
-	tasks      chan interface{}
+	taskCh     chan interface{}
 	ticker     *time.Ticker
 	done       chan bool
 	players    []*Player
-	timeEvents []*TimeEvent
-}
-
-type TimeEvent struct {
-	time   time.Time
-	action func()
+	timeEvents []TimeEventTask
+	daysData   []DayData
+	stuffData  map[string]StuffData
+	resources  world.Resources
 }
 
 type TimeEventTask struct {
-	action func()
+	Time     time.Duration
+	Callback func()
 }
 
 type StuffData struct {
@@ -30,35 +32,35 @@ type StuffData struct {
 	Energy      int    `json:"energy"`
 }
 
+type DayEvent struct {
+	Time   time.Duration     `json:"time"`
+	Desc   string            `json:"description"`
+	Action string            `json:"action"`
+	Params map[string]string `json:"params"`
+}
+
 type DayData struct {
-	Message struct {
-		Msg  string `json:"msg"`
-		Type string `json:"type"`
-		Time string `json:"time"`
-	} `json:"message"`
-	Choices []struct {
-		Description string `json:"description"`
-		Action      string `json:"action"`
-	} `json:"choices"`
-	End bool `json:"end"`
+	Events []DayEvent
 }
 
 func (s *Story) Init() {
-	s.tasks = make(chan interface{})
+	s.taskCh = make(chan interface{})
 	s.done = make(chan bool)
+	s.resources.Init("island")
 	s.loadData()
 	player := NewPlayer()
 	s.players = append(s.players, player)
 }
 
-func (s *Story) Start() {
+func (s *Story) Start(ctx context.Context) {
+	log.Info("start story")
 	s.ticker = time.NewTicker(1 * time.Minute)
 
 	go s.runTimeline()
 
-	// Start main loop
 	for {
 		select {
+		case <-ctx.Done():
 		case <-s.done:
 			s.ticker.Stop()
 			return
@@ -66,7 +68,7 @@ func (s *Story) Start() {
 			if err := s.update(); err != nil {
 				continue
 			}
-		case task := <-s.tasks:
+		case task := <-s.taskCh:
 			if err := s.handleTask(task); err != nil {
 				continue
 			}
@@ -78,18 +80,13 @@ func (s *Story) runTimeline() {
 	if len(s.timeEvents) == 0 {
 		return
 	}
-
-	// 按时间排序检查和执行事件
 	for _, event := range s.timeEvents {
-		// 等待直到事件时间到达
-		waitTime := time.Until(event.time)
+		waitTime := event.Time
 		if waitTime > 0 {
 			select {
 			case <-time.After(waitTime):
-				// 将事件动作包装成任务发送到任务通道
-				s.tasks <- TimeEventTask{action: event.action}
+				s.taskCh <- event
 			case <-s.done:
-				// 如果收到停止信号，终止事件循环
 				return
 			}
 		}
@@ -99,44 +96,8 @@ func (s *Story) runTimeline() {
 func (s *Story) handleTask(task any) error {
 	switch t := task.(type) {
 	case TimeEventTask:
-		t.action()
+		t.Callback()
 	}
-	return nil
-}
-
-func (s *Story) loadData() error {
-	// Load stuff data
-	stuffBytes, err := os.ReadFile("data/stuff/build.json")
-	if err != nil {
-		return err
-	}
-
-	stuffData := make(map[string]StuffData)
-	if err := json.Unmarshal(stuffBytes, &stuffData); err != nil {
-		return err
-	}
-
-	// Load day data
-	dayFiles, err := filepath.Glob("data/days/day*.json")
-	if err != nil {
-		return err
-	}
-
-	dayData := make(map[string]DayData)
-	for _, file := range dayFiles {
-		dayBytes, err := os.ReadFile(file)
-		if err != nil {
-			return err
-		}
-
-		var day DayData
-		if err := json.Unmarshal(dayBytes, &day); err != nil {
-			return err
-		}
-
-		dayData[filepath.Base(file)] = day
-	}
-
 	return nil
 }
 
@@ -152,10 +113,97 @@ func (s *Story) Stop() {
 }
 
 func (s *Story) GetUserInfo(id string) string {
-	for _, p in range s.players {
-		if p.Id == id {
-			return p.GetInfoAsJSON()
-		}
+	return ""
+}
+
+func (s *Story) loadData() error {
+	if err := s.loadStuff(); err != nil {
+		return err
+	}
+	if err := s.loadDays(); err != nil {
+		return err
 	}
 	return nil
+}
+
+func (s *Story) loadStuff() error {
+	stuffBytes, err := os.ReadFile(s.resources.GetPath("stuff/build.json"))
+	if err != nil {
+		return err
+	}
+
+	s.stuffData = make(map[string]StuffData)
+	if err := json.Unmarshal(stuffBytes, &s.stuffData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Story) loadDays() error {
+	dayFiles, err := filepath.Glob(s.resources.GetPath("days/day*.json"))
+	if err != nil {
+		return err
+	}
+
+	s.daysData = make([]DayData, len(dayFiles))
+	timeStart, _ := time.Parse("15:04:05", "00:00:00")
+	for day, file := range dayFiles {
+		dayBytes, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		var rawEvents map[string]interface{}
+		if err := json.Unmarshal(dayBytes, &rawEvents); err != nil {
+			return err
+		}
+
+		var events []DayEvent
+		for k, v := range rawEvents {
+			eventMap := v.(map[string]any)
+			timePoint, _ := time.Parse("15:04:05", k)
+			description, ok := eventMap["description"].(string)
+			if !ok {
+				description = ""
+			}
+			event := DayEvent{
+				Time:   timePoint.Sub(timeStart),
+				Desc:   description,
+				Action: eventMap["action"].(string),
+				Params: make(map[string]string),
+			}
+			if params, ok := eventMap["params"].(map[string]any); ok {
+				for k, v := range params {
+					event.Params[k] = v.(string)
+				}
+			}
+
+			// Add time event to task queue
+			s.timeEvents = append(s.timeEvents, TimeEventTask{event.Time,
+				func() { s.HandleDayEvent(event.Action, event.Params) }})
+			// record events
+			events = append(events, event)
+		}
+		s.daysData[day] = DayData{Events: events}
+		log.Info("Loaded day events done")
+	}
+	return nil
+}
+
+func (s *Story) HandleDayEvent(action string, params map[string]string) {
+	switch action {
+	case "SendMessage":
+		log.Info(params["value"])
+	case "Bonus":
+		item := s.stuffData[params["type"]].Item
+		s.players[0].Bag.Add(item)
+
+		log.Info(params["value"])
+	case "ChangeEnv":
+		log.Info(params["type"])
+		log.Info(params["value"])
+	case "ChangeStatus":
+		log.Info(params["type"])
+		log.Info(params["value"])
+	}
+	log.Info("handle day event done")
 }

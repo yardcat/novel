@@ -1,0 +1,16 @@
+{
+    "axe": {
+        "name": "axe",
+        "description": "斧头",
+        "attributes": {
+            "attack": 10
+        }
+    },
+    "sword": {
+        "name": "sword",
+        "description": "剑",
+        "attributes": {
+            "attack": 10
+        }
+    }
+}

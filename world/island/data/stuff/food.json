@@ -1,0 +1,23 @@
+{
+    "bread": {
+        "name": "bread",
+        "description": "面包",
+        "effects": {
+            "hunger": 10
+        }
+    },
+    "water": {
+        "name": "water",
+        "description": "水",
+        "effects": {
+            "thirst": 10
+        }
+    },
+    "herb": {
+        "name": "herb",
+        "description": "草药",
+        "effects": {
+            "hp": 10
+        }
+    }
+}

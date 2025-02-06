@@ -1,5 +1,7 @@
 package island
 
+import "my_test/world"
+
 type Player struct {
 	Health    int
 	Hunger    int
@@ -7,6 +9,7 @@ type Player struct {
 	Energy    int
 	Inventory []string
 	Location  string
+	Bag       *world.Bag
 }
 
 func NewPlayer() *Player {
@@ -17,6 +20,7 @@ func NewPlayer() *Player {
 		Energy:    100,
 		Inventory: make([]string, 0),
 		Location:  "beach",
+		Bag:       world.NewBag(),
 	}
 }
 
@@ -51,5 +55,5 @@ func (p *Player) Update() {
 }
 
 func (p *Player) GetInfoAsJSON() string {
-	return nil
+	return ""
 }

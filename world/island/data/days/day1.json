@@ -1,4 +1,32 @@
 {
-    "message": {"msg":"第一天，如你所见，这就是荒岛求生", "type": "keep","time": "00:01"},
-    "event": {"msg":"none", "type": "keep","time": "00:10"}
+    "00:00:01": {
+        "action": "SendMessage",
+        "params": {
+            "value": "第一天，如你所见，这就是荒岛求生"
+        }
+    },
+    "00:00:10": {
+        "description": "获得奖励",
+        "action": "Bonus",
+        "params": {
+            "stuff": "food.bread",
+            "count": 2
+        }
+    },
+    "00:00:20": {
+        "description": "温度下降",
+        "action": "ChangeEnv",
+        "params": {
+            "type": "temperature",
+            "value": "-1"
+        }
+    },
+    "00:00:30": {
+        "description": "遭受打击",
+        "action": "ChangeStatus",
+        "params": {
+            "type": "hp",
+            "value": "1"
+        }
+    }
 }
