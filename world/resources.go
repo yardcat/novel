@@ -9,9 +9,11 @@ type Resources struct {
 	workDir string
 }
 
-func (r *Resources) Init(world string) {
+func NewResources(world string) *Resources {
+	r := &Resources{}
 	r.World = filepath.Join("world", world, "data")
 	r.workDir, _ = filepath.Abs(".")
+	return r
 }
 
 func (r *Resources) GetPath(path string) string {

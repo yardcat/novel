@@ -1,35 +1,29 @@
-package island
+package world
 
 import (
 	"context"
 	"encoding/json"
 	"my_test/log"
-	"my_test/world"
 	"os"
 	"path/filepath"
 	"time"
 )
 
 type Story struct {
-	taskCh     chan interface{}
-	ticker     *time.Ticker
-	done       chan bool
-	players    []*Player
-	timeEvents []TimeEventTask
-	daysData   []DayData
-	stuffData  map[string]StuffData
-	resources  world.Resources
+	taskCh        chan interface{}
+	ticker        *time.Ticker
+	done          chan bool
+	players       []*Player
+	timeEvents    []TimeEventTask
+	daysData      []DayData
+	itemSystem    *ItemSystem
+	resources     *Resources
+	eventHandlers map[string]any
 }
 
 type TimeEventTask struct {
 	Time     time.Duration
 	Callback func()
-}
-
-type StuffData struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Energy      int    `json:"energy"`
 }
 
 type DayEvent struct {
@@ -43,13 +37,26 @@ type DayData struct {
 	Events []DayEvent
 }
 
+func NewStory() *Story {
+	return &Story{resources: NewResources("island")}
+}
+
 func (s *Story) Init() {
 	s.taskCh = make(chan interface{})
 	s.done = make(chan bool)
-	s.resources.Init("island")
 	s.loadData()
-	player := NewPlayer()
+	s.itemSystem = NewItemSystem(s.resources)
+	player := NewPlayer(s)
 	s.players = append(s.players, player)
+	s.RegisterEventHandler()
+}
+
+func (s *Story) RegisterEventHandler() {
+	s.eventHandlers = make(map[string]any)
+	NewEnvSystem().RegisterEventHander(s.eventHandlers)
+	for _, player := range s.players {
+		player.RegisterEventHander(s.eventHandlers)
+	}
 }
 
 func (s *Story) Start(ctx context.Context) {
@@ -117,23 +124,7 @@ func (s *Story) GetUserInfo(id string) string {
 }
 
 func (s *Story) loadData() error {
-	if err := s.loadStuff(); err != nil {
-		return err
-	}
 	if err := s.loadDays(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Story) loadStuff() error {
-	stuffBytes, err := os.ReadFile(s.resources.GetPath("stuff/build.json"))
-	if err != nil {
-		return err
-	}
-
-	s.stuffData = make(map[string]StuffData)
-	if err := json.Unmarshal(stuffBytes, &s.stuffData); err != nil {
 		return err
 	}
 	return nil
@@ -190,20 +181,7 @@ func (s *Story) loadDays() error {
 }
 
 func (s *Story) HandleDayEvent(action string, params map[string]string) {
-	switch action {
-	case "SendMessage":
-		log.Info(params["value"])
-	case "Bonus":
-		item := s.stuffData[params["type"]].Item
-		s.players[0].Bag.Add(item)
-
-		log.Info(params["value"])
-	case "ChangeEnv":
-		log.Info(params["type"])
-		log.Info(params["value"])
-	case "ChangeStatus":
-		log.Info(params["type"])
-		log.Info(params["value"])
-	}
+	handler := s.eventHandlers[action]
+	handler.(func(string, string))(params["type"], params["value"])
 	log.Info("handle day event done")
 }

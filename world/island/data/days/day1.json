@@ -10,7 +10,7 @@
         "action": "Bonus",
         "params": {
             "stuff": "food.bread",
-            "count": 2
+            "count": "2"
         }
     },
     "00:00:20": {
@@ -19,6 +19,14 @@
         "params": {
             "type": "temperature",
             "value": "-1"
+        }
+    },
+    "00:00:25": {
+        "description": "天气改变",
+        "action": "ChangeEnv",
+        "params": {
+            "type": "weather",
+            "value": "rain"
         }
     },
     "00:00:30": {

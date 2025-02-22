@@ -5,7 +5,6 @@ import (
 	"my_test/http"
 	"my_test/scene"
 	"my_test/world"
-	"my_test/world/island"
 	"os"
 	"os/signal"
 	"syscall"
@@ -25,7 +24,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	http.StartServer(ctx, cancel)
 
-	world := &island.Story{}
+	world := world.NewStory()
 	world.Init()
 	go world.Start(ctx)
 
@@ -37,11 +36,6 @@ func main() {
 	case <-sigCh:
 		http.Stop(ctx)
 	}
-}
-
-func GetCurrentWorld() world.World {
-	return nil
-
 }
 
 func loadConfig() {

@@ -12,7 +12,7 @@ func NewBag() *Bag {
 	}
 }
 
-func (b *Bag) Add(item int) bool {
+func (b *Bag) Add(item int, count int) bool {
 	if len(b.Items) >= b.capcity {
 		return false
 	}
@@ -20,7 +20,7 @@ func (b *Bag) Add(item int) bool {
 	if !ok {
 		b.capcity++
 	}
-	b.Items[item]++
+	b.Items[item] += count
 	return true
 }
 

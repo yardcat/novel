@@ -1,0 +1,17 @@
+{
+    "wood": {
+        "name": "wood",
+        "description": "A piece of wood",
+        "energy": 10
+    },
+    "stone": {
+        "name": "stone",
+        "description": "A piece of stone",
+        "energy": 10
+    },
+    "iron": {
+        "name": "iron",
+        "description": "A piece of iron",
+        "energy": 10
+    }
+}
