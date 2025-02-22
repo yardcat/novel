@@ -5,15 +5,15 @@
             "value": "第一天，如你所见，这就是荒岛求生"
         }
     },
-    "00:00:10": {
+    "00:00:09": {
         "description": "获得奖励",
         "action": "Bonus",
         "params": {
-            "stuff": "food.bread",
+            "item": "food.bread",
             "count": "2"
         }
     },
-    "00:00:20": {
+    "00:00:12": {
         "description": "温度下降",
         "action": "ChangeEnv",
         "params": {
@@ -21,7 +21,7 @@
             "value": "-1"
         }
     },
-    "00:00:25": {
+    "00:00:15": {
         "description": "天气改变",
         "action": "ChangeEnv",
         "params": {
@@ -29,7 +29,7 @@
             "value": "rain"
         }
     },
-    "00:00:30": {
+    "00:00:18": {
         "description": "遭受打击",
         "action": "ChangeStatus",
         "params": {

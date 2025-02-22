@@ -182,6 +182,10 @@ func (s *Story) loadDays() error {
 
 func (s *Story) HandleDayEvent(action string, params map[string]string) {
 	handler := s.eventHandlers[action]
-	handler.(func(string, string))(params["type"], params["value"])
-	log.Info("handle day event done")
+	if handler == nil {
+		log.Info("no handler for action %s", action)
+		return
+	}
+	handler.(func(map[string]string))(params)
+	log.Info("handle day event done %s", action)
 }

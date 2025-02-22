@@ -36,6 +36,7 @@ func main() {
 	case <-sigCh:
 		http.Stop(ctx)
 	}
+	close((sigCh))
 }
 
 func loadConfig() {

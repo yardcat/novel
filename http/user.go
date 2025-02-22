@@ -1,6 +1,10 @@
 package http
 
-import "github.com/gin-gonic/gin"
+import (
+	"my_test/log"
+
+	"github.com/gin-gonic/gin"
+)
 
 type User struct {
 	Id string
@@ -13,5 +17,6 @@ func newUser() *User {
 }
 
 func (u *User) GetUserInfo(c *gin.Context) {
+	log.Info("get user info %s", c.PostForm("key1"))
 
 }

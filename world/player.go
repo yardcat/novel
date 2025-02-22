@@ -1,6 +1,8 @@
 package world
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type Player struct {
 	Health    int
@@ -65,7 +67,9 @@ func (s *Player) RegisterEventHander(maps map[string]any) {
 	maps["Bonus"] = s.OnBonus
 }
 
-func (s *Player) OnChangeStatus(typ string, value string) {
+func (s *Player) OnChangeStatus(params map[string]string) {
+	typ := params["type"]
+	value := params["value"]
 	switch typ {
 	case "hp":
 		v, _ := strconv.Atoi(value)
@@ -73,8 +77,10 @@ func (s *Player) OnChangeStatus(typ string, value string) {
 	}
 }
 
-func (s *Player) OnBonus(stuff string, count string) {
+func (s *Player) OnBonus(params map[string]string) {
+	item := params["item"]
+	count := params["count"]
 	n, _ := strconv.Atoi(count)
-	itemId := s.Story.itemSystem.GetItemId(stuff)
+	itemId := s.Story.itemSystem.GetItemId(item)
 	s.Bag.Add(itemId, n)
 }

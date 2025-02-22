@@ -1,4 +1,4 @@
-import Choose from './Chooser';
+import Choose from './Choose';
 
 const App = () => (
   <div className="App">
