@@ -11,10 +11,11 @@ func newGinRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	setCors(r)
-	u := newUser()
-	userRouterGroup := r.Group("/user")
+
+	u := newPlayer()
+	userRouterGroup := r.Group("/player")
 	{
-		userRouterGroup.POST("/get_user_info", u.GetUserInfo)
+		userRouterGroup.POST("/get_player_info", u.GetPlayerInfo)
 	}
 	return r
 }

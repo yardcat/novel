@@ -19,14 +19,15 @@ type Config struct {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 	loadConfig()
 	scene.LoadDataFromCSV()
-	ctx, cancel := context.WithCancel(context.Background())
-	http.StartServer(ctx, cancel)
 
 	world := world.NewStory()
 	world.Init()
 	go world.Start(ctx)
+
+	http.StartServer(ctx, cancel)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM)

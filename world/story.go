@@ -6,6 +6,7 @@ import (
 	"my_test/log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -37,8 +38,17 @@ type DayData struct {
 	Events []DayEvent
 }
 
+var (
+	StoryInstance *Story
+)
+
+func GetStory() *Story {
+	return StoryInstance
+}
+
 func NewStory() *Story {
-	return &Story{resources: NewResources("island")}
+	StoryInstance = &Story{resources: NewResources("island")}
+	return StoryInstance
 }
 
 func (s *Story) Init() {
@@ -119,8 +129,14 @@ func (s *Story) Stop() {
 	s.done <- true
 }
 
-func (s *Story) GetUserInfo(id string) string {
-	return ""
+// TODO : use real id , not array index
+func (s *Story) GetPlayerInfo(id string) string {
+	idx, err := strconv.Atoi(id)
+	if err != nil {
+		log.Info("GetPlayerInfo invalid id %s", id)
+	}
+	player := s.players[idx]
+	return player.ToString()
 }
 
 func (s *Story) loadData() error {

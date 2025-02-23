@@ -1,18 +1,20 @@
 package world
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 )
 
 type Player struct {
-	Health    int
-	Hunger    int
-	Thirst    int
-	Energy    int
-	Inventory []string
-	Location  string
-	Bag       *Bag
-	Story     *Story
+	Health    int      `json:"Health"`
+	Hunger    int      `json:"Hunger"`
+	Thirst    int      `json:"Thirst"`
+	Energy    int      `json:"Energy"`
+	Inventory []string `json:"-"`
+	Location  string   `json:"-"`
+	Bag       *Bag     `json:"-"`
+	Story     *Story   `json:"-"`
 }
 
 func NewPlayer(story *Story) *Player {
@@ -58,10 +60,6 @@ func (p *Player) Update() {
 	}
 }
 
-func (p *Player) GetInfoAsJSON() string {
-	return ""
-}
-
 func (s *Player) RegisterEventHander(maps map[string]any) {
 	maps["ChangeStatus"] = s.OnChangeStatus
 	maps["Bonus"] = s.OnBonus
@@ -83,4 +81,17 @@ func (s *Player) OnBonus(params map[string]string) {
 	n, _ := strconv.Atoi(count)
 	itemId := s.Story.itemSystem.GetItemId(item)
 	s.Bag.Add(itemId, n)
+}
+
+func (s *Player) ToString() string {
+	return fmt.Sprintf(`Health: %d, Hunger: %d, Thirst: %d, Energy: %d`,
+		s.Health, s.Hunger, s.Thirst, s.Energy)
+}
+
+func (s *Player) ToJson() string {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return fmt.Sprintf(`{"error": "%s"}`, err.Error())
+	}
+	return string(data)
 }
