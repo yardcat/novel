@@ -136,7 +136,7 @@ func (s *Story) GetPlayerInfo(id string) string {
 		log.Info("GetPlayerInfo invalid id %s", id)
 	}
 	player := s.players[idx]
-	return player.ToString()
+	return player.ToJson()
 }
 
 func (s *Story) loadData() error {

@@ -1,16 +1,16 @@
-import  { Children, useState } from 'react';
-import { Cascader, Flex, Switch } from 'antd';
+import { Children, useState } from 'react';
+import { Cascader, Flex, Card } from 'antd';
 import axios from 'axios';
 import qs from 'qs'
 
 const options = [
   {
-    value: 'user',
-    label: 'user',
+    value: 'player',
+    label: 'player',
     children: [
       {
-        value: 'get_user_info',
-        label: 'UserInfo',
+        value: 'get_player_info',
+        label: 'PlayerInfo',
       },
       {
         value: 'get_bag',
@@ -22,28 +22,63 @@ const options = [
 
 const API_URL = 'http://127.0.0.1:8899'
 
-const CallAPI = (path, params) => {
+const CallAPI = (path, params, success_callback) => {
   var url = API_URL + '/' + path
   console.log('request:', url, params);
-  axios.post(url, params)
-    .then(response => {
-      console.log('Success:', response.data);
-    })
+  axios.post(url, qs.stringify(params))
+    .then(success_callback)
     .catch(error => {
       console.error('Error:', error);
     });
 }
 
-const handleChange = (value) => {
+const handleGetPlayerInfo = (setResponse) => {
+  const params = {
+    id: "0"
+  };
+  CallAPI('player/get_player_info', params, response => {
+    console.log('Success:', response.data);
+    setResponse(JSON.parse(response.data));
+  });
+};
+
+const handleGetBag = () => {
+  const params = {
+    id: "0"
+  };
+  CallAPI('player/get_bag', params);
+};
+
+const routeHandlers = {
+  'player/get_player_info': handleGetPlayerInfo,
+  'player/get_bag': handleGetBag,
+};
+
+const handleChange = (value, setResponse) => {
   var path = value.join('/')
-  var params = {"key1": "value1", "key2": "value2"}
-  CallAPI(path, qs.stringify(params))
+  const handler = routeHandlers[path];
+  if (handler) {
+    handler(setResponse);
+  } else {
+    console.error('No handler found for path:', path);
+  }
 };
 
 const Choose = () => {
+  const [response, setResponse] = useState(null);
+
   return (
     <Flex vertical gap="small" align="flex-start">
-      <Cascader.Panel  options={options} onChange={handleChange} />
+      <Cascader.Panel options={options} onChange={(value) => handleChange(value, setResponse)} />
+      {response && (
+        <Card title="Player Info">
+          {Object.entries(response).map(([key, value]) => (
+            <p key={key}>
+              <strong>{key}:</strong> {value}
+            </p>
+          ))}
+        </Card>
+      )}
     </Flex>
   );
 };
