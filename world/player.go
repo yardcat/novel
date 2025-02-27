@@ -79,8 +79,8 @@ func (s *Player) OnBonus(params map[string]string) {
 	item := params["item"]
 	count := params["count"]
 	n, _ := strconv.Atoi(count)
-	itemId := s.Story.itemSystem.GetItemId(item)
-	s.Bag.Add(itemId, n)
+	itemId := s.Story.ItemSystem.GetItemId(item)
+	s.Bag.Add(s.Story.ItemSystem.GetItem(itemId), n)
 }
 
 func (s *Player) ToString() string {

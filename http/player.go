@@ -25,7 +25,8 @@ func (u *Player) GetPlayerInfo(c *gin.Context) {
 
 func (u *Player) GetBag(c *gin.Context) {
 	log.Info("get bag%s", c.PostForm("key1"))
-	world.GetStory().GetPlayerInfo(u.Id)
+	bag := world.GetStory().GetBag()
+	c.JSON(200, bag)
 }
 
 func (u *Player) Collect(c *gin.Context) {

@@ -67,6 +67,10 @@ func (s *ItemSystem) GetItemId(path string) int {
 	return s.Path2Id[path]
 }
 
+func (s *ItemSystem) GetItem(id int) Item {
+	return s.ItemMap[id]
+}
+
 func (s *ItemSystem) loadStuff() error {
 	err := s.loadBuild()
 	if err != nil {

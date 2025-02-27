@@ -17,7 +17,7 @@ type Story struct {
 	players       []*Player
 	timeEvents    []TimeEventTask
 	daysData      []DayData
-	itemSystem    *ItemSystem
+	ItemSystem    *ItemSystem
 	resources     *Resources
 	eventHandlers map[string]any
 }
@@ -55,7 +55,7 @@ func (s *Story) Init() {
 	s.taskCh = make(chan interface{})
 	s.done = make(chan bool)
 	s.loadData()
-	s.itemSystem = NewItemSystem(s.resources)
+	s.ItemSystem = NewItemSystem(s.resources)
 	player := NewPlayer(s)
 	s.players = append(s.players, player)
 	s.RegisterEventHandler()
@@ -137,6 +137,11 @@ func (s *Story) GetPlayerInfo(id string) string {
 	}
 	player := s.players[idx]
 	return player.ToJson()
+}
+
+func (s *Story) GetBag() string {
+	player := s.players[0]
+	return player.Bag.ToJson()
 }
 
 func (s *Story) loadData() error {

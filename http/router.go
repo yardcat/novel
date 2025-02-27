@@ -16,6 +16,7 @@ func newGinRouter() *gin.Engine {
 	userRouterGroup := r.Group("/player")
 	{
 		userRouterGroup.POST("/get_player_info", u.GetPlayerInfo)
+		userRouterGroup.POST("/get_bag", u.GetBag)
 	}
 	return r
 }
