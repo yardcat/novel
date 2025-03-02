@@ -1,14 +1,25 @@
-import { React, useState } from 'react';
+import { React, useState, useEffect } from 'react';
 import { Card } from 'antd';
+import Config from "./Config";
+import CallAPI from "./Net";
 
+const API_PATH = "player/get_player_info";
 
 function GetPlayerInfo(info, setInfo) {
   setInfo(info);
 }
 
-const PlayerInfoCard = ({ ApiRegister }) => {
+const PlayerInfo = ({ addApiHandler, autoUpdate }) => {
   const [info, setInfo] = useState({});
-  ApiRegister["player/get_player_info"] = (response) => GetPlayerInfo(response, setInfo);
+
+  useEffect(() => {
+    addApiHandler(API_PATH, (response) => GetPlayerInfo(response, setInfo));
+    if (autoUpdate) {
+      setInterval(() => {
+        CallAPI(API_PATH, {}, (response) => GetPlayerInfo(response, setInfo));
+      }, Config.UPDATE_INTERVAL);
+    }
+  }, [autoUpdate]);
 
   return (
     <Card title="Player Info">
@@ -21,4 +32,4 @@ const PlayerInfoCard = ({ ApiRegister }) => {
   );
 };
 
-export default PlayerInfoCard;
+export default PlayerInfo;

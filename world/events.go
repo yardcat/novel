@@ -7,7 +7,7 @@ type ChangeStatusEvent struct {
 
 type ChangeEnvEvent struct {
 	Type  string
-	Value int
+	Value string
 }
 
 type BonusEvent struct {

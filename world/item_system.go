@@ -149,3 +149,6 @@ func (s *ItemSystem) AllocId(category string, name string) int {
 	s.idInc++
 	return id
 }
+
+func (s *ItemSystem) Craft() int {
+}

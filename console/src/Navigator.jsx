@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cascader, Flex } from 'antd';
+import { Cascader, Flex, InputNumber, Button, List } from 'antd';
 import CallAPI from './Net';
 
 class Node {
@@ -49,17 +49,59 @@ function generateOptions(api_list) {
   return root.children;
 }
 
-const handleChange = (value, handlers) => {
-  var path = value.join('/')
-  CallAPI(path, {}, handlers[path]);
-};
-
-const Navigator = ({ApiRegister}) => {
-  const options = generateOptions(Object.keys(ApiRegister));
+const CollectableComponent = ({ visible, data, onSubmit }) => {
+  if (!visible) return null;
 
   return (
-    <Flex vertical gap="small" align="flex-start">
-      <Cascader.Panel options={options} onChange={(value) => handleChange(value, ApiRegister)} />
+    <div id="collectable">
+      <List
+        itemLayout="horizontal"
+        dataSource={data}
+        renderItem={(item, index) => (
+          <List.Item>
+            <span>{item}</span>
+            <InputNumber
+              type="number"
+              defaultValue={0}
+            />
+          </List.Item>
+        )}
+      />
+      <Button type="primary" onClick={() => onSubmit(data)}>提交</Button>
+    </div>
+  );
+};
+
+const Navigator = ({ apiHandlers }) => {
+  const options = generateOptions(Object.keys(apiHandlers));
+  const [collectableVisible, setCollectableVisible] = useState(false);
+  const [collectableData, setCollectableData] = useState(["a", "b", "c"]);
+
+  const handleChange = (value, handlers) => {
+    var path = value.join('/');
+    if (value[value.length - 1] === 'collect') {
+      setCollectableVisible(true);
+      // const labels = value.slice(0, -1).map(value2Label);
+      // setCollectableData(labels.map(label => ({ label, value: 0 })));
+    } else {
+      setCollectableVisible(false);
+      CallAPI(path, {}, handlers[path]);
+    }
+  };
+
+  const handleCollectableSubmit = (data) => {
+    setCollectableVisible(false);
+    console.log('Selected data:', data);
+  };
+
+  return (
+    <Flex gap="small" align="flex-start">
+      <Cascader.Panel options={options} onChange={(value) => handleChange(value, apiHandlers)} />
+      <CollectableComponent
+        visible={collectableVisible}
+        data={collectableData}
+        onSubmit={handleCollectableSubmit}
+      />
     </Flex>
   );
 };

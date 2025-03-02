@@ -13,5 +13,18 @@
         "name": "iron",
         "description": "A piece of iron",
         "energy": 10
+    },
+    "house": {
+        "name": "house",
+        "description": "a house",
+        "energy": 10,
+        "craft": {
+            "stone": 10,
+            "wood": 10,
+            "needs": ["wood_skill"]
+        },
+        "attributes": {
+            "temperature": 3
+        }
     }
 }

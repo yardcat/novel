@@ -195,7 +195,7 @@ func (s *Story) loadDays() error {
 		if err != nil {
 			return err
 		}
-		var rawEvents map[string]interface{}
+		var rawEvents map[string]any
 		if err := json.Unmarshal(dayBytes, &rawEvents); err != nil {
 			return err
 		}
