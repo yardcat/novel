@@ -67,7 +67,12 @@ func (s *ItemSystem) GetItemId(path string) int {
 	return s.Path2Id[path]
 }
 
-func (s *ItemSystem) GetItem(id int) Item {
+func (s *ItemSystem) GetItemById(id int) Item {
+	return s.ItemMap[id]
+}
+
+func (s *ItemSystem) GetItemByName(path string) Item {
+	id := s.Path2Id[path]
 	return s.ItemMap[id]
 }
 

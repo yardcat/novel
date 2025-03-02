@@ -10,7 +10,7 @@
         "action": "Bonus",
         "params": {
             "item": "food.bread",
-            "count": "2"
+            "count": 2
         }
     },
     "00:00:12": {
@@ -34,7 +34,7 @@
         "action": "ChangeStatus",
         "params": {
             "type": "hp",
-            "value": "1"
+            "value": 1
         }
     }
 }

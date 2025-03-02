@@ -3,37 +3,27 @@ package world
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 )
 
 type Player struct {
-	Health    int      `json:"Health"`
-	Hunger    int      `json:"Hunger"`
-	Thirst    int      `json:"Thirst"`
-	Energy    int      `json:"Energy"`
-	Inventory []string `json:"-"`
-	Location  string   `json:"-"`
-	Bag       *Bag     `json:"-"`
-	Story     *Story   `json:"-"`
+	Health   int    `json:"Health"`
+	Hunger   int    `json:"Hunger"`
+	Thirst   int    `json:"Thirst"`
+	Energy   int    `json:"Energy"`
+	Location string `json:"-"`
+	Bag      *Bag   `json:"-"`
+	Story    *Story `json:"-"`
 }
 
 func NewPlayer(story *Story) *Player {
 	return &Player{
-		Health:    100,
-		Hunger:    100,
-		Thirst:    100,
-		Energy:    100,
-		Inventory: make([]string, 0),
-		Location:  "beach",
-		Bag:       NewBag(),
-		Story:     story,
-	}
-}
-
-func (p *Player) CollectStuff(stuff string) {
-	if p.Energy >= 10 {
-		p.Energy -= 10
-		p.Inventory = append(p.Inventory, stuff)
+		Health:   100,
+		Hunger:   100,
+		Thirst:   100,
+		Energy:   100,
+		Location: "beach",
+		Bag:      NewBag(),
+		Story:    story,
 	}
 }
 
@@ -61,26 +51,30 @@ func (p *Player) Update() {
 }
 
 func (s *Player) RegisterEventHander(maps map[string]any) {
+	// day event
 	maps["ChangeStatus"] = s.OnChangeStatus
 	maps["Bonus"] = s.OnBonus
+
+	// user event
+	maps["Collect"] = s.OnBonus
 }
 
-func (s *Player) OnChangeStatus(params map[string]string) {
-	typ := params["type"]
-	value := params["value"]
-	switch typ {
-	case "hp":
-		v, _ := strconv.Atoi(value)
-		s.Health += v
+func (p *Player) Collect(event CollectEvent) {
+	if p.Energy >= 10 {
+		p.Energy -= 10
+		p.Bag.Add(p.Story.ItemSystem.GetItemByName(event.Item), event.Count)
 	}
 }
 
-func (s *Player) OnBonus(params map[string]string) {
-	item := params["item"]
-	count := params["count"]
-	n, _ := strconv.Atoi(count)
-	itemId := s.Story.ItemSystem.GetItemId(item)
-	s.Bag.Add(s.Story.ItemSystem.GetItem(itemId), n)
+func (s *Player) OnChangeStatus(event ChangeStatusEvent) {
+	switch event.Type {
+	case "hp":
+		s.Health += event.Value
+	}
+}
+
+func (s *Player) OnBonus(event BonusEvent) {
+	s.Bag.Add(s.Story.ItemSystem.GetItemByName(event.Item), event.Count)
 }
 
 func (s *Player) ToString() string {

@@ -6,12 +6,13 @@ import (
 	"my_test/log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"time"
 )
 
 type Story struct {
-	taskCh        chan interface{}
+	taskCh        chan EventTask
 	ticker        *time.Ticker
 	done          chan bool
 	players       []*Player
@@ -23,15 +24,19 @@ type Story struct {
 }
 
 type TimeEventTask struct {
-	Time     time.Duration
-	Callback func()
+	Time time.Duration
+	EventTask
+}
+
+type EventTask struct {
+	EventName string
+	Event     string
 }
 
 type DayEvent struct {
-	Time   time.Duration     `json:"time"`
-	Desc   string            `json:"description"`
-	Action string            `json:"action"`
-	Params map[string]string `json:"params"`
+	Time   time.Duration `json:"time"`
+	Desc   string        `json:"description"`
+	Action string        `json:"action"`
 }
 
 type DayData struct {
@@ -52,7 +57,7 @@ func NewStory() *Story {
 }
 
 func (s *Story) Init() {
-	s.taskCh = make(chan interface{})
+	s.taskCh = make(chan EventTask)
 	s.done = make(chan bool)
 	s.loadData()
 	s.ItemSystem = NewItemSystem(s.resources)
@@ -67,6 +72,14 @@ func (s *Story) RegisterEventHandler() {
 	for _, player := range s.players {
 		player.RegisterEventHander(s.eventHandlers)
 	}
+}
+
+func (s *Story) PostEvent(name string, event string) {
+	task := EventTask{
+		EventName: name,
+		Event:     event,
+	}
+	s.taskCh <- task
 }
 
 func (s *Story) Start(ctx context.Context) {
@@ -86,9 +99,7 @@ func (s *Story) Start(ctx context.Context) {
 				continue
 			}
 		case task := <-s.taskCh:
-			if err := s.handleTask(task); err != nil {
-				continue
-			}
+			s.handleTask(task)
 		}
 	}
 }
@@ -102,7 +113,7 @@ func (s *Story) runTimeline() {
 		if waitTime > 0 {
 			select {
 			case <-time.After(waitTime):
-				s.taskCh <- event
+				s.taskCh <- event.EventTask
 			case <-s.done:
 				return
 			}
@@ -110,12 +121,32 @@ func (s *Story) runTimeline() {
 	}
 }
 
-func (s *Story) handleTask(task any) error {
-	switch t := task.(type) {
-	case TimeEventTask:
-		t.Callback()
+func (s *Story) handleTask(event EventTask) {
+	action := event.EventName
+	handler := s.eventHandlers[action]
+	if handler == nil {
+		log.Info("no handler for action %s", action)
+		return
 	}
-	return nil
+
+	handlerType := reflect.TypeOf(handler)
+	if handlerType.Kind() != reflect.Func || handlerType.NumIn() != 1 {
+		log.Info("handler %s is invalid", action)
+		return
+	}
+
+	paramType := handlerType.In(0)
+	paramValue := reflect.New(paramType).Interface()
+
+	if err := json.Unmarshal([]byte(event.Event), paramValue); err != nil {
+		log.Info("Failed to unmarshal event %s: %v", action, err)
+		return
+	}
+
+	convertedValue := reflect.ValueOf(paramValue).Elem()
+	handlerValue := reflect.ValueOf(handler)
+	handlerValue.Call([]reflect.Value{convertedValue})
+	log.Info("handle event done %s", action)
 }
 
 func (s *Story) update() error {
@@ -181,17 +212,12 @@ func (s *Story) loadDays() error {
 				Time:   timePoint.Sub(timeStart),
 				Desc:   description,
 				Action: eventMap["action"].(string),
-				Params: make(map[string]string),
-			}
-			if params, ok := eventMap["params"].(map[string]any); ok {
-				for k, v := range params {
-					event.Params[k] = v.(string)
-				}
 			}
 
 			// Add time event to task queue
+			eventStr, _ := json.Marshal(eventMap["params"])
 			s.timeEvents = append(s.timeEvents, TimeEventTask{event.Time,
-				func() { s.HandleDayEvent(event.Action, event.Params) }})
+				EventTask{event.Action, string(eventStr)}})
 			// record events
 			events = append(events, event)
 		}
