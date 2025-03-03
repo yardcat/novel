@@ -56,13 +56,15 @@ func (s *Player) RegisterEventHander(maps map[string]any) {
 	maps["Bonus"] = s.OnBonus
 
 	// user event
-	maps["Collect"] = s.OnBonus
+	maps["Collect"] = s.Collect
 }
 
 func (p *Player) Collect(event CollectEvent) {
-	if p.Energy >= 10 {
-		p.Energy -= 10
-		p.Bag.Add(p.Story.ItemSystem.GetItemByName(event.Item), event.Count)
+	for _, item := range event.Items {
+		if p.Energy >= 10 {
+			p.Energy -= 10
+			p.Bag.Add(p.Story.ItemSystem.GetItemByName(item.Label), item.Number)
+		}
 	}
 }
 

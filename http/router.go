@@ -12,11 +12,18 @@ func newGinRouter() *gin.Engine {
 	r := gin.New()
 	setCors(r)
 
-	u := newPlayer()
-	userRouterGroup := r.Group("/player")
+	p := newPlayer()
+	playerRouterGroup := r.Group("/player")
 	{
-		userRouterGroup.POST("/get_player_info", u.GetPlayerInfo)
-		userRouterGroup.POST("/get_bag", u.GetBag)
+		playerRouterGroup.POST("/get_player_info", p.GetPlayerInfo)
+		playerRouterGroup.POST("/get_bag", p.GetBag)
+		playerRouterGroup.POST("/collect", p.Collect)
+	}
+
+	w := newWorld()
+	worldRouterGroup := r.Group("/world")
+	{
+		worldRouterGroup.POST("/get_ui_info", w.GetUiInfo)
 	}
 	return r
 }

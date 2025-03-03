@@ -13,10 +13,13 @@ type Item interface {
 }
 
 type ItemSystem struct {
-	ItemMap   map[int]Item
-	Path2Id   map[string]int
-	Resources *Resources
-	idInc     int
+	ItemMap     map[int]Item
+	Path2Id     map[string]int
+	Resources   *Resources
+	idInc       int
+	buildItems  []*BuildItem
+	foodItems   []*FoodItem
+	weaponItems []*WeaponItem
 }
 
 type ItemData struct {
@@ -104,7 +107,9 @@ func (s *ItemSystem) loadBuild() error {
 	}
 	for k, v := range items {
 		v.Id = s.AllocId("build", k)
-		s.ItemMap[v.Id] = &v
+		item := v
+		s.ItemMap[v.Id] = &item
+		s.buildItems = append(s.buildItems, &item)
 	}
 	return nil
 }
@@ -121,7 +126,9 @@ func (s *ItemSystem) loadFood() error {
 	}
 	for k, v := range items {
 		v.Id = s.AllocId("food", k)
-		s.ItemMap[v.Id] = &v
+		item := v
+		s.ItemMap[v.Id] = &item
+		s.foodItems = append(s.foodItems, &item)
 	}
 	return nil
 }
@@ -138,7 +145,9 @@ func (s *ItemSystem) loadWeapon() error {
 	}
 	for k, v := range items {
 		v.Id = s.AllocId("weapon", k)
-		s.ItemMap[v.Id] = &v
+		item := v
+		s.ItemMap[v.Id] = &item
+		s.weaponItems = append(s.weaponItems, &item)
 	}
 	return nil
 }
@@ -151,4 +160,12 @@ func (s *ItemSystem) AllocId(category string, name string) int {
 }
 
 func (s *ItemSystem) Craft() {
+}
+
+func (s *ItemSystem) GetCollectable() []string {
+	collectable := make([]string, len(s.buildItems))
+	for i, v := range s.buildItems {
+		collectable[i] = v.GetName()
+	}
+	return collectable
 }

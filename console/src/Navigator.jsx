@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Cascader, Flex, InputNumber, Button, List } from 'antd';
 import CallAPI from './Net';
+import Config from './Config';
 
 class Node {
   value;
@@ -49,14 +50,26 @@ function generateOptions(api_list) {
   return root.children;
 }
 
-const CollectableComponent = ({ visible, data, onSubmit }) => {
-  if (!visible) return null;
+const CollectableComponent = ({ setCollectableVisible }) => {
+  const onSubmit = () => {
+    const listItems = document.querySelectorAll('#collectable .ant-list-item');
+    const collectableData = Array.from(listItems).map(item => {
+      const label = item.querySelector('span').innerText;
+      const number = item.querySelector('.ant-input-number-input').value;
+      return { label, number: parseInt(number, 10) };
+    });
+
+    const jsonData = JSON.stringify({ "items": collectableData });
+    CallAPI('player/collect', { "items": jsonData }, (response) => {
+    });
+    setCollectableVisible(false);
+  };
 
   return (
     <div id="collectable">
       <List
         itemLayout="horizontal"
-        dataSource={data}
+        dataSource={Config.collectable}
         renderItem={(item, index) => (
           <List.Item>
             <span>{item}</span>
@@ -67,7 +80,7 @@ const CollectableComponent = ({ visible, data, onSubmit }) => {
           </List.Item>
         )}
       />
-      <Button type="primary" onClick={() => onSubmit(data)}>提交</Button>
+      <Button type="primary" onClick={onSubmit}>提交</Button>
     </div>
   );
 };
@@ -75,33 +88,23 @@ const CollectableComponent = ({ visible, data, onSubmit }) => {
 const Navigator = ({ apiHandlers }) => {
   const options = generateOptions(Object.keys(apiHandlers));
   const [collectableVisible, setCollectableVisible] = useState(false);
-  const [collectableData, setCollectableData] = useState(["a", "b", "c"]);
 
   const handleChange = (value, handlers) => {
     var path = value.join('/');
     if (value[value.length - 1] === 'collect') {
       setCollectableVisible(true);
-      // const labels = value.slice(0, -1).map(value2Label);
-      // setCollectableData(labels.map(label => ({ label, value: 0 })));
     } else {
       setCollectableVisible(false);
       CallAPI(path, {}, handlers[path]);
     }
   };
 
-  const handleCollectableSubmit = (data) => {
-    setCollectableVisible(false);
-    console.log('Selected data:', data);
-  };
-
   return (
     <Flex gap="small" align="flex-start">
       <Cascader.Panel options={options} onChange={(value) => handleChange(value, apiHandlers)} />
-      <CollectableComponent
-        visible={collectableVisible}
-        data={collectableData}
-        onSubmit={handleCollectableSubmit}
-      />
+      {collectableVisible && <CollectableComponent
+        setCollectableVisible={setCollectableVisible}
+      />}
     </Flex>
   );
 };

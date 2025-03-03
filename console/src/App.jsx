@@ -3,6 +3,7 @@ import Navigator from './Navigator';
 import PlayerInfo from './PlayerInfo';
 import Bag from './Bag';
 import Action from './Action';
+import {initConfig} from './Config';
 
 const App = () => {
   const [apiHandlers, setApiHandlers] = useState({});
@@ -13,6 +14,10 @@ const App = () => {
       [path]: handler
     }));
   };
+
+  useEffect(() => {
+    initConfig();
+  }, []);
 
   return (
     <div className="App">

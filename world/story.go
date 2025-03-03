@@ -236,3 +236,7 @@ func (s *Story) HandleDayEvent(action string, params map[string]string) {
 	handler.(func(map[string]string))(params)
 	log.Info("handle day event done %s", action)
 }
+
+func (s *Story) GetCollectable() []string {
+	return s.ItemSystem.GetCollectable()
+}

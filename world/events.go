@@ -16,6 +16,8 @@ type BonusEvent struct {
 }
 
 type CollectEvent struct {
-	Item  string
-	Count int
+	Items []struct {
+		Label  string
+		Number int
+	}
 }
