@@ -150,5 +150,5 @@ func (s *ItemSystem) AllocId(category string, name string) int {
 	return id
 }
 
-func (s *ItemSystem) Craft() int {
+func (s *ItemSystem) Craft() {
 }
