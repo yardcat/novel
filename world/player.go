@@ -60,10 +60,10 @@ func (s *Player) RegisterEventHander(maps map[string]any) {
 }
 
 func (p *Player) Collect(event CollectEvent) {
-	for _, item := range event.Items {
+	for _, i := range event.Items {
 		if p.Energy >= 10 {
 			p.Energy -= 10
-			p.Bag.Add(p.Story.ItemSystem.GetItemByName(item.Label), item.Number)
+			p.Bag.Add(p.Story.ItemSystem.GetItemByName(i.Item), i.Count)
 		}
 	}
 }

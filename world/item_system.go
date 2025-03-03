@@ -154,7 +154,7 @@ func (s *ItemSystem) loadWeapon() error {
 
 func (s *ItemSystem) AllocId(category string, name string) int {
 	id := s.idInc
-	s.Path2Id[category+"."+name] = s.idInc
+	s.Path2Id[name] = s.idInc
 	s.idInc++
 	return id
 }

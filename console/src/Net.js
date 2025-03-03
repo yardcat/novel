@@ -28,6 +28,7 @@ const CallAPI = (path, params, callback) => {
         console.error('Error:', error);
       }
       connected = false;
+      console.log('net disconnected, %s', error);
     });
 }
 

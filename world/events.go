@@ -17,7 +17,15 @@ type BonusEvent struct {
 
 type CollectEvent struct {
 	Items []struct {
-		Label  string
-		Number int
+		Item  string
+		Count int
+	}
+}
+
+type CollectEventReply struct {
+	EnergyCost int
+	Items      []struct {
+		Item  string
+		Count int
 	}
 }

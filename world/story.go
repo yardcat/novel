@@ -12,7 +12,7 @@ import (
 )
 
 type Story struct {
-	taskCh        chan EventTask
+	taskCh        chan Task
 	ticker        *time.Ticker
 	done          chan bool
 	players       []*Player
@@ -23,6 +23,11 @@ type Story struct {
 	eventHandlers map[string]any
 }
 
+type Task interface {
+	GetName() string
+	GetEvent() string
+}
+
 type TimeEventTask struct {
 	Time time.Duration
 	EventTask
@@ -31,6 +36,15 @@ type TimeEventTask struct {
 type EventTask struct {
 	EventName string
 	Event     string
+}
+
+func (e *EventTask) GetName() string { return e.EventName }
+
+func (e *EventTask) GetEvent() string { return e.Event }
+
+type ReplyEventTask struct {
+	Reply any
+	EventTask
 }
 
 type DayEvent struct {
@@ -57,7 +71,7 @@ func NewStory() *Story {
 }
 
 func (s *Story) Init() {
-	s.taskCh = make(chan EventTask)
+	s.taskCh = make(chan Task)
 	s.done = make(chan bool)
 	s.loadData()
 	s.ItemSystem = NewItemSystem(s.resources)
@@ -79,7 +93,18 @@ func (s *Story) PostEvent(name string, event string) {
 		EventName: name,
 		Event:     event,
 	}
-	s.taskCh <- task
+	s.taskCh <- &task
+}
+
+func (s *Story) PostReplyEvent(name string, event string, reply any) {
+	task := ReplyEventTask{
+		Reply: reply,
+		EventTask: EventTask{
+			EventName: name,
+			Event:     event,
+		},
+	}
+	s.taskCh <- &task
 }
 
 func (s *Story) Start(ctx context.Context) {
@@ -113,7 +138,7 @@ func (s *Story) runTimeline() {
 		if waitTime > 0 {
 			select {
 			case <-time.After(waitTime):
-				s.taskCh <- event.EventTask
+				s.taskCh <- &event.EventTask
 			case <-s.done:
 				return
 			}
@@ -121,8 +146,8 @@ func (s *Story) runTimeline() {
 	}
 }
 
-func (s *Story) handleTask(event EventTask) {
-	action := event.EventName
+func (s *Story) handleTask(event Task) {
+	action := event.GetName()
 	handler := s.eventHandlers[action]
 	if handler == nil {
 		log.Info("no handler for action %s", action)
@@ -138,7 +163,7 @@ func (s *Story) handleTask(event EventTask) {
 	paramType := handlerType.In(0)
 	paramValue := reflect.New(paramType).Interface()
 
-	if err := json.Unmarshal([]byte(event.Event), paramValue); err != nil {
+	if err := json.Unmarshal([]byte(event.GetEvent()), paramValue); err != nil {
 		log.Info("Failed to unmarshal event %s: %v", action, err)
 		return
 	}

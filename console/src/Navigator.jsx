@@ -56,8 +56,8 @@ const CollectableComponent = ({ setCollectableVisible }) => {
     const collectableData = Array.from(listItems).map(item => {
       const label = item.querySelector('span').innerText;
       const number = item.querySelector('.ant-input-number-input').value;
-      return { label, number: parseInt(number, 10) };
-    });
+      return { item:label, count: parseInt(number, 10) };
+    }).filter(item => item.count > 0);
 
     const jsonData = JSON.stringify({ "items": collectableData });
     CallAPI('player/collect', { "items": jsonData }, (response) => {

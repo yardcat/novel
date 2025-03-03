@@ -33,5 +33,8 @@ func (u *Player) Collect(c *gin.Context) {
 	log.Info("collect %s", c.PostForm("items"))
 	items := c.PostForm("items")
 	world.GetStory().PostEvent("Collect", items)
+	world.GetStory().PostReplyEvent("Collect", items, func() {
+
+	})
 	c.JSON(200, "{}")
 }

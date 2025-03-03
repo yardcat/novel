@@ -5,6 +5,9 @@ import CallAPI from "./Net";
 const API_PATH = "player/get_bag";
 
 function GetBag(info, setInfo) {
+  if (info.items) {
+    info.items.sort((a, b) => a.name.localeCompare(b.name));
+  }
   setInfo(info);
 }
 
