@@ -1,36 +1,28 @@
 import { React, useState, useEffect } from 'react';
-import { List } from 'antd';
+import { List, Card } from 'antd';
 
-function updateAction(response, setAction) {
-  setAction(response);
-}
-
-const Action = ({ addApiHandler }) => {
-  const [actions, setAction] = useState([]);
-
+const Action = ({ addApiHandler,actions }) => {
   useEffect(() => {
-    addApiHandler('player/collect', (response) => { updateAction(response, setAction) });
+    addApiHandler('player/collect', null);
   }, []);
 
   return (
-    <div style={{ height: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px' }}>
+    <Card title="Action" style={{ width: '1000px' }}>
       <List
         itemLayout="horizontal"
         dataSource={actions}
         renderItem={(item) => (
           <List.Item>
             <List.Item.Meta
-              title={`${item.endpoint} - ${item.timestamp}`}
+              title={item.action}
               description={
-                <div>
-                  <p><strong>Params:</strong> {JSON.stringify(item.params)}</p>
-                </div>
+                <div> {item.log} </div>
               }
             />
           </List.Item>
         )}
       />
-    </div>
+    </Card>
   );
 };
 

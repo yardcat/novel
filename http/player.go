@@ -32,9 +32,15 @@ func (u *Player) GetBag(c *gin.Context) {
 func (u *Player) Collect(c *gin.Context) {
 	log.Info("collect %s", c.PostForm("items"))
 	items := c.PostForm("items")
+<<<<<<< HEAD
 	world.GetStory().PostEvent("Collect", items)
 	world.GetStory().PostReplyEvent("Collect", items, func() {
 
 	})
 	c.JSON(200, "{}")
+=======
+	world.GetStory().PostReplyEvent("Collect", items, func(response string) {
+		c.JSON(200, response)
+	})
+>>>>>>> 015ea37 (add reply task)
 }

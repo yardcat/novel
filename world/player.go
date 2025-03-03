@@ -59,13 +59,24 @@ func (s *Player) RegisterEventHander(maps map[string]any) {
 	maps["Collect"] = s.Collect
 }
 
+<<<<<<< HEAD
 func (p *Player) Collect(event CollectEvent) {
+=======
+func (p *Player) Collect(event CollectEvent) CollectEventReply {
+	reply := CollectEventReply{}
+>>>>>>> 015ea37 (add reply task)
 	for _, i := range event.Items {
 		if p.Energy >= 10 {
 			p.Energy -= 10
 			p.Bag.Add(p.Story.ItemSystem.GetItemByName(i.Item), i.Count)
+<<<<<<< HEAD
+=======
+			reply.EnergyCost += 10
+			reply.Items = append(reply.Items, i)
+>>>>>>> 015ea37 (add reply task)
 		}
 	}
+	return reply
 }
 
 func (s *Player) OnChangeStatus(event ChangeStatusEvent) {

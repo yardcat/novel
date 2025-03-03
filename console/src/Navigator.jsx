@@ -17,7 +17,7 @@ class Node {
 function value2Label(input) {
   const words = input.split('_');
   const capitalizedWords = words.map(word => {
-      return word.charAt(0).toUpperCase() + word.slice(1);
+    return word.charAt(0).toUpperCase() + word.slice(1);
   });
   return capitalizedWords.join('');
 }
@@ -50,17 +50,26 @@ function generateOptions(api_list) {
   return root.children;
 }
 
-const CollectableComponent = ({ setCollectableVisible }) => {
+const CollectableComponent = ({ setCollectableVisible, setAction }) => {
   const onSubmit = () => {
     const listItems = document.querySelectorAll('#collectable .ant-list-item');
     const collectableData = Array.from(listItems).map(item => {
       const label = item.querySelector('span').innerText;
       const number = item.querySelector('.ant-input-number-input').value;
-      return { item:label, count: parseInt(number, 10) };
+      return { item: label, count: parseInt(number, 10) };
     }).filter(item => item.count > 0);
 
     const jsonData = JSON.stringify({ "items": collectableData });
     CallAPI('player/collect', { "items": jsonData }, (response) => {
+      if (response["items"]) {
+        response["action"] = "collect";
+        let log =""
+        response["items"].forEach(item => {
+          log += item["count"] + " " + item["item"] + ","
+        });
+        response["log"] = log
+        setAction(response);
+      }
     });
     setCollectableVisible(false);
   };
@@ -85,7 +94,7 @@ const CollectableComponent = ({ setCollectableVisible }) => {
   );
 };
 
-const Navigator = ({ apiHandlers }) => {
+const Navigator = ({ apiHandlers, setAction }) => {
   const options = generateOptions(Object.keys(apiHandlers));
   const [collectableVisible, setCollectableVisible] = useState(false);
 
@@ -104,6 +113,7 @@ const Navigator = ({ apiHandlers }) => {
       <Cascader.Panel options={options} onChange={(value) => handleChange(value, apiHandlers)} />
       {collectableVisible && <CollectableComponent
         setCollectableVisible={setCollectableVisible}
+        setAction={setAction}
       />}
     </Flex>
   );

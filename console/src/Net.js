@@ -27,7 +27,13 @@ const CallAPI = (path, params, callback) => {
       if (Config.DEBUG) {
         console.error('Error:', error);
       }
+<<<<<<< HEAD
       connected = false;
+=======
+      if (error.code === "ERR_NETWORK") {
+        connected = false;
+      }
+>>>>>>> 015ea37 (add reply task)
       console.log('net disconnected, %s', error);
     });
 }

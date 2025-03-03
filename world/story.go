@@ -12,7 +12,11 @@ import (
 )
 
 type Story struct {
+<<<<<<< HEAD
 	taskCh        chan Task
+=======
+	taskCh        chan *EventTask
+>>>>>>> 015ea37 (add reply task)
 	ticker        *time.Ticker
 	done          chan bool
 	players       []*Player
@@ -36,6 +40,7 @@ type TimeEventTask struct {
 type EventTask struct {
 	EventName string
 	Event     string
+	ReplyCh   chan string
 }
 
 func (e *EventTask) GetName() string { return e.EventName }
@@ -71,7 +76,11 @@ func NewStory() *Story {
 }
 
 func (s *Story) Init() {
+<<<<<<< HEAD
 	s.taskCh = make(chan Task)
+=======
+	s.taskCh = make(chan *EventTask)
+>>>>>>> 015ea37 (add reply task)
 	s.done = make(chan bool)
 	s.loadData()
 	s.ItemSystem = NewItemSystem(s.resources)
@@ -96,6 +105,7 @@ func (s *Story) PostEvent(name string, event string) {
 	s.taskCh <- &task
 }
 
+<<<<<<< HEAD
 func (s *Story) PostReplyEvent(name string, event string, reply any) {
 	task := ReplyEventTask{
 		Reply: reply,
@@ -105,6 +115,18 @@ func (s *Story) PostReplyEvent(name string, event string, reply any) {
 		},
 	}
 	s.taskCh <- &task
+=======
+func (s *Story) PostReplyEvent(name string, event string, callback func(string)) {
+	replyCh := make(chan string)
+	task := EventTask{
+		EventName: name,
+		Event:     event,
+		ReplyCh:   replyCh,
+	}
+	s.taskCh <- &task
+	reply := <-replyCh
+	callback(reply)
+>>>>>>> 015ea37 (add reply task)
 }
 
 func (s *Story) Start(ctx context.Context) {
@@ -146,8 +168,13 @@ func (s *Story) runTimeline() {
 	}
 }
 
+<<<<<<< HEAD
 func (s *Story) handleTask(event Task) {
 	action := event.GetName()
+=======
+func (s *Story) handleTask(event *EventTask) {
+	action := event.EventName
+>>>>>>> 015ea37 (add reply task)
 	handler := s.eventHandlers[action]
 	if handler == nil {
 		log.Info("no handler for action %s", action)
@@ -170,7 +197,22 @@ func (s *Story) handleTask(event Task) {
 
 	convertedValue := reflect.ValueOf(paramValue).Elem()
 	handlerValue := reflect.ValueOf(handler)
-	handlerValue.Call([]reflect.Value{convertedValue})
+	results := handlerValue.Call([]reflect.Value{convertedValue})
+
+	if event.ReplyCh != nil {
+		if len(results) > 0 {
+			replyValue := results[0].Interface()
+			replyBytes, err := json.Marshal(replyValue)
+			if err != nil {
+				log.Info("Failed to marshal reply for event %s: %v", action, err)
+				return
+			}
+			event.ReplyCh <- string(replyBytes)
+		} else {
+			log.Info("No reply from handler for event %s", action)
+		}
+	}
+
 	log.Info("handle event done %s", action)
 }
 
@@ -242,7 +284,7 @@ func (s *Story) loadDays() error {
 			// Add time event to task queue
 			eventStr, _ := json.Marshal(eventMap["params"])
 			s.timeEvents = append(s.timeEvents, TimeEventTask{event.Time,
-				EventTask{event.Action, string(eventStr)}})
+				EventTask{EventName: event.Action, Event: string(eventStr)}})
 			// record events
 			events = append(events, event)
 		}
