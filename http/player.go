@@ -32,15 +32,31 @@ func (u *Player) GetBag(c *gin.Context) {
 func (u *Player) Collect(c *gin.Context) {
 	log.Info("collect %s", c.PostForm("items"))
 	items := c.PostForm("items")
-<<<<<<< HEAD
-	world.GetStory().PostEvent("Collect", items)
-	world.GetStory().PostReplyEvent("Collect", items, func() {
-
-	})
-	c.JSON(200, "{}")
-=======
 	world.GetStory().PostReplyEvent("Collect", items, func(response string) {
 		c.JSON(200, response)
 	})
->>>>>>> 015ea37 (add reply task)
+}
+
+func (u *Player) Explore(c *gin.Context) {
+	log.Info("explore")
+	time := c.PostForm("time")
+	world.GetStory().PostReplyEvent("Explore", time, func(response string) {
+		c.JSON(200, response)
+	})
+}
+
+func (u *Player) ChallengeSub(c *gin.Context) {
+	log.Info("explore")
+	time := c.PostForm("time")
+	world.GetStory().PostReplyEvent("ChallengeSub", time, func(response string) {
+		c.JSON(200, response)
+	})
+}
+
+func (u *Player) Fish(c *gin.Context) {
+	log.Info("fish")
+	time := c.PostForm("time")
+	world.GetStory().PostReplyEvent("ChallengeSub", time, func(response string) {
+		c.JSON(200, response)
+	})
 }

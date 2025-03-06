@@ -1,10 +1,13 @@
 package combat
 
 type Actor struct {
+	name string
 }
 
 func NewActor(id int, name string) *Actor {
-	return &Actor{}
+	return &Actor{
+		name: name,
+	}
 }
 
 func (u *Actor) AttackSpeed() int {
@@ -15,33 +18,33 @@ func (u *Actor) CombatType() int {
 	return ENEMY
 }
 
-func (u *Player) Attack(op Fightable) {
+func (u *Actor) OnAttack(op Combatable) {
 }
 
-func (u *Player) Damage(damage int) {
+func (u *Actor) OnDamage(damage int, op Combatable) {
 	u.property.Life -= damage
 }
 
-func (u *Player) GetName() string {
+func (u *Actor) GetName() string {
 	return u.name
 }
 
-func (u *Player) GetLife() int {
+func (u *Actor) GetLife() int {
 	return u.property.Life
 }
 
-func (u *Player) GetAttack() int {
+func (u *Actor) GetAttack() int {
 	return u.property.Attack
 }
 
-func (u *Player) GetDefense() int {
+func (u *Actor) GetDefense() int {
 	return u.property.Defense
 }
 
-func (u *Player) GetDodge() int {
+func (u *Actor) GetDodge() int {
 	return u.property.Dodge
 }
 
-func (u *Player) IsAlive() bool {
+func (u *Actor) IsAlive() bool {
 	return u.property.Life > 0
 }

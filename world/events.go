@@ -17,21 +17,8 @@ type BonusEvent struct {
 
 type CollectEvent struct {
 	Items []struct {
-<<<<<<< HEAD
-		Item  string
-		Count int
-	}
-}
-
-type CollectEventReply struct {
-	EnergyCost int
-	Items      []struct {
-		Item  string
-		Count int
-=======
 		Item  string `json:"item"`
 		Count int    `json:"count"`
->>>>>>> 015ea37 (add reply task)
 	}
 }
 

@@ -12,11 +12,7 @@ import (
 )
 
 type Story struct {
-<<<<<<< HEAD
-	taskCh        chan Task
-=======
 	taskCh        chan *EventTask
->>>>>>> 015ea37 (add reply task)
 	ticker        *time.Ticker
 	done          chan bool
 	players       []*Player
@@ -76,11 +72,7 @@ func NewStory() *Story {
 }
 
 func (s *Story) Init() {
-<<<<<<< HEAD
-	s.taskCh = make(chan Task)
-=======
 	s.taskCh = make(chan *EventTask)
->>>>>>> 015ea37 (add reply task)
 	s.done = make(chan bool)
 	s.loadData()
 	s.ItemSystem = NewItemSystem(s.resources)
@@ -105,17 +97,6 @@ func (s *Story) PostEvent(name string, event string) {
 	s.taskCh <- &task
 }
 
-<<<<<<< HEAD
-func (s *Story) PostReplyEvent(name string, event string, reply any) {
-	task := ReplyEventTask{
-		Reply: reply,
-		EventTask: EventTask{
-			EventName: name,
-			Event:     event,
-		},
-	}
-	s.taskCh <- &task
-=======
 func (s *Story) PostReplyEvent(name string, event string, callback func(string)) {
 	replyCh := make(chan string)
 	task := EventTask{
@@ -126,7 +107,6 @@ func (s *Story) PostReplyEvent(name string, event string, callback func(string))
 	s.taskCh <- &task
 	reply := <-replyCh
 	callback(reply)
->>>>>>> 015ea37 (add reply task)
 }
 
 func (s *Story) Start(ctx context.Context) {
@@ -168,13 +148,8 @@ func (s *Story) runTimeline() {
 	}
 }
 
-<<<<<<< HEAD
-func (s *Story) handleTask(event Task) {
-	action := event.GetName()
-=======
 func (s *Story) handleTask(event *EventTask) {
 	action := event.EventName
->>>>>>> 015ea37 (add reply task)
 	handler := s.eventHandlers[action]
 	if handler == nil {
 		log.Info("no handler for action %s", action)
