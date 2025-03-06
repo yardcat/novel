@@ -1,22 +1,18 @@
-package user
+package combat
 
-type Player struct {
-	id       int
-	name     string
-	property Property
+type Actor struct {
 }
 
-func NewPlayer(id int, name string) *Player {
-	return &Player{
-		id:   id,
-		name: name,
-		property: Property{
-			Life:    100,
-			Attack:  10,
-			Defense: 5,
-			Dodge:   10,
-		},
-	}
+func NewActor(id int, name string) *Actor {
+	return &Actor{}
+}
+
+func (u *Actor) AttackSpeed() int {
+	return 1
+}
+
+func (u *Actor) CombatType() int {
+	return ENEMY
 }
 
 func (u *Player) Attack(op Fightable) {

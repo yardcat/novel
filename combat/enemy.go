@@ -1,15 +1,22 @@
-package user
+package combat
 
-type Monster struct {
-	name     string
-	property Property
+type Enemy struct {
+	name string
 }
 
-func NewMonster(name string, property Property) *Monster {
-	return &Monster{
+func NewEnemy(name string, property Property) *Enemy {
+	return &Enemy{
 		name:     name,
 		property: property,
 	}
+}
+
+func (u *Enemy) AttackSpeed() int {
+	return 1
+}
+
+func (u *Enemy) CombatType() int {
+	return ENEMY
 }
 
 func (u *Monster) Attack(op Fightable) {
