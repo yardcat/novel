@@ -1,11 +1,11 @@
 package combat
 
-type Enemy struct {
+type Actor struct {
 	CombatableBase
 }
 
-func NewEnemy(id int, name string) *Enemy {
-	return &Enemy{
+func NewActor(id int, name string) *Actor {
+	return &Actor{
 		CombatableBase: CombatableBase{
 			name: name,
 		},

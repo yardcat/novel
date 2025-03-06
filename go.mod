@@ -8,6 +8,7 @@ require github.com/gin-gonic/gin v1.10.0
 
 require (
 	github.com/gin-contrib/cors v1.7.3 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 )
 

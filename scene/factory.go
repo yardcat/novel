@@ -32,7 +32,7 @@ var (
 )
 
 func CreateScene(id int, players []*user.Player) *LineScene {
-	monsters := make([]*user.Monster, 0)
+	monsters := make([]*user.Enemy, 0)
 	scene_proto := scene_table[id]
 	for monster_id, num := range scene_proto.monsters {
 		for j := 0; j < num; j++ {

@@ -2,9 +2,7 @@ package combat
 
 import (
 	"fmt"
-	"my_test/event"
 	"my_test/log"
-	"my_test/user"
 )
 
 const (
@@ -13,21 +11,11 @@ const (
 	ENEMY    = 2
 )
 
-type Combatable interface {
-	GetAttackSpeed() int
-	GetAttack() int
-	CombatType() int
-	IsAlive() bool
-	OnAttack(defender Combatable)
-	OnDamage(damage int, attacker Combatable)
-	OnDead(killer Combatable)
-}
-
 type CombatClient interface {
-	OnLost()
+	OnLose()
 	OnWin()
-	OnKill(killer Combatable)
-	OnDead()
+	OnKill(Combatable)
+	OnDead(Combatable)
 }
 
 type Combat struct {
@@ -51,20 +39,22 @@ func (c *Combat) Start() {
 		isActorAttacker := attacker.CombatType() == ACTOR
 		result := c.CombatOnce(attacker, defender, isActorAttacker)
 		if result.attackerDead {
-			fmt.Println(attacker.OnDead(defender), "dead")
+			defender.OnKill(attacker)
+			attacker.OnDead(defender)
 			c.removeCombatable(attacker)
 		}
 		if result.defenderDead {
-			fmt.Println(defender.OnDead(attacker), "dead")
+			defender.OnKill(attacker)
+			defender.OnDead(attacker)
 			c.removeCombatable(defender)
 		}
 	}
 	if len(c.actors) == 0 {
-		fmt.Println(defender.GetName(), "dead")
-		event.GetEventBus().OnEvent(event.Die, map[string]any{"player": player})
+		fmt.Println("lose")
+		c.client.OnLose()
 	} else if len(c.enemies) == 0 {
-		fmt.Println(attacker.GetName(), "win")
-		event.GetEventBus().OnEvent(event.Die, map[string]any{"player": player})
+		fmt.Println("win")
+		c.client.OnWin()
 	}
 }
 
@@ -93,23 +83,23 @@ func (c *Combat) ChooseDefender(attacker Combatable) Combatable {
 
 func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
 	attacker.OnAttack(defender)
-	damage_reduce_factor := getDamageFactor(attacker, op)
+	damage_reduce_factor := getDamageFactor(attacker, defender)
 	damage := int(float32(attacker.GetAttack()) * damage_reduce_factor)
 	if shouldDodge(attacker, defender) {
 		damage = 0
 	}
-	defender.OnDamage(damage)
+	defender.OnDamage(damage, attacker)
 	return CombatOnceResult{
 		attackerDead: attacker.IsAlive(),
 		defenderDead: defender.IsAlive(),
 	}
 }
 
-func getDamageFactor(player user.Fightable, op user.Fightable) float32 {
+func getDamageFactor(attacker Combatable, enemy Combatable) float32 {
 	return 1.0
 }
 
-func shouldDodge(player user.Fightable, op user.Fightable) bool {
+func shouldDodge(attacker Combatable, enemy Combatable) bool {
 	return false
 }
 

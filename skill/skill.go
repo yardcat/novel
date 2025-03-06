@@ -1,15 +1,16 @@
 package skill
 
-import "my_test/user"
+type Caster interface {
+}
 
 type Skill struct {
 	name   string
 	damage int
 	cost   int
-	caster user.Fightable
+	caster Caster
 }
 
-func (*Skill) NewSkill(name string, damage int, cost int, caster user.Fightable) *Skill {
+func (*Skill) NewSkill(name string, damage int, cost int, caster Caster) *Skill {
 	return &Skill{
 		name:   name,
 		damage: damage,
@@ -18,7 +19,7 @@ func (*Skill) NewSkill(name string, damage int, cost int, caster user.Fightable)
 	}
 }
 
-func (s *Skill) Cast(target user.Fightable) {
+func (s *Skill) Cast(target Caster) {
 
 }
 

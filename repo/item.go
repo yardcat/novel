@@ -1,4 +1,4 @@
-package item
+package repo
 
 const (
 	Weapon = iota
