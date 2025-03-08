@@ -7,7 +7,7 @@ type Actor struct {
 func NewActor(id int, name string) *Actor {
 	return &Actor{
 		CombatableBase: CombatableBase{
-			name: name,
+			CombatType: ACTOR,
 		},
 	}
 }

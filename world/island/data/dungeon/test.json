@@ -1,0 +1,8 @@
+{
+    "group1": {
+        "members": ["cat", "dog", "cat"]
+     }, 
+     "group2": {
+        "members": ["sheep", "pig", "pig"]
+     }
+}

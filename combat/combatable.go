@@ -1,5 +1,10 @@
 package combat
 
+const (
+	ACTOR = 1
+	ENEMY = 2
+)
+
 type Combatable interface {
 	GetName() string
 	GetAttackSpeed() int
@@ -8,7 +13,7 @@ type Combatable interface {
 	GetDefense() int
 	GetDodge() int
 
-	CombatType() int
+	GetCombatType() int
 	IsAlive() bool
 	OnAttack(defender Combatable)
 	OnDamage(damage int, attacker Combatable)
@@ -17,49 +22,49 @@ type Combatable interface {
 }
 
 type CombatableBase struct {
-	name        string
-	attackSpeed int
-	attack      int
-	life        int
-	defense     int
-	dodge       int
-	combatType  int
+	Name        string
+	AttackSpeed int
+	Attack      int
+	Life        int
+	Defense     int
+	Dodge       int
+	CombatType  int
 }
 
 func NewCombatableBase(id int, name string) *CombatableBase {
 	return &CombatableBase{
-		name: name,
+		Name: name,
 	}
 }
 
 func (c *CombatableBase) GetName() string {
-	return c.name
+	return c.Name
 }
 
 func (c *CombatableBase) GetAttackSpeed() int {
-	return c.attackSpeed
+	return c.AttackSpeed
 }
 func (c *CombatableBase) GetAttack() int {
-	return c.attack
+	return c.Attack
 }
 func (c *CombatableBase) GetLife() int {
-	return c.life
+	return c.Life
 }
 
 func (c *CombatableBase) GetDefense() int {
-	return c.defense
+	return c.Defense
 }
 
 func (c *CombatableBase) GetDodge() int {
-	return c.dodge
+	return c.Dodge
 }
 
-func (c *CombatableBase) CombatType() int {
-	return c.combatType
+func (c *CombatableBase) GetCombatType() int {
+	return c.CombatType
 }
 
 func (c *CombatableBase) IsAlive() bool {
-	return c.life > 0
+	return c.Life > 0
 }
 
 func (c *CombatableBase) OnAttack(defender Combatable) {

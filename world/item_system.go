@@ -15,7 +15,7 @@ type Item interface {
 type ItemSystem struct {
 	ItemMap     map[int]Item
 	Path2Id     map[string]int
-	Resources   *Resources
+	resources   *Resources
 	idInc       int
 	buildItems  []*BuildItem
 	foodItems   []*FoodItem
@@ -55,11 +55,11 @@ type WeaponItem struct {
 	Attributes map[string]int
 }
 
-func NewItemSystem(resources *Resources) *ItemSystem {
+func NewItemSystem() *ItemSystem {
 	itemSystem := &ItemSystem{
 		ItemMap:   make(map[int]Item),
 		Path2Id:   make(map[string]int),
-		Resources: resources,
+		resources: GetStory().GetResources(),
 		idInc:     0,
 	}
 	itemSystem.loadStuff()
@@ -96,7 +96,7 @@ func (s *ItemSystem) loadStuff() error {
 }
 
 func (s *ItemSystem) loadBuild() error {
-	stuffBytes, err := os.ReadFile(s.Resources.GetPath("item/build.json"))
+	stuffBytes, err := os.ReadFile(s.resources.GetPath("item/build.json"))
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (s *ItemSystem) loadBuild() error {
 }
 
 func (s *ItemSystem) loadFood() error {
-	stuffBytes, err := os.ReadFile(s.Resources.GetPath("item/food.json"))
+	stuffBytes, err := os.ReadFile(s.resources.GetPath("item/food.json"))
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (s *ItemSystem) loadFood() error {
 }
 
 func (s *ItemSystem) loadWeapon() error {
-	stuffBytes, err := os.ReadFile(s.Resources.GetPath("item/weapon.json"))
+	stuffBytes, err := os.ReadFile(s.resources.GetPath("item/weapon.json"))
 	if err != nil {
 		return err
 	}

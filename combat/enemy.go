@@ -7,7 +7,7 @@ type Enemy struct {
 func NewEnemy(id int, name string) *Enemy {
 	return &Enemy{
 		CombatableBase: CombatableBase{
-			name: name,
+			CombatType: ENEMY,
 		},
 	}
 }

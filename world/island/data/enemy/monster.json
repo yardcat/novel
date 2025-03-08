@@ -1,0 +1,38 @@
+{
+    "pig":{
+      "Name": "pig",
+      "Level": 1,
+      "Life": 50,
+      "Attack": 3,
+      "AttackSpeed": 5,
+      "Defense": 2,
+      "Dodge": 0
+    },
+    "dog":{
+      "Name": "dog",
+      "Level": 2,
+      "Life": 30,
+      "Attack": 5,
+      "AttackSpeed": 5,
+      "Defense": 3,
+      "Dodge": 10
+    },
+    "cat":{
+      "Name": "cat",
+      "Level": 2,
+      "Life": 20,
+      "Attack": 6,
+      "AttackSpeed": 5,
+      "Defense": 2,
+      "Dodge": 20
+    },
+    "sheep":{
+      "Name": "sheep",
+      "Level": 1,
+      "Life": 40,
+      "Attack": 2,
+      "AttackSpeed": 5,
+      "Defense": 2,
+      "Dodge": 5
+    }
+}

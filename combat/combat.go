@@ -7,13 +7,12 @@ import (
 
 const (
 	MAX_STEP = 100.0
-	ACTOR    = 1
-	ENEMY    = 2
 )
 
 type CombatClient interface {
 	OnLose()
 	OnWin()
+	OnDraw()
 	OnKill(Combatable)
 	OnDead(Combatable)
 }
@@ -23,7 +22,6 @@ type Combat struct {
 	combatables []Combatable
 	actors      []*Actor
 	enemies     []*Enemy
-	record      string
 	client      CombatClient
 }
 
@@ -32,11 +30,28 @@ type CombatOnceResult struct {
 	defenderDead bool
 }
 
+func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
+	c := &Combat{
+		actors:      actors,
+		enemies:     enemies,
+		client:      client,
+		combatables: make([]Combatable, len(actors)+len(enemies)),
+		attackStep:  make(map[Combatable]float64),
+	}
+	for _, actor := range actors {
+		c.combatables = append(c.combatables, actor)
+	}
+	for _, enemy := range enemies {
+		c.combatables = append(c.combatables, enemy)
+	}
+	return c
+}
+
 func (c *Combat) Start() {
 	for len(c.actors) > 0 && len(c.enemies) > 0 {
 		attacker := c.ChooseAttacker()
 		defender := c.ChooseDefender(attacker)
-		isActorAttacker := attacker.CombatType() == ACTOR
+		isActorAttacker := attacker.GetCombatType() == ACTOR
 		result := c.CombatOnce(attacker, defender, isActorAttacker)
 		if result.attackerDead {
 			defender.OnKill(attacker)
@@ -49,12 +64,15 @@ func (c *Combat) Start() {
 			c.removeCombatable(defender)
 		}
 	}
-	if len(c.actors) == 0 {
-		fmt.Println("lose")
-		c.client.OnLose()
-	} else if len(c.enemies) == 0 {
+	if len(c.actors) != 0 {
 		fmt.Println("win")
+		c.client.OnLose()
+	} else if len(c.enemies) != 0 {
+		fmt.Println("lose")
 		c.client.OnWin()
+	} else {
+		fmt.Println("draw")
+		c.client.OnDraw()
 	}
 }
 
@@ -72,19 +90,19 @@ func (c *Combat) ChooseAttacker() Combatable {
 }
 
 func (c *Combat) ChooseDefender(attacker Combatable) Combatable {
-	if attacker.CombatType() == ACTOR {
+	if attacker.GetCombatType() == ACTOR {
 		return c.enemies[0]
-	} else if attacker.CombatType() == ENEMY {
+	} else if attacker.GetCombatType() == ENEMY {
 		return c.actors[0]
 	}
-	log.Info("unknown attacker type %d", attacker.CombatType())
+	log.Info("unknown attacker type %d", attacker.GetCombatType())
 	return nil
 }
 
 func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
 	attacker.OnAttack(defender)
-	damage_reduce_factor := getDamageFactor(attacker, defender)
-	damage := int(float32(attacker.GetAttack()) * damage_reduce_factor)
+	damage_reduce := getDamageReduce(attacker, defender)
+	damage := int(float32(attacker.GetAttack()) * damage_reduce)
 	if shouldDodge(attacker, defender) {
 		damage = 0
 	}
@@ -95,7 +113,7 @@ func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAtt
 	}
 }
 
-func getDamageFactor(attacker Combatable, enemy Combatable) float32 {
+func getDamageReduce(attacker Combatable, enemy Combatable) float32 {
 	return 1.0
 }
 
@@ -104,7 +122,7 @@ func shouldDodge(attacker Combatable, enemy Combatable) bool {
 }
 
 func (c *Combat) removeCombatable(combatable Combatable) {
-	switch combatable.CombatType() {
+	switch combatable.GetCombatType() {
 	case ACTOR:
 		for i, actor := range c.actors {
 			if actor == combatable {
@@ -120,6 +138,6 @@ func (c *Combat) removeCombatable(combatable Combatable) {
 			}
 		}
 	default:
-		log.Info("unknown combatable type %d", combatable.CombatType())
+		log.Info("unknown combatable type %d", combatable.GetCombatType())
 	}
 }

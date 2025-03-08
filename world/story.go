@@ -18,9 +18,10 @@ type Story struct {
 	players       []*Player
 	timeEvents    []TimeEventTask
 	daysData      []DayData
-	ItemSystem    *ItemSystem
 	resources     *Resources
 	eventHandlers map[string]any
+	ItemSystem    *ItemSystem
+	CombatSystem  *CombatSystem
 }
 
 type Task interface {
@@ -75,10 +76,15 @@ func (s *Story) Init() {
 	s.taskCh = make(chan *EventTask)
 	s.done = make(chan bool)
 	s.loadData()
-	s.ItemSystem = NewItemSystem(s.resources)
+	s.ItemSystem = NewItemSystem()
 	player := NewPlayer(s)
 	s.players = append(s.players, player)
+	s.CombatSystem = NewCombatSystem()
 	s.RegisterEventHandler()
+}
+
+func (s *Story) GetResources() *Resources {
+	return s.resources
 }
 
 func (s *Story) RegisterEventHandler() {

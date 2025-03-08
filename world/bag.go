@@ -53,7 +53,7 @@ func (b *Bag) Remove(item Item) bool {
 func (b *Bag) ToJson() string {
 	res := `{"items": [`
 	line_arr := []string{}
-	for item, _ := range b.Items {
+	for item := range b.Items {
 		line := fmt.Sprintf(`{"name": "%s", "count": %d}`, item.GetName(), b.Items[item])
 		line_arr = append(line_arr, line)
 	}
