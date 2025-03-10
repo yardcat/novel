@@ -80,6 +80,7 @@ func (s *Story) Init() {
 	player := NewPlayer(s)
 	s.players = append(s.players, player)
 	s.CombatSystem = NewCombatSystem()
+	s.CombatSystem.ChallengeDungeon("test")
 	s.RegisterEventHandler()
 }
 

@@ -71,6 +71,7 @@ func (c *CombatableBase) OnAttack(defender Combatable) {
 }
 
 func (c *CombatableBase) OnDamage(damage int, attacker Combatable) {
+	c.Life -= damage
 }
 
 func (c *CombatableBase) OnDead(Combatable) {

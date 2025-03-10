@@ -1,10 +1,11 @@
 package combat
 
 type EnemyGroup struct {
-	Enemies []Enemy
+	Name    string
+	Enemies []*Enemy
 }
 
 type Dungeon struct {
-	name   string
-	groups []EnemyGroup
+	Name   string
+	Groups []EnemyGroup
 }
