@@ -4,6 +4,7 @@ import "my_test/log"
 
 type Actor struct {
 	CombatableBase
+	Magic int
 }
 
 func NewActor(id int, name string) *Actor {
@@ -18,6 +19,7 @@ func NewActor(id int, name string) *Actor {
 			AttackSpeed: 10,
 			AttackStep:  0,
 		},
+		Magic: 100,
 	}
 }
 

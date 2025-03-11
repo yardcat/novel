@@ -1,0 +1,9 @@
+{
+    "sunwukong": {
+        "name": "孙悟空",
+        "description": "孙悟空",
+        "attributes": {
+            "attack": 10
+        }
+    }
+}
