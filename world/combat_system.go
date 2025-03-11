@@ -36,7 +36,9 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	actors := []*combat.Actor{actor}
 	dg := c.Dungeons[name]
 	for _, group := range dg.Groups {
-		combat.NewCombat(actors, group.Enemies, c).Start()
+		log.Info("start combat group %s", group.Name)
+		enemies := combat.CreateEnemyGroup(group)
+		combat.NewCombat(actors, enemies.Enemies, c).Start()
 	}
 	return nil
 }

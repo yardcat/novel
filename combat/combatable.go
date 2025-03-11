@@ -6,6 +6,7 @@ const (
 )
 
 type Combatable interface {
+	GetBase() *CombatableBase
 	GetName() string
 	GetAttackSpeed() int
 	GetAttack() int
@@ -24,6 +25,7 @@ type Combatable interface {
 type CombatableBase struct {
 	Name        string
 	AttackSpeed int
+	AttackStep  float64
 	Attack      int
 	Life        int
 	Defense     int

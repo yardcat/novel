@@ -4,10 +4,19 @@ type Enemy struct {
 	CombatableBase
 }
 
-func NewEnemy(id int, name string) *Enemy {
-	return &Enemy{
-		CombatableBase: CombatableBase{
-			CombatType: ENEMY,
-		},
+func CreateEnemy(proto *Enemy) *Enemy {
+	ret := &Enemy{
+		CombatableBase: proto.CombatableBase,
 	}
+	ret.CombatType = ENEMY
+	ret.AttackStep = 0
+	return ret
+}
+
+func (a *Enemy) GetBase() *CombatableBase {
+	return &a.CombatableBase
+}
+
+func (c *Enemy) OnKill(Combatable) {
+
 }

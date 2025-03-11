@@ -3,6 +3,7 @@ package combat
 import (
 	"fmt"
 	"my_test/log"
+	"my_test/util"
 )
 
 const (
@@ -17,12 +18,18 @@ type CombatClient interface {
 	OnDead(Combatable)
 }
 
+type Record struct {
+	actorCastDamage  int
+	actorIncurDamage int
+	turns            int
+}
+
 type Combat struct {
 	combatables []Combatable
-	attackStep  []float64
 	actors      []*Actor
 	enemies     []*Enemy
 	client      CombatClient
+	Record
 }
 
 type CombatOnceResult struct {
@@ -36,7 +43,6 @@ func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
 		enemies:     enemies,
 		client:      client,
 		combatables: make([]Combatable, len(actors)+len(enemies)),
-		attackStep:  make([]float64, len(actors)+len(enemies)),
 	}
 	i := 0
 	for _, actor := range actors {
@@ -56,43 +62,45 @@ func (c *Combat) Start() {
 		defender := c.ChooseDefender(attacker)
 		isActorAttacker := attacker.GetCombatType() == ACTOR
 		result := c.CombatOnce(attacker, defender, isActorAttacker)
+		c.turns++
 		if result.attackerDead {
 			defender.OnKill(attacker)
 			attacker.OnDead(defender)
 			c.removeCombatable(attacker)
 		}
 		if result.defenderDead {
-			defender.OnKill(attacker)
+			attacker.OnKill(defender)
 			defender.OnDead(attacker)
 			c.removeCombatable(defender)
 		}
 	}
 	if len(c.actors) != 0 {
 		fmt.Println("win")
-		c.client.OnLose()
+		c.client.OnWin()
 	} else if len(c.enemies) != 0 {
 		fmt.Println("lose")
-		c.client.OnWin()
+		c.client.OnLose()
 	} else {
 		fmt.Println("draw")
 		c.client.OnDraw()
 	}
+	c.onCombatFinish()
 }
 
 func (c *Combat) ChooseAttacker() Combatable {
 	fast := MAX_STEP
 	fast_idx := 0
 	for i, comb := range c.combatables {
-		speed := (MAX_STEP - c.attackStep[i]) / float64(comb.GetAttackSpeed())
+		speed := (MAX_STEP - comb.GetBase().AttackStep) / float64(comb.GetAttackSpeed())
 		if speed < fast {
 			fast = speed
 			fast_idx = i
 		}
 	}
-	for i, comb := range c.combatables {
-		c.attackStep[i] += float64(comb.GetAttackSpeed()) * fast
+	for _, comb := range c.combatables {
+		comb.GetBase().AttackStep += float64(comb.GetAttackSpeed()) * fast
 	}
-	c.attackStep[fast_idx] = 0
+	c.combatables[fast_idx].GetBase().AttackStep = 0
 	return c.combatables[fast_idx]
 }
 
@@ -108,12 +116,21 @@ func (c *Combat) ChooseDefender(attacker Combatable) Combatable {
 
 func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
 	attacker.OnAttack(defender)
-	damage_reduce := getDamageReduce(attacker, defender)
-	damage := int(float32(attacker.GetAttack()) * (1 - damage_reduce))
-	if shouldDodge(attacker, defender) {
-		damage = 0
+	damage := c.cacDamage(attacker, defender)
+	if c.shouldDodge(attacker, defender) {
+		log.Info("%s dodge damage %d on %s", attacker.GetName(), damage, defender.GetName())
+		return CombatOnceResult{
+			attackerDead: false,
+			defenderDead: false,
+		}
 	}
 	defender.OnDamage(damage, attacker)
+	if isActorAttacker {
+		c.actorCastDamage += damage
+	} else {
+		c.actorIncurDamage += damage
+
+	}
 	log.Info("%s cast damage %d on %s", attacker.GetName(), damage, defender.GetName())
 	return CombatOnceResult{
 		attackerDead: !attacker.IsAlive(),
@@ -121,12 +138,18 @@ func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAtt
 	}
 }
 
-func getDamageReduce(attacker Combatable, enemy Combatable) float32 {
-	return 0
+func (c *Combat) cacDamage(attacker Combatable, defender Combatable) int {
+	attack := attacker.GetAttack()
+	defense := defender.GetDefense()
+	damage_reduce_factor := 0.0
+	damage := int(float64(attack-defense) * (1 - damage_reduce_factor))
+	return max(damage, 0)
 }
 
-func shouldDodge(attacker Combatable, enemy Combatable) bool {
-	return false
+func (c *Combat) shouldDodge(_ Combatable, defender Combatable) bool {
+	randomNumber := util.GetRandomInt(100)
+	dodge := defender.GetDodge()
+	return randomNumber < dodge
 }
 
 func (c *Combat) removeCombatable(combatable Combatable) {
@@ -151,8 +174,11 @@ func (c *Combat) removeCombatable(combatable Combatable) {
 	for i, v := range c.combatables {
 		if v == combatable {
 			c.combatables = append(c.combatables[:i], c.combatables[i+1:]...)
-			c.attackStep = append(c.attackStep[:i], c.attackStep[i+1:]...)
 			return
 		}
 	}
+}
+
+func (c *Combat) onCombatFinish() {
+	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage", c.turns, c.actorCastDamage, c.actorIncurDamage)
 }
