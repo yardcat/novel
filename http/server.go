@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/websocket"
-	"github.com/openimsdk/tools/utils/network"
 )
 
 var (
@@ -18,7 +17,7 @@ var (
 func StartServer(ctx context.Context, cancel context.CancelFunc) {
 	ip := "0.0.0.0"
 	port := 8899
-	address := net.JoinHostPort(network.GetListenIP(ip), strconv.Itoa(port))
+	address := net.JoinHostPort(ip, strconv.Itoa(port))
 	router := newGinRouter()
 	server = &http.Server{Addr: address, Handler: router}
 
@@ -33,8 +32,8 @@ func StartServer(ctx context.Context, cancel context.CancelFunc) {
 
 func StartWebSocketServer(ctx context.Context, cancel context.CancelFunc) {
 	ip := "0.0.0.0"
-	port := 8899
-	address := net.JoinHostPort(network.GetListenIP(ip), strconv.Itoa(port)+"/ws")
+	port := 8898
+	address := net.JoinHostPort(ip, strconv.Itoa(port))
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)

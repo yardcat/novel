@@ -2,6 +2,7 @@ import CallAPI from './Net';
 
 class Config {
     static API_URL = "http://127.0.0.1:8899"
+    static SOCKET_URL = "http://127.0.0.1:8898"
     static UPDATE_INTERVAL = 1000
     static DEBUG = false
     static collectable = []
