@@ -15,6 +15,7 @@ var (
 	server *http.Server
 	ip     = "0.0.0.0"
 	port   = 8899
+	pushCh = make(chan string)
 )
 
 func StartServer(ctx context.Context, cancel context.CancelFunc) {
@@ -44,21 +45,41 @@ func webSocketHandler(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
-	eventRouter := make(map[string]any)
+	eventRouter := make(map[string]func(string) string)
 	NewWebSocketRouter(eventRouter)
 
-	for {
-		messageType, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Error("read:", err)
-			break
+	go func() {
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				log.Error("read:", err)
+				break
+			}
+			log.Info("recv: %s", message)
+			if eventRouter[string(message)] != nil {
+				eventRouter[string(message)](string(message))
+			}
+
 		}
-		err = conn.WriteMessage(messageType, message)
-		if err != nil {
-			log.Error("write:", err)
-			break
+	}()
+
+	for {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		case message := <-pushCh:
+			log.Info("push: %s", message)
+			err := conn.WriteMessage(websocket.TextMessage, []byte(message))
+			if err != nil {
+				log.Error("write:", err)
+				break
+			}
 		}
 	}
+}
+
+func PushMsg(msg string) {
+	pushCh <- msg
 }
 
 func Stop(ctx context.Context) {

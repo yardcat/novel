@@ -7,12 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	p *Player
+	w *World
+)
+
 func NewGinRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	setCors(r)
 
-	p := newPlayer()
+	p = newPlayer()
 	playerRouterGroup := r.Group("/player")
 	{
 		playerRouterGroup.POST("/get_player_info", p.GetPlayerInfo)
@@ -20,7 +25,7 @@ func NewGinRouter() *gin.Engine {
 		playerRouterGroup.POST("/collect", p.Collect)
 	}
 
-	w := newWorld()
+	w = newWorld()
 	worldRouterGroup := r.Group("/world")
 	{
 		worldRouterGroup.POST("/get_ui_info", w.GetUiInfo)
@@ -29,8 +34,7 @@ func NewGinRouter() *gin.Engine {
 	return r
 }
 
-func NewWebSocketRouter(eventRouter map[string]any) {
-	eventRouter["get_player_info"] = func(c *gin.Context) {}
+func NewWebSocketRouter(eventRouter map[string]func(string) string) {
 
 }
 
