@@ -28,7 +28,6 @@ func main() {
 	go world.Start(ctx)
 
 	http.StartServer(ctx, cancel)
-	http.StartWebSocketServer(ctx, cancel)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM)

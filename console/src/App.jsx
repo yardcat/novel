@@ -3,7 +3,7 @@ import Navigator from './Navigator';
 import PlayerInfo from './PlayerInfo';
 import Bag from './Bag';
 import Action from './Action';
-import {initSocket} from './Socket';
+import {socket} from './Socket';
 import {initConfig} from './Config';
 import { Flex } from 'antd';
 
@@ -24,7 +24,7 @@ const App = () => {
 
   useEffect(() => {
     initConfig();
-    initSocket();
+    socket.initSocket();
   }, []);
 
   return (

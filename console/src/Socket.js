@@ -1,40 +1,66 @@
 import Config from "./Config";
-import io from 'socket.io-client';
 
-const SOCKET_URL = Config.SOCKET_URL;
+class Socket {
+  constructor() {
+    this.ws = null;
+    this.eventHandlers = {};
+  }
 
-let socket;
+  initSocket() {
+    this.ws = new WebSocket(Config.SOCKET_URL);
 
-function initSocket() {
-  socket = io(SOCKET_URL);
+    this.ws.onopen = () => {
+      console.log('WebSocket connection opened');
+    };
 
-  socket.on('connect', () => {
-    console.log('Connected to WebSocket server');
-  });
+    this.ws.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
 
-  socket.on('disconnect', (reason) => {
-    console.log('Disconnected from WebSocket server:', reason);
-  });
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
 
-  socket.on('error', (error) => {
-    console.error('WebSocket error:', error);
-  });
-}
+    this.ws.onmessage = (message) => {
+      try {
+        const msg = JSON.parse(message.data);
+        const { event, data } = msg;
+        if (this.eventHandlers[event]) {
+          try {
+            this.eventHandlers[event](data);
+          } catch (callbackError) {
+            console.error(`Callback for event "${event}" failed:`, callbackError);
+          }
+        } else {
+          console.warn(`No handler registered for event "${event}"`);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse message:', parseError);
+      }
+    };
+  }
 
-function sendSocketMessage(event, data) {
-  if (connected) {
-    socket.emit(event, data);
-  } else {
-    console.log('WebSocket is not connected');
+  sendMsg(event, data) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket is not open. Message not sent.');
+      return;
+    }
+    try {
+      this.ws.send(JSON.stringify({ event, data }));
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  }
+
+  onMsg(event, callback) {
+    if (typeof callback !== 'function') {
+      console.error('Invalid callback provided for event:', event);
+      return;
+    }
+    this.eventHandlers[event] = callback;
   }
 }
 
-function onSocketMessage(event, callback) {
-  if (connected) {
-    socket.on(event, callback);
-  } else {
-    console.log('WebSocket is not connected');
-  }
-}
+const socket = new Socket();
 
-export { initSocket, sendSocketMessage, onSocketMessage };
+export { socket };

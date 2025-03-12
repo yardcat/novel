@@ -1,7 +1,8 @@
 import axios from 'axios';
 import qs from 'qs';
 
-const API_URL = Config.API_URL;
+import Config from "./Config";
+
 let connected = true;
 
 function extractResponse(response) {
@@ -12,7 +13,7 @@ const CallAPI = (path, params, callback) => {
   if (!connected) {
     return false;
   }
-  var url = API_URL + '/' + path;
+  var url = Config.API_URL + '/' + path;
   if (Config.DEBUG) {
     console.log('request:', url, params);
   }
