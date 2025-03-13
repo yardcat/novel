@@ -31,7 +31,7 @@ const App = () => {
   return (
     <Flex gap="middle">
       <Flex vertical gap="middle">
-        <Navigator apiHandlers={apiHandlers} setAction={addAction}></Navigator>
+        <Navigator apiHandlers={apiHandlers} addApiHandler={addApiHandler} setAction={addAction}></Navigator>
         <PlayerInfo addApiHandler={addApiHandler} autoUpdate={true}></PlayerInfo>
         <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
       </Flex>

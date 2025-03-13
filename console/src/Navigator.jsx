@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Cascader, Flex, InputNumber, Button, List } from 'antd';
+import { Cascader, Flex } from 'antd';
 import CallAPI from './Net';
-import Config from './Config';
+import Collectable from './Collectable';
+import Mp from './Map';
 
 class Node {
   value;
@@ -50,60 +51,20 @@ function generateOptions(api_list) {
   return root.children;
 }
 
-const CollectableComponent = ({ setCollectableVisible, setAction }) => {
-  const onSubmit = () => {
-    const listItems = document.querySelectorAll('#collectable .ant-list-item');
-    const collectableData = Array.from(listItems).map(item => {
-      const label = item.querySelector('span').innerText;
-      const number = item.querySelector('.ant-input-number-input').value;
-      return { item: label, count: parseInt(number, 10) };
-    }).filter(item => item.count > 0);
-
-    const jsonData = JSON.stringify({ "items": collectableData });
-    CallAPI('player/collect', { "items": jsonData }, (response) => {
-      if (response["items"]) {
-        response["action"] = "collect";
-        let log =""
-        response["items"].forEach(item => {
-          log += item["count"] + " " + item["item"] + ","
-        });
-        response["log"] = log
-        setAction(response);
-      }
-    });
-    setCollectableVisible(false);
-  };
-
-  return (
-    <div id="collectable">
-      <List
-        itemLayout="horizontal"
-        dataSource={Config.collectable}
-        renderItem={(item, index) => (
-          <List.Item>
-            <span>{item}</span>
-            <InputNumber
-              type="number"
-              defaultValue={0}
-            />
-          </List.Item>
-        )}
-      />
-      <Button type="primary" onClick={onSubmit}>提交</Button>
-    </div>
-  );
-};
-
-const Navigator = ({ apiHandlers, setAction }) => {
+const Navigator = ({ apiHandlers, addApiHandler, setAction }) => {
   const options = generateOptions(Object.keys(apiHandlers));
-  const [collectableVisible, setCollectableVisible] = useState(false);
+  const [showCollect, setShowCollect] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const handleChange = (value, handlers) => {
     var path = value.join('/');
     if (value[value.length - 1] === 'collect') {
-      setCollectableVisible(true);
+      setShowCollect(true);
+    } else if (value[value.length - 1] === 'get_map') {
+      setShowMap(true);
+      // CallAPI(path, {}, handlers[path]);
     } else {
-      setCollectableVisible(false);
+      setShowCollect(false);
       CallAPI(path, {}, handlers[path]);
     }
   };
@@ -111,10 +72,8 @@ const Navigator = ({ apiHandlers, setAction }) => {
   return (
     <Flex gap="small" align="flex-start">
       <Cascader.Panel options={options} onChange={(value) => handleChange(value, apiHandlers)} />
-      {collectableVisible && <CollectableComponent
-        setCollectableVisible={setCollectableVisible}
-        setAction={setAction}
-      />}
+      <Collectable showCollect={showCollect} setShowCollect={setShowCollect} setAction={setAction} />
+      <Mp addApiHandler={addApiHandler} showMap={showMap} setShowMap={setShowMap} />
     </Flex>
   );
 };

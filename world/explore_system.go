@@ -2,8 +2,8 @@ package world
 
 import (
 	"encoding/json"
-	"math"
 	"my_test/log"
+	"my_test/util"
 	"os"
 )
 
@@ -24,10 +24,15 @@ type Grid struct {
 }
 
 type ExploreSystem struct {
+	client   ExploreClient
 	story    *Story
 	mp       Map
-	mapData  map[int]Grid
+	mapData  []Grid
 	homeCord int
+}
+
+type ExploreClient interface {
+	OnGridDiscovered(cord Cord)
 }
 
 func NewExploreSystem(story *Story) *ExploreSystem {
@@ -35,12 +40,19 @@ func NewExploreSystem(story *Story) *ExploreSystem {
 		story: story,
 	}
 	e.loadMap()
+	e.mapData = make([]Grid, e.mp.Width*e.mp.Height)
 	e.fillMap()
 	return e
 }
 
 func (e *ExploreSystem) Explore(path []int) {
 	cords := e.getGridFromPath(path)
+	for _, cord := range cords {
+		idx := e.cord2Index(cord)
+		grid := &e.mapData[idx]
+		grid.Discovered = true
+		e.client.OnGridDiscovered(cord)
+	}
 }
 
 func (e *ExploreSystem) getGridFromPath(path []int) []Cord {
@@ -51,12 +63,12 @@ func (e *ExploreSystem) getGridFromPath(path []int) []Cord {
 		dx := cord.X - start.X
 		dy := cord.Y - start.Y
 		if dx == 0 {
-			for j := 0; j < math.Abs(dy); j++ {
-				ret = append(ret, Cord{cord.X, cord.Y + j})
+			for j := 0; j < util.Abs(dy); j++ {
+				ret = append(ret, Cord{cord.X, cord.Y + util.Abs(dy)/dy*j})
 			}
 		} else if dy == 0 {
-			for j := 0; j < dx; j++ {
-				ret = append(ret, Cord{cord.X + j, cord.Y})
+			for j := 0; j < util.Abs(dx); j++ {
+				ret = append(ret, Cord{cord.X + util.Abs(dx)/dx*j, cord.Y})
 			}
 		}
 		start = cord
