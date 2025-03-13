@@ -3,6 +3,7 @@ import Navigator from './Navigator';
 import PlayerInfo from './PlayerInfo';
 import Bag from './Bag';
 import Action from './Action';
+import Chat from './Chat';
 import {socket} from './Socket';
 import {initConfig} from './Config';
 import { Flex } from 'antd';
@@ -34,7 +35,8 @@ const App = () => {
         <PlayerInfo addApiHandler={addApiHandler} autoUpdate={true}></PlayerInfo>
         <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
       </Flex>
-      <Flex>
+      <Flex vertical>
+        <Chat></Chat>
         <Action addApiHandler={addApiHandler} actions={actions}></Action>
       </Flex>
     </Flex>

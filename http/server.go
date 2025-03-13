@@ -2,9 +2,11 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"my_test/log"
 	"net"
 	"net/http"
+	"reflect"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +19,11 @@ var (
 	port   = 8899
 	pushCh = make(chan string)
 )
+
+type WsEvent struct {
+	Event string `json:"event"`
+	Data  any    `json:"data"`
+}
 
 func StartServer(ctx context.Context, cancel context.CancelFunc) {
 	address := net.JoinHostPort(ip, strconv.Itoa(port))
@@ -72,14 +79,24 @@ func webSocketHandler(c *gin.Context) {
 			err := conn.WriteMessage(websocket.TextMessage, []byte(message))
 			if err != nil {
 				log.Error("write:", err)
-				break
 			}
 		}
 	}
 }
 
-func PushMsg(msg string) {
-	pushCh <- msg
+func PushEvent(event any) error {
+	eventTypeName := reflect.TypeOf(event).String()
+	pushEvent := WsEvent{
+		Event: eventTypeName,
+		Data:  event,
+	}
+	bytes, err := json.Marshal(pushEvent)
+	if err != nil {
+		log.Error("PushMsg json marshal err %v", err)
+		return err
+	}
+	pushCh <- string(bytes)
+	return nil
 }
 
 func Stop(ctx context.Context) {

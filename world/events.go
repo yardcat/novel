@@ -29,3 +29,7 @@ type CollectEventReply struct {
 		Count int    `json:"count"`
 	} `json:"items"`
 }
+
+type CombatWinEvent struct {
+	Result string
+}

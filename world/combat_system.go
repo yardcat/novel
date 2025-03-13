@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"my_test/combat"
 	"my_test/log"
+	"my_test/push"
 	"my_test/util"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type CombatSystem struct {
@@ -66,6 +68,10 @@ func (c *CombatSystem) OnLose() {
 // OnWin implements combat.CombatClient.
 func (c *CombatSystem) OnWin() {
 	log.Info("OnWin is unimplemented")
+	go func() {
+		time.Sleep(1 * time.Second)
+		push.PushEvent(CombatWinEvent{Result: "win"})
+	}()
 }
 
 func (c *CombatSystem) loadData() error {

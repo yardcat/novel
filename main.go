@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"my_test/http"
+	"my_test/push"
 	"my_test/scene"
 	"my_test/world"
 	"os"
@@ -28,6 +29,7 @@ func main() {
 	go world.Start(ctx)
 
 	http.StartServer(ctx, cancel)
+	push.SetPusher(http.PushEvent)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM)

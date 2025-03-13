@@ -1,12 +1,29 @@
 import { React, useState, useEffect } from 'react';
-import { Card } from 'antd';
-import Config from "./Config";
-import CallAPI from "./Net";
+import { Card, List } from 'antd';
+import { socket } from "./Socket";
 
 const Chat = () => {
-  return (
-    <Card title="Action">
+  const [chats, setChat] = useState([]);
+  const addChat = (chat) => {
+    setChat(prevChats => [...prevChats, chat]);
+  };
 
+  useEffect(() => {
+    socket.onMsg('world.CombatWinEvent', (data) => {
+      addChat(data.Result);
+    });
+  }, []);
+
+  return (
+    <Card title="Chat">
+      <List
+        dataSource={chats}
+        renderItem={item => (
+          <List.Item>
+            {item}
+          </List.Item>
+        )}
+      />
     </Card>
   );
 }
