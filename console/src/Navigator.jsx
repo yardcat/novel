@@ -71,7 +71,9 @@ const Navigator = ({ apiHandlers, addApiHandler, setAction }) => {
 
   return (
     <Flex gap="small" align="flex-start">
-      <Cascader.Panel options={options} onChange={(value) => handleChange(value, apiHandlers)} />
+      <Cascader placeholder="Command" variant="filled" options={options}
+        onChange={(value) => handleChange(value, apiHandlers)}
+        displayRender={(label) => "Command"} />
       <Collectable showCollect={showCollect} setShowCollect={setShowCollect} setAction={setAction} />
       <Mp addApiHandler={addApiHandler} showMap={showMap} setShowMap={setShowMap} />
     </Flex>
