@@ -1,26 +1,28 @@
-import { React, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navigator from './Navigator';
 import PlayerInfo from './PlayerInfo';
-import Bag from './Bag';
-import Action from './Action';
-import Chat from './Chat';
-import {socket} from './Socket';
-import {initConfig} from './Config';
-import { Flex } from 'antd';
+import { Bag } from './Bag';
+import { Action } from './Action';
+import { Chat } from './Chat';
+import { socket } from './Socket';
+import { initConfig } from './Config';
+import { Layout } from 'antd';
+
+const { Header, Footer, Sider, Content } = Layout;
 
 const App = () => {
   const [apiHandlers, setApiHandlers] = useState({});
   const [actions, setAction] = useState([]);
 
   const addApiHandler = (path, handler) => {
-    setApiHandlers(prevHandlers => ({
+    setApiHandlers((prevHandlers) => ({
       ...prevHandlers,
-      [path]: handler
+      [path]: handler,
     }));
   };
 
   const addAction = (action) => {
-    setAction(prevActions => [...prevActions, action]);
+    setAction((prevActions) => [...prevActions, action]);
   };
 
   useEffect(() => {
@@ -29,18 +31,20 @@ const App = () => {
   }, []);
 
   return (
-    <Flex gap="middle">
-      <Flex vertical gap="middle">
+    <Layout>
+      <Header>
         <Navigator apiHandlers={apiHandlers} addApiHandler={addApiHandler} setAction={addAction}></Navigator>
+      </Header>
+      <Sider>
         <PlayerInfo addApiHandler={addApiHandler} autoUpdate={true}></PlayerInfo>
         <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
-      </Flex>
-      <Flex vertical>
+      </Sider>
+      <Content>
         <Chat></Chat>
         <Action addApiHandler={addApiHandler} actions={actions}></Action>
-      </Flex>
-    </Flex>
+      </Content>
+    </Layout>
   );
 };
 
-export default App;
+export { App };

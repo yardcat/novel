@@ -1,7 +1,7 @@
 import axios from 'axios';
 import qs from 'qs';
 
-import Config from "./Config";
+import Config from './Config';
 
 let connected = true;
 
@@ -17,20 +17,21 @@ const CallAPI = (path, params, callback) => {
   if (Config.DEBUG) {
     console.log('request:', url, params);
   }
-  axios.post(url, qs.stringify(params))
+  axios
+    .post(url, qs.stringify(params))
     .then((response) => {
       callback(extractResponse(response));
       connected = true;
     })
-    .catch(error => {
+    .catch((error) => {
       if (Config.DEBUG) {
         console.error('Error:', error);
       }
-      if (error.code === "ERR_NETWORK") {
+      if (error.code === 'ERR_NETWORK') {
         connected = false;
       }
       console.log('net disconnected, %s', error);
     });
-}
+};
 
 export default CallAPI;

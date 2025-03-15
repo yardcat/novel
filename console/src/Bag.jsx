@@ -1,8 +1,8 @@
-import { React, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from 'antd';
-import Config from "./Config";
-import CallAPI from "./Net";
-const API_PATH = "player/get_bag";
+import Config from './Config';
+import CallAPI from './Net';
+const API_PATH = 'player/get_bag';
 
 function GetBag(info, setInfo) {
   if (info.items) {
@@ -25,17 +25,18 @@ const Bag = ({ addApiHandler, autoUpdate }) => {
 
   return (
     <Card title="Bag">
-      {info.items && info.items.map((item, count) => (
-        <div key={count}>
-          {Object.entries(item).map(([key, value]) => (
-            <p key={key}>
-              <strong>{key}:</strong> {value}
-            </p>
-          ))}
-        </div>
-      ))}
+      {info.items &&
+        info.items.map((item, count) => (
+          <div key={count}>
+            {Object.entries(item).map(([key, value]) => (
+              <p key={key}>
+                <strong>{key}:</strong> {value}
+              </p>
+            ))}
+          </div>
+        ))}
     </Card>
   );
 };
 
-export default Bag;
+export { Bag };

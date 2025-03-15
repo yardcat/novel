@@ -1,11 +1,11 @@
-import { React, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, List } from 'antd';
-import { socket } from "./Socket";
+import { socket } from './Socket';
 
 const Chat = () => {
   const [chats, setChat] = useState([]);
   const addChat = (chat) => {
-    setChat(prevChats => [...prevChats, chat]);
+    setChat((prevChats) => [...prevChats, chat]);
   };
 
   useEffect(() => {
@@ -16,16 +16,9 @@ const Chat = () => {
 
   return (
     <Card title="Chat">
-      <List
-        dataSource={chats}
-        renderItem={item => (
-          <List.Item>
-            {item}
-          </List.Item>
-        )}
-      />
+      <List dataSource={chats} renderItem={(item) => <List.Item>{item}</List.Item>} />
     </Card>
   );
-}
+};
 
-export default Chat;
+export { Chat };

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Cascader, Flex } from 'antd';
 import CallAPI from './Net';
 import Collectable from './Collectable';
-import Mp from './Map';
+import { Mp } from './Map';
 
 class Node {
   value;
@@ -17,7 +17,7 @@ class Node {
 
 function value2Label(input) {
   const words = input.split('_');
-  const capitalizedWords = words.map(word => {
+  const capitalizedWords = words.map((word) => {
     return word.charAt(0).toUpperCase() + word.slice(1);
   });
   return capitalizedWords.join('');
@@ -71,9 +71,13 @@ const Navigator = ({ apiHandlers, addApiHandler, setAction }) => {
 
   return (
     <Flex gap="small" align="flex-start">
-      <Cascader placeholder="Command" variant="filled" options={options}
+      <Cascader
+        placeholder="Command"
+        variant="filled"
+        options={options}
         onChange={(value) => handleChange(value, apiHandlers)}
-        displayRender={(label) => "Command"} />
+        displayRender={(label) => 'Command'}
+      />
       <Collectable showCollect={showCollect} setShowCollect={setShowCollect} setAction={setAction} />
       <Mp addApiHandler={addApiHandler} showMap={showMap} setShowMap={setShowMap} />
     </Flex>

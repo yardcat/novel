@@ -5,6 +5,19 @@
 		}
 	],
 	"settings": {
-		"gitlens.proxy": {}
+		"editor.formatOnSave": true,
+		"editor.rulers": [120],
+		"files.trimTrailingWhitespace": true,
+		"files.eol": "\n",
+		"prettier.configPath": "console/.prettierrc",
+		"[javascript]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[javascriptreact]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[json]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
 	}
 }

@@ -1,11 +1,10 @@
 import { React, useState, useEffect } from 'react';
 import { Modal } from 'antd';
-import CallAPI from "./Net";
+import CallAPI from './Net';
 
-const API_PATH = "world/get_map";
+const API_PATH = 'world/get_map';
 
-function OnMapGet(response, setInfo) {
-}
+function OnMapGet(response, setInfo) {}
 
 const Mp = ({ addApiHandler, showMap, setShowMap }) => {
   const [info, setMap] = useState(122);
@@ -21,4 +20,4 @@ const Mp = ({ addApiHandler, showMap, setShowMap }) => {
   );
 };
 
-export default Mp;
+export { Mp };
