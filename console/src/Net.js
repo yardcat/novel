@@ -1,7 +1,7 @@
 import axios from 'axios';
 import qs from 'qs';
 
-import Config from './Config';
+import { Config } from './Config';
 
 let connected = true;
 
@@ -34,4 +34,4 @@ const CallAPI = (path, params, callback) => {
     });
 };
 
-export default CallAPI;
+export { CallAPI };

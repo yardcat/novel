@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Cascader, Flex } from 'antd';
-import CallAPI from './Net';
-import Collectable from './Collectable';
+import { CallAPI } from './Net';
+import { Collectable } from './Collectable';
 import { Mp } from './Map';
 
 class Node {

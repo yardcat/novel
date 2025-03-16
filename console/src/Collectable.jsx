@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { InputNumber, List, Modal } from 'antd';
-import CallAPI from './Net';
-import Config from './Config';
+import { CallAPI } from './Net';
+import { Config } from './Config';
 
 const Collectable = ({ showCollect, setShowCollect, setAction }) => {
   const onSubmit = () => {
@@ -51,4 +51,4 @@ const Collectable = ({ showCollect, setShowCollect, setAction }) => {
   );
 };
 
-export default Collectable;
+export { Collectable };

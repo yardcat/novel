@@ -1,4 +1,4 @@
-import CallAPI from './Net';
+import { CallAPI } from './Net';
 
 class Config {
   static API_URL = 'http://127.0.0.1:8899';
@@ -14,4 +14,4 @@ export function initConfig() {
   });
 }
 
-export default Config;
+export { Config };

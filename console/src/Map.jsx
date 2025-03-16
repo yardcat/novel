@@ -1,6 +1,6 @@
 import { React, useState, useEffect } from 'react';
 import { Modal } from 'antd';
-import CallAPI from './Net';
+import { GridCanvas } from './GridCanvas';
 
 const API_PATH = 'world/get_map';
 
@@ -14,8 +14,8 @@ const Mp = ({ addApiHandler, showMap, setShowMap }) => {
   }, []);
 
   return (
-    <Modal title="Map" open={showMap}>
-      <p>{info}</p>
+    <Modal title="Map" open={showMap} onCancel={() => setShowMap(false)} onOk={() => setShowMap(false)}>
+      <GridCanvas></GridCanvas>
     </Modal>
   );
 };
