@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Navigator from './Navigator';
-import PlayerInfo from './PlayerInfo';
+import { Navigator } from './Navigator';
+import { PlayerInfo } from './PlayerInfo';
 import { Bag } from './Bag';
 import { Action } from './Action';
 import { Chat } from './Chat';
@@ -35,14 +35,16 @@ const App = () => {
       <Header>
         <Navigator apiHandlers={apiHandlers} addApiHandler={addApiHandler} setAction={addAction}></Navigator>
       </Header>
-      <Sider>
-        <PlayerInfo addApiHandler={addApiHandler} autoUpdate={true}></PlayerInfo>
-        <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
-      </Sider>
-      <Content>
-        <Chat></Chat>
-        <Action addApiHandler={addApiHandler} actions={actions}></Action>
-      </Content>
+      <Layout>
+        <Sider width="20%">
+          <PlayerInfo addApiHandler={addApiHandler} autoUpdate={true}></PlayerInfo>
+          <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
+        </Sider>
+        <Content>
+          <Chat></Chat>
+          <Action addApiHandler={addApiHandler} actions={actions}></Action>
+        </Content>
+      </Layout>
     </Layout>
   );
 };

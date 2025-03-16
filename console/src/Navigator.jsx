@@ -84,4 +84,4 @@ const Navigator = ({ apiHandlers, addApiHandler, setAction }) => {
   );
 };
 
-export default Navigator;
+export { Navigator };

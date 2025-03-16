@@ -32,4 +32,4 @@ const PlayerInfo = ({ addApiHandler, autoUpdate }) => {
   );
 };
 
-export default PlayerInfo;
+export { PlayerInfo };

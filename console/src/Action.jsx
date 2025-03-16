@@ -7,7 +7,7 @@ const Action = ({ addApiHandler, actions }) => {
   }, []);
 
   return (
-    <Card title="Action" style={{ width: '1000px' }}>
+    <Card title="Action">
       <List
         itemLayout="horizontal"
         dataSource={actions}
