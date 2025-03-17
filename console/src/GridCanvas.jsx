@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 const GridCanvas = () => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const gridSize = 1;
+  const gridSize = 15;
   const rows = 50;
   const cols = 50;
 
