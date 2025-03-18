@@ -17,6 +17,7 @@ func NewActor(id int, name string) *Actor {
 			Defense:     2,
 			Dodge:       10,
 			AttackSpeed: 10,
+			AttackRange: 6,
 			AttackStep:  0,
 		},
 		Magic: 100,

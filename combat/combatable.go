@@ -8,6 +8,7 @@ const (
 type Combatable interface {
 	GetBase() *CombatableBase
 	GetName() string
+	GetAttackRange() int
 	GetAttackSpeed() int
 	GetAttack() int
 	GetLife() int
@@ -25,6 +26,7 @@ type Combatable interface {
 type CombatableBase struct {
 	Name        string
 	AttackSpeed int
+	AttackRange int
 	AttackStep  float64
 	Attack      int
 	Life        int
@@ -46,6 +48,11 @@ func (c *CombatableBase) GetName() string {
 func (c *CombatableBase) GetAttackSpeed() int {
 	return c.AttackSpeed
 }
+
+func (c *CombatableBase) GetAttackRange() int {
+	return c.AttackRange
+}
+
 func (c *CombatableBase) GetAttack() int {
 	return c.Attack
 }

@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+const (
+	EXPLORE_MINE = 1
+	EXPLORE_LAKE = iota
+)
+
 type Map struct {
 	Name   string
 	Width  int
@@ -18,9 +23,18 @@ type Cord struct {
 	Y int
 }
 
+type Explorable interface {
+	Explore()
+}
+
 type Grid struct {
 	Name       string
 	Discovered bool
+	Type       int
+	Explorable bool
+}
+
+type ExploreResult struct {
 }
 
 type ExploreSystem struct {
@@ -52,6 +66,13 @@ func (e *ExploreSystem) Explore(path []int) {
 		grid := &e.mapData[idx]
 		grid.Discovered = true
 		e.client.OnGridDiscovered(cord)
+		e.exploreGrid(grid.Type)
+	}
+}
+
+func (e *ExploreSystem) exploreGrid(typ int) {
+	switch typ {
+	case EXPLORE_MINE:
 	}
 }
 

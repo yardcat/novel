@@ -24,11 +24,16 @@ type Record struct {
 	turns            int
 }
 
+type CombatStrategy interface {
+	ChooseDefender(attacker Combatable) Combatable
+}
+
 type Combat struct {
 	combatables []Combatable
 	actors      []*Actor
 	enemies     []*Enemy
 	client      CombatClient
+	strategy    CombatStrategy
 	Record
 }
 
@@ -44,6 +49,7 @@ func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
 		client:      client,
 		combatables: make([]Combatable, len(actors)+len(enemies)),
 	}
+	c.strategy = NewLineCombat(c)
 	i := 0
 	for _, actor := range actors {
 		c.combatables[i] = actor
@@ -59,7 +65,11 @@ func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
 func (c *Combat) Start() {
 	for len(c.actors) > 0 && len(c.enemies) > 0 {
 		attacker := c.ChooseAttacker()
-		defender := c.ChooseDefender(attacker)
+		defender := c.strategy.ChooseDefender(attacker)
+		if defender == nil {
+			log.Info("attacker %s can't find defender", attacker.GetName())
+			continue
+		}
 		isActorAttacker := attacker.GetCombatType() == ACTOR
 		result := c.CombatOnce(attacker, defender, isActorAttacker)
 		c.turns++
@@ -88,11 +98,20 @@ func (c *Combat) Start() {
 }
 
 func (c *Combat) ChooseAttacker() Combatable {
-	return nil
-}
-
-func (c *Combat) ChooseDefender(attacker Combatable) Combatable {
-	return nil
+	fast := MAX_STEP
+	fast_idx := 0
+	for i, comb := range c.combatables {
+		speed := (MAX_STEP - comb.GetBase().AttackStep) / float64(comb.GetAttackSpeed())
+		if speed < fast {
+			fast = speed
+			fast_idx = i
+		}
+	}
+	for _, comb := range c.combatables {
+		comb.GetBase().AttackStep += float64(comb.GetAttackSpeed()) * fast
+	}
+	c.combatables[fast_idx].GetBase().AttackStep = 0
+	return c.combatables[fast_idx]
 }
 
 func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
@@ -162,4 +181,20 @@ func (c *Combat) removeCombatable(combatable Combatable) {
 
 func (c *Combat) onCombatFinish() {
 	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage", c.turns, c.actorCastDamage, c.actorIncurDamage)
+}
+
+func (c *Combat) getEnemyAsCombatable() []Combatable {
+	enemies := make([]Combatable, len(c.enemies))
+	for i, enemy := range c.enemies {
+		enemies[i] = enemy
+	}
+	return enemies
+}
+
+func (c *Combat) getActorAsCombatable() []Combatable {
+	actors := make([]Combatable, len(c.actors))
+	for i, actor := range c.actors {
+		actors[i] = actor
+	}
+	return actors
 }

@@ -2,41 +2,88 @@ package combat
 
 import (
 	"my_test/log"
+	"my_test/util"
+)
+
+const (
+	GRID_WIDTH  = 6
+	GRID_HEIGHT = 6
 )
 
 type GridCombat struct {
-	Combat
+	*Combat
+	pos2comb map[int]Combatable
+	comb2pos map[Combatable]int
 }
 
-func NewGridCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *GridCombat {
-	return &GridCombat{
-		Combat: *NewCombat(actors, enemies, client),
+func NewGridCombat(combat *Combat) *GridCombat {
+	g := &GridCombat{
+		combat,
+		make(map[int]Combatable),
+		make(map[Combatable]int),
 	}
+	g.placeCombatables()
+	return g
 }
 
-func (c *GridCombat) ChooseAttacker() Combatable {
-	fast := MAX_STEP
-	fast_idx := 0
-	for i, comb := range c.combatables {
-		speed := (MAX_STEP - comb.GetBase().AttackStep) / float64(comb.GetAttackSpeed())
-		if speed < fast {
-			fast = speed
-			fast_idx = i
-		}
-	}
-	for _, comb := range c.combatables {
-		comb.GetBase().AttackStep += float64(comb.GetAttackSpeed()) * fast
-	}
-	c.combatables[fast_idx].GetBase().AttackStep = 0
-	return c.combatables[fast_idx]
+func (g *GridCombat) getComb(x, y int) Combatable {
+	idx := y*GRID_WIDTH + x
+	return g.pos2comb[idx]
 }
 
-func (c *GridCombat) ChooseDefender(attacker Combatable) Combatable {
+func (g *GridCombat) ChooseDefender(attacker Combatable) Combatable {
+	var near Combatable
 	if attacker.GetCombatType() == ACTOR {
-		return c.enemies[0]
+		near = g.getNearDefender(attacker, g.getEnemyAsCombatable())
 	} else if attacker.GetCombatType() == ENEMY {
-		return c.actors[0]
+		near = g.getNearDefender(attacker, g.getActorAsCombatable())
 	}
 	log.Info("unknown attacker type %d", attacker.GetCombatType())
-	return nil
+	return near
+}
+
+func (g *GridCombat) getNearDefender(attacker Combatable, defenders []Combatable) Combatable {
+	attackRange := attacker.GetAttackRange()
+	if attackRange == 0 {
+		attackRange = GRID_WIDTH + GRID_HEIGHT
+	}
+	var near Combatable
+	var minDistance int
+	for _, defender := range defenders {
+		distance := g.getDistance(attacker, defender)
+		if distance <= attackRange && distance > minDistance {
+			minDistance = distance
+			near = defender
+		}
+	}
+	return near
+}
+
+func (g *GridCombat) getDistance(attacker Combatable, defender Combatable) int {
+	aX, aY := g.index2Cord(g.comb2pos[attacker])
+	dX, dY := g.index2Cord(g.comb2pos[defender])
+	return util.Abs(aX-dX) + util.Abs(aY-dY)
+}
+
+func (g *GridCombat) index2Cord(idx int) (int, int) {
+	return idx % GRID_WIDTH, idx / GRID_WIDTH
+}
+
+func (g *GridCombat) cord2Index(x, y int) int {
+	return y*GRID_WIDTH + x
+}
+
+func (g *GridCombat) placeCombatables() {
+	for i := 0; i < len(g.combatables); i++ {
+		pos := util.GetRandomInt(GRID_WIDTH*GRID_HEIGHT*0.5 - 1)
+		if g.combatables[i].GetCombatType() == ENEMY {
+			pos += GRID_WIDTH * GRID_HEIGHT * 0.5
+		}
+		v, exist := g.pos2comb[pos]
+		if exist {
+			i--
+			continue
+		}
+		g.pos2comb[pos] = v
+	}
 }

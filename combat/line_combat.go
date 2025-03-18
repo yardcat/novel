@@ -5,30 +5,13 @@ import (
 )
 
 type LineCombat struct {
-	Combat
+	*Combat
 }
 
-func NewLineCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *LineCombat {
+func NewLineCombat(combat *Combat) *LineCombat {
 	return &LineCombat{
-		Combat: *NewCombat(actors, enemies, client),
+		combat,
 	}
-}
-
-func (c *LineCombat) ChooseAttacker() Combatable {
-	fast := MAX_STEP
-	fast_idx := 0
-	for i, comb := range c.combatables {
-		speed := (MAX_STEP - comb.GetBase().AttackStep) / float64(comb.GetAttackSpeed())
-		if speed < fast {
-			fast = speed
-			fast_idx = i
-		}
-	}
-	for _, comb := range c.combatables {
-		comb.GetBase().AttackStep += float64(comb.GetAttackSpeed()) * fast
-	}
-	c.combatables[fast_idx].GetBase().AttackStep = 0
-	return c.combatables[fast_idx]
 }
 
 func (c *LineCombat) ChooseDefender(attacker Combatable) Combatable {
