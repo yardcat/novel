@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"time"
 )
 
@@ -15,12 +14,13 @@ type Story struct {
 	taskCh        chan *EventTask
 	ticker        *time.Ticker
 	done          chan bool
-	players       []*Player
+	players       map[string]*Player
 	timeEvents    []TimeEventTask
 	daysData      []DayData
 	resources     *Resources
 	eventHandlers map[string]any
 	ItemSystem    *ItemSystem
+	PetSystem     *PetSystem
 	CombatSystem  *CombatSystem
 }
 
@@ -77,8 +77,9 @@ func (s *Story) Init() {
 	s.done = make(chan bool)
 	s.loadData()
 	s.ItemSystem = NewItemSystem()
-	player := NewPlayer(s)
-	s.players = append(s.players, player)
+	player := NewPlayer(s, "0")
+	s.players = map[string]*Player{player.Id: player}
+	s.PetSystem = NewPetSystem(s)
 	s.CombatSystem = NewCombatSystem()
 	s.CombatSystem.ChallengeDungeon("test")
 	s.RegisterEventHandler()
@@ -211,16 +212,25 @@ func (s *Story) Stop() {
 
 // TODO : use real id , not array index
 func (s *Story) GetPlayerInfo(id string) string {
-	idx, err := strconv.Atoi(id)
-	if err != nil {
+	player, exist := s.players[id]
+	if !exist {
 		log.Info("GetPlayerInfo invalid id %s", id)
+		return ""
 	}
-	player := s.players[idx]
 	return player.ToJson()
 }
 
+func (s *Story) GetPlayer(id string) *Player {
+	player, exist := s.players[id]
+	if !exist {
+		log.Info("GetPlayer invalid id %s", id)
+		return nil
+	}
+	return player
+}
+
 func (s *Story) GetBag() string {
-	player := s.players[0]
+	player := s.players["0"]
 	return player.Bag.ToJson()
 }
 

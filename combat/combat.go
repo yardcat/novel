@@ -24,6 +24,11 @@ type Record struct {
 	turns            int
 }
 
+type CombatResult struct {
+	LifeCost  int
+	MagicCost int
+}
+
 type CombatStrategy interface {
 	ChooseDefender(attacker Combatable) Combatable
 }
@@ -49,7 +54,6 @@ func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
 		client:      client,
 		combatables: make([]Combatable, len(actors)+len(enemies)),
 	}
-	c.strategy = NewLineCombat(c)
 	i := 0
 	for _, actor := range actors {
 		c.combatables[i] = actor
@@ -59,6 +63,7 @@ func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
 		c.combatables[i] = enemy
 		i++
 	}
+	c.strategy = NewGridCombat(c)
 	return c
 }
 
@@ -181,6 +186,10 @@ func (c *Combat) removeCombatable(combatable Combatable) {
 
 func (c *Combat) onCombatFinish() {
 	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage", c.turns, c.actorCastDamage, c.actorIncurDamage)
+	for _, actor := range c.actors {
+		result := CombatResult{LifeCost: c.actorIncurDamage}
+		actor.OnCombatDone(result)
+	}
 }
 
 func (c *Combat) getEnemyAsCombatable() []Combatable {

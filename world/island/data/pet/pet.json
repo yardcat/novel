@@ -1,0 +1,20 @@
+{
+  "dog_pet": {
+    "Name": "dog",
+    "Level": 2,
+    "Life": 30,
+    "Attack": 5,
+    "AttackSpeed": 5,
+    "Defense": 3,
+    "Dodge": 10
+  },
+  "cat_pet": {
+    "Name": "cat",
+    "Level": 2,
+    "Life": 20,
+    "Attack": 6,
+    "AttackSpeed": 5,
+    "Defense": 2,
+    "Dodge": 20
+  }
+}

@@ -2,26 +2,25 @@ package combat
 
 import "my_test/log"
 
-type Actor struct {
-	CombatableBase
-	Magic int
+type ActorClient interface {
+	OnCombatDone(result CombatResult)
 }
 
-func NewActor(id int, name string) *Actor {
+type Actor struct {
+	CombatableBase
+	Magic  int
+	client ActorClient
+}
+
+func NewActor(base CombatableBase) *Actor {
 	return &Actor{
-		CombatableBase: CombatableBase{
-			Name:        name,
-			CombatType:  ACTOR,
-			Life:        100,
-			Attack:      10,
-			Defense:     2,
-			Dodge:       10,
-			AttackSpeed: 10,
-			AttackRange: 6,
-			AttackStep:  0,
-		},
-		Magic: 100,
+		CombatableBase: base,
+		Magic:          100,
 	}
+}
+
+func CreateActor(base CombatableBase, client ActorClient) Combatable {
+	return NewActor(base)
 }
 
 func (a *Actor) GetBase() *CombatableBase {
@@ -30,4 +29,8 @@ func (a *Actor) GetBase() *CombatableBase {
 
 func (a *Actor) OnKill(defender Combatable) {
 	log.Info("%s kill %s", a.GetName(), defender.GetName())
+}
+
+func (a *Actor) OnCombatDone(result CombatResult) {
+	a.client.OnCombatDone(result)
 }

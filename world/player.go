@@ -3,9 +3,11 @@ package world
 import (
 	"encoding/json"
 	"fmt"
+	"my_test/combat"
 )
 
 type Player struct {
+	Id       string
 	Health   int    `json:"Health"`
 	Hunger   int    `json:"Hunger"`
 	Thirst   int    `json:"Thirst"`
@@ -13,10 +15,12 @@ type Player struct {
 	Location string `json:"-"`
 	Bag      *Bag   `json:"-"`
 	Story    *Story `json:"-"`
+	Pets     []Pet
 }
 
-func NewPlayer(story *Story) *Player {
+func NewPlayer(story *Story, id string) *Player {
 	return &Player{
+		Id:       id,
 		Health:   100,
 		Hunger:   100,
 		Thirst:   100,
@@ -24,6 +28,7 @@ func NewPlayer(story *Story) *Player {
 		Location: "beach",
 		Bag:      NewBag(),
 		Story:    story,
+		Pets:     make([]Pet, 0),
 	}
 }
 
@@ -70,6 +75,26 @@ func (p *Player) Collect(event CollectEvent) CollectEventReply {
 		}
 	}
 	return reply
+}
+
+func (s *Player) GetCombatableBase() combat.CombatableBase {
+	return combat.CombatableBase{
+		Name:        "player",
+		CombatType:  combat.ACTOR,
+		Life:        s.Health,
+		Attack:      10,
+		Defense:     2,
+		Dodge:       10,
+		AttackSpeed: 10,
+		AttackRange: 6,
+		AttackStep:  0,
+	}
+}
+
+func (s *Player) AddPet(name string) {
+	proto := s.Story.PetSystem.GetPet(name)
+	pet := CreatePet(&proto)
+	s.Pets = append(s.Pets, *pet)
 }
 
 func (s *Player) OnChangeStatus(event ChangeStatusEvent) {

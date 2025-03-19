@@ -19,7 +19,8 @@ func (c *LineCombat) ChooseDefender(attacker Combatable) Combatable {
 		return c.enemies[0]
 	} else if attacker.GetCombatType() == ENEMY {
 		return c.actors[0]
+	} else {
+		log.Info("unknown attacker type %d", attacker.GetCombatType())
 	}
-	log.Info("unknown attacker type %d", attacker.GetCombatType())
 	return nil
 }

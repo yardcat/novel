@@ -37,8 +37,9 @@ func (g *GridCombat) ChooseDefender(attacker Combatable) Combatable {
 		near = g.getNearDefender(attacker, g.getEnemyAsCombatable())
 	} else if attacker.GetCombatType() == ENEMY {
 		near = g.getNearDefender(attacker, g.getActorAsCombatable())
+	} else {
+		log.Info("unknown attacker type %d", attacker.GetCombatType())
 	}
-	log.Info("unknown attacker type %d", attacker.GetCombatType())
 	return near
 }
 
@@ -79,11 +80,12 @@ func (g *GridCombat) placeCombatables() {
 		if g.combatables[i].GetCombatType() == ENEMY {
 			pos += GRID_WIDTH * GRID_HEIGHT * 0.5
 		}
-		v, exist := g.pos2comb[pos]
+		_, exist := g.pos2comb[pos]
 		if exist {
 			i--
 			continue
 		}
-		g.pos2comb[pos] = v
+		g.pos2comb[pos] = g.combatables[i]
+		g.comb2pos[g.combatables[i]] = pos
 	}
 }
