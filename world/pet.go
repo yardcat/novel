@@ -1,18 +1,13 @@
 package world
 
-import "my_test/combat"
+import (
+	"my_test/combat"
+	"my_test/log"
+)
 
 type Pet struct {
 	combat.CombatableBase
-	Name string
 	Type int
-}
-
-func NewPet(name string, petType int) *Pet {
-	return &Pet{
-		Name: name,
-		Type: petType,
-	}
 }
 
 func CreatePet(proto *Pet) *Pet {
@@ -26,4 +21,8 @@ func CreatePet(proto *Pet) *Pet {
 
 func (p *Pet) GetCombatableBase() combat.CombatableBase {
 	return p.CombatableBase
+}
+
+func (p *Pet) OnCombatDone(result combat.CombatResult) {
+	log.Info("pet combat done %v", result)
 }

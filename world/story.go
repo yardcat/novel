@@ -20,7 +20,9 @@ type Story struct {
 	resources     *Resources
 	eventHandlers map[string]any
 	ItemSystem    *ItemSystem
+	NpcSystem     *NpcSystem
 	PetSystem     *PetSystem
+	ExploreSystem *ExploreSystem
 	CombatSystem  *CombatSystem
 }
 
@@ -79,7 +81,9 @@ func (s *Story) Init() {
 	s.ItemSystem = NewItemSystem()
 	player := NewPlayer(s, "0")
 	s.players = map[string]*Player{player.Id: player}
+	s.NpcSystem = NewNpcSystem(s)
 	s.PetSystem = NewPetSystem(s)
+	s.ExploreSystem = NewExploreSystem(s)
 	s.CombatSystem = NewCombatSystem()
 	s.CombatSystem.ChallengeDungeon("test")
 	s.RegisterEventHandler()

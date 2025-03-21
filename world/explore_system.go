@@ -43,6 +43,7 @@ type ExploreSystem struct {
 	mp       Map
 	mapData  []Grid
 	homeCord int
+	MineMap  map[string]Mine
 }
 
 type ExploreClient interface {
@@ -56,6 +57,7 @@ func NewExploreSystem(story *Story) *ExploreSystem {
 	e.loadMap()
 	e.mapData = make([]Grid, e.mp.Width*e.mp.Height)
 	e.fillMap()
+	e.loadMine()
 	return e
 }
 
@@ -131,4 +133,21 @@ func (e *ExploreSystem) fillMap() {
 			}
 		}
 	}
+}
+
+func (e *ExploreSystem) loadMine() error {
+	mineFile := e.story.GetResources().GetPath("scene/mine.json")
+	jsonData, err := os.ReadFile(mineFile)
+	if err != nil {
+		return err
+	}
+
+	var mines map[string]Mine
+	if err := json.Unmarshal(jsonData, &mines); err != nil {
+		log.Error("load mine err %v", err)
+		return err
+	}
+
+	e.MineMap = mines
+	return nil
 }

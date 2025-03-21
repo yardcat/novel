@@ -1,9 +1,20 @@
 {
-    "sunwukong": {
-        "name": "孙悟空",
-        "description": "孙悟空",
-        "attributes": {
-            "attack": 10
-        }
-    }
+  "SunWuKong": {
+    "Name": "SunWuKong",
+    "Level": 2,
+    "Life": 50,
+    "Attack": 10,
+    "AttackSpeed": 10,
+    "Defense": 4,
+    "Dodge": 10
+  },
+  "ZhuBaJie": {
+    "Name": "ZhuBaJie",
+    "Level": 2,
+    "Life": 20,
+    "Attack": 6,
+    "AttackSpeed": 5,
+    "Defense": 2,
+    "Dodge": 20
+  }
 }

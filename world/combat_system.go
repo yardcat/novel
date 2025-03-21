@@ -34,10 +34,17 @@ func (c *CombatSystem) StartCombat(actors []*combat.Actor, enemies []*combat.Ene
 }
 
 func (c *CombatSystem) ChallengeDungeon(name string) error {
-	actor := combat.NewActor(c.story.GetPlayer("0").GetCombatableBase())
-	pet := c.story.GetPlayer("0").Pets[0]
-	petActor := combat.NewActor(pet.GetCombatableBase())
-	actors := []*combat.Actor{actor, petActor}
+	player := c.story.GetPlayer("0")
+	actor := combat.NewActor(player.GetCombatableBase(), player)
+	petName := "dog_pet"
+	player.AddPet(petName)
+	pet := player.GetPet(petName)
+	npcName := "SunWuKong"
+	player.AddNpc(npcName)
+	npc := player.GetNpc(npcName)
+	npcActor := combat.NewActor(npc.GetCombatableBase(), npc)
+	petActor := combat.NewActor(pet.GetCombatableBase(), pet)
+	actors := []*combat.Actor{actor, petActor, npcActor}
 	dg := c.Dungeons[name]
 	for _, group := range dg.Groups {
 		log.Info("start combat group %s", group.Name)

@@ -12,15 +12,12 @@ type Actor struct {
 	client ActorClient
 }
 
-func NewActor(base CombatableBase) *Actor {
+func NewActor(base CombatableBase, c ActorClient) *Actor {
 	return &Actor{
 		CombatableBase: base,
 		Magic:          100,
+		client:         c,
 	}
-}
-
-func CreateActor(base CombatableBase, client ActorClient) Combatable {
-	return NewActor(base)
 }
 
 func (a *Actor) GetBase() *CombatableBase {
