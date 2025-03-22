@@ -1,34 +1,35 @@
 {
-    "normal mime": {
-        "resources": {
-            "iron": {
-                "store": 1,
-                "rate": 10
-            },
-            "copper": {
-                "store": 1,
-                "rate": 10
-            },
-            "gold": {
-                "store": 1,
-                "rate": 10
-            },
-            "silver": {
-                "store": 1,
-                "rate": 10
-            },
-            "coal": {
-                "store": 1,
-                "rate": 10
-            }
-        },
-        "enemies": {
-            "spider": {
-                "rate": 10
-            },
-            "wolf": {
-                "rate": 10
-            }
-        }
+  "normal": {
+    "action_rate": [80, 5],
+    "resource": {
+      "iron": {
+        "store": 1,
+        "rate": 10
+      },
+      "copper": {
+        "store": 1,
+        "rate": 10
+      },
+      "gold": {
+        "store": 1,
+        "rate": 10
+      },
+      "silver": {
+        "store": 1,
+        "rate": 10
+      },
+      "coal": {
+        "store": 1,
+        "rate": 10
+      }
+    },
+    "enemy": {
+      "spider": {
+        "rate": 10
+      },
+      "wolf": {
+        "rate": 10
+      }
     }
+  }
 }

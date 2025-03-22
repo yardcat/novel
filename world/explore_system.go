@@ -43,7 +43,7 @@ type ExploreSystem struct {
 	mp       Map
 	mapData  []Grid
 	homeCord int
-	MineMap  map[string]Mine
+	MineMap  map[string]*Mine
 }
 
 type ExploreClient interface {
@@ -142,12 +142,13 @@ func (e *ExploreSystem) loadMine() error {
 		return err
 	}
 
-	var mines map[string]Mine
+	var mines map[string]*Mine
 	if err := json.Unmarshal(jsonData, &mines); err != nil {
 		log.Error("load mine err %v", err)
 		return err
 	}
 
 	e.MineMap = mines
+	e.MineMap["normal"].Explore(10)
 	return nil
 }
