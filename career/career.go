@@ -1,5 +1,7 @@
 package career
 
+import "my_test/util"
+
 const (
 	Doctor = iota
 	Teacher
@@ -8,7 +10,7 @@ const (
 )
 
 type Career struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Attr        map[string]string `json:"attributes"`
+	Name        string                `json:"name"`
+	Description string                `json:"description"`
+	Attr        map[string]util.Value `json:"attributes"`
 }

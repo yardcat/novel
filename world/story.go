@@ -22,6 +22,7 @@ type Story struct {
 	ItemSystem    *ItemSystem
 	NpcSystem     *NpcSystem
 	PetSystem     *PetSystem
+	CareerSystem  *CareerSystem
 	ExploreSystem *ExploreSystem
 	CombatSystem  *CombatSystem
 }
@@ -83,6 +84,7 @@ func (s *Story) Init() {
 	s.players = map[string]*Player{player.Id: player}
 	s.NpcSystem = NewNpcSystem(s)
 	s.PetSystem = NewPetSystem(s)
+	s.CareerSystem = NewCareerSystem(s)
 	s.ExploreSystem = NewExploreSystem(s)
 	s.CombatSystem = NewCombatSystem()
 	s.CombatSystem.ChallengeDungeon("test")

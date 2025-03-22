@@ -35,6 +35,7 @@ func (c *CombatSystem) StartCombat(actors []*combat.Actor, enemies []*combat.Ene
 
 func (c *CombatSystem) ChallengeDungeon(name string) error {
 	player := c.story.GetPlayer("0")
+	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)
 	petName := "dog_pet"
 	player.AddPet(petName)
@@ -143,7 +144,7 @@ func (c *CombatSystem) loadDungeons() error {
 			}
 			groupID++
 		}
-		dungeonName := util.GetPureFileName(file)
+		dungeonName := util.GetFileNameWithoutExt(file)
 		c.Dungeons[dungeonName] = dungeon
 	}
 

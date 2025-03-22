@@ -33,14 +33,15 @@ func (p *NpcSystem) loadData() error {
 }
 
 func (c *NpcSystem) loadNpcs() error {
-	files, err := filepath.Glob(c.story.GetResources().GetPath("npc/*.json"))
+	npcPath := c.story.GetResources().GetPath("npc")
+	files, err := os.ReadDir(npcPath)
 	if err != nil {
 		return err
 	}
 
 	npcs := make(map[string]*Npc)
 	for _, file := range files {
-		jsonData, err := os.ReadFile(file)
+		jsonData, err := os.ReadFile(filepath.Join(npcPath, file.Name()))
 		if err != nil {
 			log.Error("load npc err %v", err)
 			continue

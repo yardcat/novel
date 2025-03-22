@@ -3,8 +3,10 @@ package world
 import (
 	"encoding/json"
 	"fmt"
+	"my_test/career"
 	"my_test/combat"
 	"my_test/log"
+	"my_test/util"
 )
 
 type Player struct {
@@ -18,6 +20,7 @@ type Player struct {
 	Story    *Story `json:"-"`
 	Pets     []Pet
 	Npcs     []Npc
+	Career   *career.Career
 }
 
 func NewPlayer(story *Story, id string) *Player {
@@ -81,7 +84,7 @@ func (p *Player) Collect(event CollectEvent) CollectEventReply {
 }
 
 func (p *Player) GetCombatableBase() combat.CombatableBase {
-	return combat.CombatableBase{
+	base := combat.CombatableBase{
 		Name:        "player",
 		CombatType:  combat.ACTOR,
 		Life:        p.Health,
@@ -92,6 +95,48 @@ func (p *Player) GetCombatableBase() combat.CombatableBase {
 		AttackRange: 6,
 		AttackStep:  0,
 	}
+
+	// TODO : 优化获取属性逻辑, 使用Enum或者value
+	if p.Career != nil {
+		for attr, value := range p.Career.Attr {
+			switch attr {
+			case "Life":
+				base.Life = AddAttr(base.Life, value)
+			case "Attack":
+				base.Attack = AddAttr(base.Attack, value)
+			case "Defense":
+				base.Defense = AddAttr(base.Defense, value)
+			case "Dodge":
+				base.Dodge = AddAttr(base.Dodge, value)
+			case "AttackSpeed":
+				base.AttackSpeed = AddAttr(base.AttackSpeed, value)
+			case "AttackRange":
+				base.AttackRange = AddAttr(base.AttackRange, value)
+			case "AttackStep":
+				base.AttackStep = AddAttr(base.AttackStep, value)
+			}
+		}
+	}
+	return base
+}
+
+func AddAttr[T int | int64 | float64](attr T, value util.Value) T {
+	switch value.Type {
+	case util.Int:
+		addOn := value.Int()
+		return attr + T(addOn)
+	case util.Float:
+		addOn := value.Float()
+		return attr + T(addOn)
+	case util.Percent:
+		addOn := value.Percent() * float64(attr)
+		return attr + T(addOn)
+	}
+	return attr
+}
+
+func (p *Player) AddCareer(name string) {
+	p.Career = p.Story.CareerSystem.GetCareer(name)
 }
 
 func (p *Player) AddPet(name string) {

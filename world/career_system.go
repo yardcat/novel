@@ -2,47 +2,60 @@ package world
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"my_test/career"
+	"my_test/log"
+	"my_test/util"
+	"os"
 	"path/filepath"
 )
 
 type CareerSystem struct {
-	CareerProto [career.CareerTypeCount]career.Career
+	CareerProto [career.CareerTypeCount]*career.Career
 	NameMap     map[string]int
+	story       *Story
 }
 
-func NewCareerSystem() *CareerSystem {
+func (c *CareerSystem) GetCareer(name string) *career.Career {
+	return c.CareerProto[c.NameMap[name]]
+}
+
+func NewCareerSystem(s *Story) *CareerSystem {
 	c := &CareerSystem{
 		NameMap: map[string]int{
 			"doctor":     career.Doctor,
 			"teacher":    career.Teacher,
 			"programmer": career.Programmer},
+		story: s,
 	}
 	c.loadData()
 	return c
 }
 
-func (c *CareerSystem) loadData() {
-	files, err := ioutil.ReadDir("career")
+func (c *CareerSystem) loadData() error {
+	careerPath := c.story.resources.GetPath("career")
+	files, err := os.ReadDir(careerPath)
 	if err != nil {
-		panic(err)
+		log.Error("read career dir %v", err)
+		return err
 	}
 
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".json" {
-			data, err := ioutil.ReadFile(filepath.Join("career", file.Name()))
+			data, err := os.ReadFile(filepath.Join(careerPath, file.Name()))
 			if err != nil {
-				panic(err)
+				log.Error("load career file %s err %v", file.Name(), err)
+				return err
 			}
 
-			var careerData career.Career
-			err = json.Unmarshal(data, &careerData)
+			idx := c.NameMap[util.GetFileNameWithoutExt(file.Name())]
+			proto := &career.Career{}
+			err = json.Unmarshal(data, &proto)
 			if err != nil {
-				panic(err)
+				log.Error("Unmarshal career file %s err %v", file.Name(), err)
+				return err
 			}
-
-			c.CareerProto[careerData.Type] = careerData
+			c.CareerProto[idx] = proto
 		}
 	}
+	return nil
 }

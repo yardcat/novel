@@ -16,7 +16,7 @@ type Value struct {
 	Type   int
 }
 
-func NewValue(t int, n int) Value {
+func NewValue(t int, n string) Value {
 	return Value{Type: t, Number: n}
 }
 

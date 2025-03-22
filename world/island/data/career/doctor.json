@@ -2,6 +2,6 @@
   "Name": "doctor",
   "Description": "A doctor",
   "Attributes": {
-    "Life": { "Number": "20", "Type": 3 }
+    "Life": { "Number": "20", "Type": 2 }
   }
 }
