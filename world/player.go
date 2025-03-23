@@ -7,35 +7,45 @@ import (
 	"my_test/combat"
 	"my_test/log"
 	"my_test/util"
+	"os"
 )
 
+type PlayerAttr struct {
+	combat.CombatableBase
+	Exp         int
+	Health      int
+	Hunger      int
+	Thirst      int
+	Energy      int
+	LevelExp    int
+	LevelExpInc int
+	LevelUp     map[string]int
+}
+
 type Player struct {
-	Id       string
-	Health   int    `json:"Health"`
-	Hunger   int    `json:"Hunger"`
-	Thirst   int    `json:"Thirst"`
-	Energy   int    `json:"Energy"`
-	Location string `json:"-"`
-	Bag      *Bag   `json:"-"`
-	Story    *Story `json:"-"`
-	Pets     []Pet
-	Npcs     []Npc
-	Career   *career.Career
+	PlayerAttr
+	Id             string
+	Bag            *Bag
+	Story          *Story
+	Pets           []Pet
+	Npcs           []Npc
+	Equips         *PlayerEquips
+	Career         *career.Career
+	attr           PlayerAttr
+	attrAdd        PlayerAttr
+	attrAddPercent PlayerAttr
 }
 
 func NewPlayer(story *Story, id string) *Player {
-	return &Player{
-		Id:       id,
-		Health:   100,
-		Hunger:   100,
-		Thirst:   100,
-		Energy:   100,
-		Location: "beach",
-		Bag:      NewBag(),
-		Story:    story,
-		Pets:     make([]Pet, 0),
-		Npcs:     make([]Npc, 0),
+	p := &Player{
+		Id:    id,
+		Bag:   NewBag(),
+		Story: story,
+		Pets:  make([]Pet, 0),
+		Npcs:  make([]Npc, 0),
 	}
+	p.loadPlayerData()
+	return p
 }
 
 func (p *Player) Update() {
@@ -81,6 +91,10 @@ func (p *Player) Collect(event CollectEvent) CollectEventReply {
 		}
 	}
 	return reply
+}
+
+func (p *Player) UpdateAttr() {
+
 }
 
 func (p *Player) GetCombatableBase() combat.CombatableBase {
@@ -195,4 +209,22 @@ func (p *Player) ToJson() string {
 
 func (p *Player) OnCombatDone(result combat.CombatResult) {
 	log.Info("player combat done %v", result)
+}
+
+func (p *Player) loadPlayerData() {
+	p.LoadAttrFromJson()
+}
+
+func (p *Player) LoadAttrFromJson() {
+	data, err := os.ReadFile(p.Story.GetResources().GetPath("player/player.json"))
+	if err != nil {
+		log.Error("Failed to read player.json: %v", err)
+		return
+	}
+
+	err = json.Unmarshal(data, &p.attr)
+	if err != nil {
+		log.Error("Failed to unmarshal player.json: %v", err)
+		return
+	}
 }

@@ -1,0 +1,18 @@
+{
+  "Health": 100,
+  "Hunger": 100,
+  "Thirst": 100,
+  "Energy": 100,
+  "Level": 1,
+  "Life": 50,
+  "Attack": 8,
+  "AttackSpeed": 5,
+  "Defense": 3,
+  "Dodge": 10,
+  "LevelExp": 100,
+  "LevelExpInc": 100,
+  "LevelUp": {
+    "Attack": 1,
+    "Defense": 1
+  }
+}
