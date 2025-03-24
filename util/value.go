@@ -37,12 +37,3 @@ func (value Value) Float() float64 {
 	ret, _ := strconv.ParseFloat(value.Number, 64)
 	return ret
 }
-
-func (value Value) Percent() float64 {
-	if value.Type != Percent {
-		err := fmt.Sprintf("%s not percent", value.Number)
-		panic(err)
-	}
-	ret, _ := strconv.Atoi(value.Number)
-	return float64(ret) / 100.0
-}

@@ -12,6 +12,7 @@ type PlayerEquips struct {
 	Shoes     [2]equip.Shoe
 	Trouser   equip.Trouser
 	Weapon    [2]equip.Weapon
+	Equips    []equip.Equip
 }
 
 type EquipSystem struct {

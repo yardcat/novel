@@ -1,6 +1,7 @@
 package equip
 
 type Armor struct {
+	Name  string
 	Attrs []Attr
 }
 

@@ -5,22 +5,10 @@ import (
 	"fmt"
 	"my_test/career"
 	"my_test/combat"
+	"my_test/equip"
 	"my_test/log"
-	"my_test/util"
 	"os"
 )
-
-type PlayerAttr struct {
-	combat.CombatableBase
-	Exp         int
-	Health      int
-	Hunger      int
-	Thirst      int
-	Energy      int
-	LevelExp    int
-	LevelExpInc int
-	LevelUp     map[string]int
-}
 
 type Player struct {
 	PlayerAttr
@@ -29,20 +17,23 @@ type Player struct {
 	Story          *Story
 	Pets           []Pet
 	Npcs           []Npc
-	Equips         *PlayerEquips
+	Equips         PlayerEquips
 	Career         *career.Career
 	attr           PlayerAttr
 	attrAdd        PlayerAttr
 	attrAddPercent PlayerAttr
+	needUpdateAttr bool
 }
 
 func NewPlayer(story *Story, id string) *Player {
 	p := &Player{
-		Id:    id,
-		Bag:   NewBag(),
-		Story: story,
-		Pets:  make([]Pet, 0),
-		Npcs:  make([]Npc, 0),
+		Id:             id,
+		Bag:            NewBag(),
+		Story:          story,
+		Pets:           make([]Pet, 0),
+		Npcs:           make([]Npc, 0),
+		Equips:         PlayerEquips{},
+		needUpdateAttr: true,
 	}
 	p.loadPlayerData()
 	return p
@@ -94,59 +85,25 @@ func (p *Player) Collect(event CollectEvent) CollectEventReply {
 }
 
 func (p *Player) UpdateAttr() {
+	p.caculateAttrFromEquip()
+}
 
+func (p *Player) caculateAttrFromEquip() {
+	attrs := make([]equip.Attr, 0)
+	for _, v := range p.Equips.Equips {
+		attrs = append(attrs, v.GetAttrs()...)
+	}
+	p.attrAdd.UpdateFromAttr(attrs, false)
+	p.attrAddPercent.UpdateFromAttr(attrs, true)
+	p.UpdateFinal(&p.attrAdd, &p.attrAddPercent)
 }
 
 func (p *Player) GetCombatableBase() combat.CombatableBase {
-	base := combat.CombatableBase{
-		Name:        "player",
-		CombatType:  combat.ACTOR,
-		Life:        p.Health,
-		Attack:      10,
-		Defense:     2,
-		Dodge:       10,
-		AttackSpeed: 10,
-		AttackRange: 6,
-		AttackStep:  0,
-	}
-
 	// TODO : 优化获取属性逻辑, 使用Enum或者value
-	if p.Career != nil {
-		for attr, value := range p.Career.Attr {
-			switch attr {
-			case "Life":
-				base.Life = AddAttr(base.Life, value)
-			case "Attack":
-				base.Attack = AddAttr(base.Attack, value)
-			case "Defense":
-				base.Defense = AddAttr(base.Defense, value)
-			case "Dodge":
-				base.Dodge = AddAttr(base.Dodge, value)
-			case "AttackSpeed":
-				base.AttackSpeed = AddAttr(base.AttackSpeed, value)
-			case "AttackRange":
-				base.AttackRange = AddAttr(base.AttackRange, value)
-			case "AttackStep":
-				base.AttackStep = AddAttr(base.AttackStep, value)
-			}
-		}
+	if p.needUpdateAttr {
+		p.UpdateAttr()
 	}
-	return base
-}
-
-func AddAttr[T int | int64 | float64](attr T, value util.Value) T {
-	switch value.Type {
-	case util.Int:
-		addOn := value.Int()
-		return attr + T(addOn)
-	case util.Float:
-		addOn := value.Float()
-		return attr + T(addOn)
-	case util.Percent:
-		addOn := value.Percent() * float64(attr)
-		return attr + T(addOn)
-	}
-	return attr
+	return p.attr.CombatableBase
 }
 
 func (p *Player) AddCareer(name string) {
