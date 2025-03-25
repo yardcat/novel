@@ -28,10 +28,9 @@ type Explorable interface {
 }
 
 type Grid struct {
-	Name       string
 	Discovered bool
 	Type       int
-	Explorable bool
+	Entity     *Explorable
 }
 
 type ExploreResult struct {
@@ -56,8 +55,8 @@ func NewExploreSystem(story *Story) *ExploreSystem {
 	}
 	e.loadMap()
 	e.mapData = make([]Grid, e.mp.Width*e.mp.Height)
-	e.fillMap()
 	e.loadMine()
+	e.fillMap()
 	return e
 }
 
@@ -128,7 +127,6 @@ func (e *ExploreSystem) fillMap() {
 	for i := 0; i < e.mp.Width; i++ {
 		for j := 0; j < e.mp.Height; j++ {
 			e.mapData[i*e.mp.Height+j] = Grid{
-				Name:       "earth",
 				Discovered: false,
 			}
 		}
@@ -142,13 +140,9 @@ func (e *ExploreSystem) loadMine() error {
 		return err
 	}
 
-	var mines map[string]*Mine
-	if err := json.Unmarshal(jsonData, &mines); err != nil {
+	if err := json.Unmarshal(jsonData, &e.MineMap); err != nil {
 		log.Error("load mine err %v", err)
 		return err
 	}
-
-	e.MineMap = mines
-	e.MineMap["normal"].Explore(10)
 	return nil
 }

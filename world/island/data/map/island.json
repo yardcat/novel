@@ -1,5 +1,8 @@
 {
-    "name": "island",
-    "width": 20,
-    "height": 20
+  "name": "island",
+  "width": 20,
+  "height": 20,
+  "elements": {
+    "mine": 2
+  }
 }

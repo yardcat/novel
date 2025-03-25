@@ -54,6 +54,10 @@ func (m *Mine) Explore(times int) {
 	}
 }
 
+func (m *Mine) PassBy() {
+	m.Explore(1)
+}
+
 func (m *Mine) SelectAction() int {
 	rate := util.GetRandomInt(RATE_MAX)
 	for i, r := range m.ActionRate {
