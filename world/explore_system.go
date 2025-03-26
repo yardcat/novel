@@ -2,14 +2,20 @@ package world
 
 import (
 	"encoding/json"
+	"my_test/combat"
 	"my_test/log"
 	"my_test/util"
 	"os"
 )
 
 const (
-	EXPLORE_MINE = 1
-	EXPLORE_LAKE = iota
+	EXPLORE_NONE = 0
+	EXPLORE_MINE = iota
+	EXPLORE_LAKE
+
+	EXPLORE_RESULT_NONE   = 0
+	EXPLORE_RESULT_COMBAT = iota
+	EXPLORE_RESULT_ITEM
 )
 
 type Map struct {
@@ -23,17 +29,21 @@ type Cord struct {
 	Y int
 }
 
+type ExploreResult struct {
+	Type         int
+	combatResult *combat.CombatResult
+	itemResult   []string
+}
+
 type Explorable interface {
-	Explore()
+	PassBy()
+	Explore() ExploreResult
 }
 
 type Grid struct {
 	Discovered bool
 	Type       int
 	Entity     *Explorable
-}
-
-type ExploreResult struct {
 }
 
 type ExploreSystem struct {
