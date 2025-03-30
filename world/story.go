@@ -12,19 +12,19 @@ import (
 
 type Story struct {
 	taskCh        chan *EventTask
-	ticker        *time.Ticker
 	done          chan bool
 	players       map[string]*Player
 	timeEvents    []TimeEventTask
 	daysData      []DayData
 	resources     *Resources
 	eventHandlers map[string]any
-	ItemSystem    *ItemSystem
-	NpcSystem     *NpcSystem
-	PetSystem     *PetSystem
-	CareerSystem  *CareerSystem
-	ExploreSystem *ExploreSystem
-	CombatSystem  *CombatSystem
+	timeSystem    *TimeSystem
+	itemSystem    *ItemSystem
+	npcSystem     *NpcSystem
+	petSystem     *PetSystem
+	careerSystem  *CareerSystem
+	exploreSystem *ExploreSystem
+	combatSystem  *CombatSystem
 }
 
 type Task interface {
@@ -79,15 +79,15 @@ func (s *Story) Init() {
 	s.taskCh = make(chan *EventTask)
 	s.done = make(chan bool)
 	s.loadData()
-	s.ItemSystem = NewItemSystem()
+	s.itemSystem = NewItemSystem()
 	player := NewPlayer(s, "0")
 	s.players = map[string]*Player{player.Id: player}
-	s.NpcSystem = NewNpcSystem(s)
-	s.PetSystem = NewPetSystem(s)
-	s.CareerSystem = NewCareerSystem(s)
-	s.ExploreSystem = NewExploreSystem(s)
-	s.CombatSystem = NewCombatSystem()
-	s.CombatSystem.ChallengeDungeon("test")
+	s.npcSystem = NewNpcSystem(s)
+	s.petSystem = NewPetSystem(s)
+	s.careerSystem = NewCareerSystem(s)
+	s.exploreSystem = NewExploreSystem(s)
+	s.combatSystem = NewCombatSystem()
+	s.combatSystem.ChallengeDungeon("test")
 	s.RegisterEventHandler()
 }
 
@@ -125,17 +125,17 @@ func (s *Story) PostReplyEvent(name string, event string, callback func(string))
 
 func (s *Story) Start(ctx context.Context) {
 	log.Info("start story")
-	s.ticker = time.NewTicker(1 * time.Minute)
 
+	// TODO: 合并到主线程
 	go s.runTimeline()
 
 	for {
 		select {
 		case <-ctx.Done():
 		case <-s.done:
-			s.ticker.Stop()
+			s.timeSystem.Stop()
 			return
-		case <-s.ticker.C:
+		case <-s.timeSystem.Tick():
 			if err := s.update(); err != nil {
 				continue
 			}
@@ -303,5 +303,5 @@ func (s *Story) HandleDayEvent(action string, params map[string]string) {
 }
 
 func (s *Story) GetCollectable() []string {
-	return s.ItemSystem.GetCollectable()
+	return s.itemSystem.GetCollectable()
 }

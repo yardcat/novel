@@ -76,7 +76,7 @@ func (p *Player) Collect(event CollectEvent) CollectEventReply {
 	for _, i := range event.Items {
 		if p.Energy >= 10 {
 			p.Energy -= 10
-			p.Bag.Add(p.Story.ItemSystem.GetItemByName(i.Item), i.Count)
+			p.Bag.Add(p.Story.itemSystem.GetItemByName(i.Item), i.Count)
 			reply.EnergyCost += 10
 			reply.Items = append(reply.Items, i)
 		}
@@ -107,11 +107,11 @@ func (p *Player) GetCombatableBase() combat.CombatableBase {
 }
 
 func (p *Player) AddCareer(name string) {
-	p.Career = p.Story.CareerSystem.GetCareer(name)
+	p.Career = p.Story.careerSystem.GetCareer(name)
 }
 
 func (p *Player) AddPet(name string) {
-	proto := p.Story.PetSystem.GetPet(name)
+	proto := p.Story.petSystem.GetPet(name)
 	pet := CreatePet(&proto)
 	p.Pets = append(p.Pets, *pet)
 }
@@ -126,7 +126,7 @@ func (p *Player) GetPet(name string) *Pet {
 }
 
 func (p *Player) AddNpc(name string) {
-	proto := p.Story.NpcSystem.GetNpc(name)
+	proto := p.Story.npcSystem.GetNpc(name)
 	npc := CreateNpc(&proto)
 	p.Npcs = append(p.Npcs, *npc)
 }
@@ -148,7 +148,7 @@ func (p *Player) OnChangeStatus(event ChangeStatusEvent) {
 }
 
 func (p *Player) OnBonus(event BonusEvent) {
-	p.Bag.Add(p.Story.ItemSystem.GetItemByName(event.Item), event.Count)
+	p.Bag.Add(p.Story.itemSystem.GetItemByName(event.Item), event.Count)
 }
 
 func (p *Player) ToString() string {
