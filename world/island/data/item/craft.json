@@ -1,15 +1,28 @@
 {
+  "Recipe": {
     "house": {
-        "name": "house",
-        "description": "a house",
-        "energy": 10,
-        "craft": {
-            "stone": 10,
-            "wood": 10,
-            "needs": ["wood_skill"]
-        },
-        "attributes": {
-            "temperature": 3
-        }
+      "Name": "house",
+      "Description": "a house",
+      "Energy": 10,
+      "Need": {
+        "item": [{ "stone": 10 }, { "wood": 10 }],
+        "skill": [{ "wood_skill": 1 }]
+      },
+      "Attribute": {
+        "temperature": 3
+      }
+    },
+    "cake": {
+      "Name": "house",
+      "Description": "a house",
+      "Energy": 10,
+      "Need": {
+        "item": [{ "bread": 10 }, { "water": 10 }],
+        "skill": [{ "kichen_skill": 1 }]
+      },
+      "Attribute": {
+        "temperature": 3
+      }
     }
+  }
 }

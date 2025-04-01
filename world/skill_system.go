@@ -6,35 +6,27 @@ import (
 	"os"
 )
 
-type Forest struct {
+type SkillSystem struct {
 	story *Story
 }
 
-func NewForest(story *Story) *Forest {
-	f := &Forest{
+func NewSkillSystem(story *Story) *SkillSystem {
+	s := &SkillSystem{
 		story: story,
 	}
-	f.loadData()
-	return f
+	s.loadData()
+	return s
 }
 
-func (f *Forest) PassBy() {
-
-}
-
-func (f *Forest) Explore() int {
-	return 0
-}
-
-func (f *Forest) loadData() error {
-	file := f.story.GetResources().GetPath("scene/forest.json")
+func (s *SkillSystem) loadData() error {
+	file := s.story.GetResources().GetPath("skill/skill.json")
 	jsonData, err := os.ReadFile(file)
 	if err != nil {
 		log.Error("load config file err: %v", err)
 		return err
 	}
 
-	err = json.Unmarshal(jsonData, &f)
+	err = json.Unmarshal(jsonData, &s)
 	if err != nil {
 		log.Error("unmarshal config file err: %v", err)
 		return err

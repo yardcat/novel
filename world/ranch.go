@@ -1,7 +1,9 @@
 package world
 
 import (
+	"encoding/json"
 	"my_test/log"
+	"os"
 )
 
 type Animal struct {
@@ -14,16 +16,26 @@ type Ranch struct {
 	Width     int
 	Height    int
 	animals   map[*Animal]int
+	story     *Story
 }
 
-func NewRanch(name string) *Ranch {
-	log.Info("new farm %s", name)
+func NewRanch(story *Story) *Ranch {
+	log.Info("new farm")
 	f := &Ranch{
 		AnimalMap: make(map[string]Animal),
 		animals:   make(map[*Animal]int),
+		story:     story,
 	}
 	f.loadData()
 	return f
+}
+
+func (f *Ranch) PassBy() {
+
+}
+
+func (f *Ranch) Explore() int {
+	return 0
 }
 
 func (f *Ranch) CreateAnimal(name string) *Animal {
@@ -60,5 +72,18 @@ func (f *Ranch) Water() {
 	}
 }
 
-func (f *Ranch) loadData() {
+func (f *Ranch) loadData() error {
+	file := f.story.GetResources().GetPath("scene/ranch.json")
+	jsonData, err := os.ReadFile(file)
+	if err != nil {
+		log.Error("load config file err: %v", err)
+		return err
+	}
+
+	err = json.Unmarshal(jsonData, &f)
+	if err != nil {
+		log.Error("unmarshal config file err: %v", err)
+		return err
+	}
+	return nil
 }

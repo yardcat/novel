@@ -80,6 +80,7 @@ func (s *Story) Init() {
 	s.done = make(chan bool)
 	s.loadData()
 	s.itemSystem = NewItemSystem()
+	s.timeSystem = NewTimeSystem(s)
 	player := NewPlayer(s, "0")
 	s.players = map[string]*Player{player.Id: player}
 	s.npcSystem = NewNpcSystem(s)
@@ -89,6 +90,7 @@ func (s *Story) Init() {
 	s.combatSystem = NewCombatSystem()
 	s.combatSystem.ChallengeDungeon("test")
 	s.RegisterEventHandler()
+	NewFarm(s)
 }
 
 func (s *Story) GetResources() *Resources {
@@ -150,7 +152,7 @@ func (s *Story) runTimeline() {
 		return
 	}
 	for _, event := range s.timeEvents {
-		waitTime := event.Time
+		waitTime := s.timeSystem.GetRealTime(event.Time)
 		if waitTime > 0 {
 			select {
 			case <-time.After(waitTime):

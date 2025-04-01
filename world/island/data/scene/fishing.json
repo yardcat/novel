@@ -1,0 +1,16 @@
+{
+  "fishMap": {
+    "crab": {
+      "Name": "crab",
+      "Rate": 10
+    },
+    "liyu": {
+      "Name": "liyu",
+      "Rate": 10
+    },
+    "shrimp": {
+      "Name": "shrimp",
+      "Rate": 10
+    }
+  }
+}
