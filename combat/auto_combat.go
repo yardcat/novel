@@ -33,13 +33,10 @@ type CombatStrategy interface {
 	ChooseDefender(attacker Combatable) Combatable
 }
 
-type Combat struct {
-	combatables []Combatable
-	actors      []*Actor
-	enemies     []*Enemy
-	client      CombatClient
-	strategy    CombatStrategy
-	Record
+type CombatParams struct {
+	Actors  []*Actor
+	Enemies []*Enemy
+	Client  CombatClient
 }
 
 type CombatOnceResult struct {
@@ -47,30 +44,39 @@ type CombatOnceResult struct {
 	defenderDead bool
 }
 
-func NewCombat(actors []*Actor, enemies []*Enemy, client CombatClient) *Combat {
-	c := &Combat{
-		actors:      actors,
-		enemies:     enemies,
-		client:      client,
-		combatables: make([]Combatable, len(actors)+len(enemies)),
+type AutoCombat struct {
+	combatables []Combatable
+	actors      []*Actor
+	enemies     []*Enemy
+	client      CombatClient
+	layout      CombatStrategy
+	Record
+}
+
+func NewAutoCombat(p *CombatParams) *AutoCombat {
+	c := &AutoCombat{
+		actors:      p.Actors,
+		enemies:     p.Enemies,
+		client:      p.Client,
+		combatables: make([]Combatable, len(p.Actors)+len(p.Enemies)),
 	}
 	i := 0
-	for _, actor := range actors {
+	for _, actor := range p.Actors {
 		c.combatables[i] = actor
 		i++
 	}
-	for _, enemy := range enemies {
+	for _, enemy := range p.Enemies {
 		c.combatables[i] = enemy
 		i++
 	}
-	c.strategy = NewGridCombat(c)
+	c.layout = NewGridCombat(c)
 	return c
 }
 
-func (c *Combat) Start() {
+func (c *AutoCombat) Start() {
 	for len(c.actors) > 0 && len(c.enemies) > 0 {
 		attacker := c.ChooseAttacker()
-		defender := c.strategy.ChooseDefender(attacker)
+		defender := c.layout.ChooseDefender(attacker)
 		if defender == nil {
 			log.Info("attacker %s can't find defender", attacker.GetName())
 			continue
@@ -102,7 +108,7 @@ func (c *Combat) Start() {
 	c.onCombatFinish()
 }
 
-func (c *Combat) ChooseAttacker() Combatable {
+func (c *AutoCombat) ChooseAttacker() Combatable {
 	fast := MAX_STEP
 	fast_idx := 0
 	for i, comb := range c.combatables {
@@ -119,7 +125,7 @@ func (c *Combat) ChooseAttacker() Combatable {
 	return c.combatables[fast_idx]
 }
 
-func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
+func (c *AutoCombat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
 	attacker.OnAttack(defender)
 	damage := c.cacDamage(attacker, defender)
 	if c.shouldDodge(attacker, defender) {
@@ -143,7 +149,7 @@ func (c *Combat) CombatOnce(attacker Combatable, defender Combatable, isActorAtt
 	}
 }
 
-func (c *Combat) cacDamage(attacker Combatable, defender Combatable) int {
+func (c *AutoCombat) cacDamage(attacker Combatable, defender Combatable) int {
 	attack := attacker.GetAttack()
 	defense := defender.GetDefense()
 	damage_reduce_factor := 0.0
@@ -151,13 +157,13 @@ func (c *Combat) cacDamage(attacker Combatable, defender Combatable) int {
 	return max(damage, 0)
 }
 
-func (c *Combat) shouldDodge(_ Combatable, defender Combatable) bool {
+func (c *AutoCombat) shouldDodge(_ Combatable, defender Combatable) bool {
 	randomNumber := util.GetRandomInt(100)
 	dodge := defender.GetDodge()
 	return randomNumber < dodge
 }
 
-func (c *Combat) removeCombatable(combatable Combatable) {
+func (c *AutoCombat) removeCombatable(combatable Combatable) {
 	switch combatable.GetCombatType() {
 	case ACTOR:
 		for i, actor := range c.actors {
@@ -184,7 +190,7 @@ func (c *Combat) removeCombatable(combatable Combatable) {
 	}
 }
 
-func (c *Combat) onCombatFinish() {
+func (c *AutoCombat) onCombatFinish() {
 	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage", c.turns, c.actorCastDamage, c.actorIncurDamage)
 	for _, actor := range c.actors {
 		result := CombatResult{LifeCost: c.actorIncurDamage}
@@ -192,7 +198,7 @@ func (c *Combat) onCombatFinish() {
 	}
 }
 
-func (c *Combat) getEnemyAsCombatable() []Combatable {
+func (c *AutoCombat) getEnemyAsCombatable() []Combatable {
 	enemies := make([]Combatable, len(c.enemies))
 	for i, enemy := range c.enemies {
 		enemies[i] = enemy
@@ -200,7 +206,7 @@ func (c *Combat) getEnemyAsCombatable() []Combatable {
 	return enemies
 }
 
-func (c *Combat) getActorAsCombatable() []Combatable {
+func (c *AutoCombat) getActorAsCombatable() []Combatable {
 	actors := make([]Combatable, len(c.actors))
 	for i, actor := range c.actors {
 		actors[i] = actor

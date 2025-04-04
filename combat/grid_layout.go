@@ -10,14 +10,14 @@ const (
 	GRID_HEIGHT = 6
 )
 
-type GridCombat struct {
-	*Combat
+type GridLayout struct {
+	*AutoCombat
 	pos2comb map[int]Combatable
 	comb2pos map[Combatable]int
 }
 
-func NewGridCombat(combat *Combat) *GridCombat {
-	g := &GridCombat{
+func NewGridCombat(combat *AutoCombat) *GridLayout {
+	g := &GridLayout{
 		combat,
 		make(map[int]Combatable),
 		make(map[Combatable]int),
@@ -26,12 +26,12 @@ func NewGridCombat(combat *Combat) *GridCombat {
 	return g
 }
 
-func (g *GridCombat) getComb(x, y int) Combatable {
+func (g *GridLayout) getComb(x, y int) Combatable {
 	idx := y*GRID_WIDTH + x
 	return g.pos2comb[idx]
 }
 
-func (g *GridCombat) ChooseDefender(attacker Combatable) Combatable {
+func (g *GridLayout) ChooseDefender(attacker Combatable) Combatable {
 	var near Combatable
 	if attacker.GetCombatType() == ACTOR {
 		near = g.getNearDefender(attacker, g.getEnemyAsCombatable())
@@ -43,7 +43,7 @@ func (g *GridCombat) ChooseDefender(attacker Combatable) Combatable {
 	return near
 }
 
-func (g *GridCombat) getNearDefender(attacker Combatable, defenders []Combatable) Combatable {
+func (g *GridLayout) getNearDefender(attacker Combatable, defenders []Combatable) Combatable {
 	attackRange := attacker.GetAttackRange()
 	if attackRange == 0 {
 		attackRange = GRID_WIDTH + GRID_HEIGHT
@@ -60,21 +60,21 @@ func (g *GridCombat) getNearDefender(attacker Combatable, defenders []Combatable
 	return near
 }
 
-func (g *GridCombat) getDistance(attacker Combatable, defender Combatable) int {
+func (g *GridLayout) getDistance(attacker Combatable, defender Combatable) int {
 	aX, aY := g.index2Cord(g.comb2pos[attacker])
 	dX, dY := g.index2Cord(g.comb2pos[defender])
 	return util.Abs(aX-dX) + util.Abs(aY-dY)
 }
 
-func (g *GridCombat) index2Cord(idx int) (int, int) {
+func (g *GridLayout) index2Cord(idx int) (int, int) {
 	return idx % GRID_WIDTH, idx / GRID_WIDTH
 }
 
-func (g *GridCombat) cord2Index(x, y int) int {
+func (g *GridLayout) cord2Index(x, y int) int {
 	return y*GRID_WIDTH + x
 }
 
-func (g *GridCombat) placeCombatables() {
+func (g *GridLayout) placeCombatables() {
 	for i := 0; i < len(g.combatables); i++ {
 		pos := util.GetRandomInt(GRID_WIDTH*GRID_HEIGHT*0.5 - 1)
 		if g.combatables[i].GetCombatType() == ENEMY {

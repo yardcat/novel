@@ -12,9 +12,10 @@ import (
 )
 
 type CombatSystem struct {
-	Monsters map[string]*combat.Enemy
-	Dungeons map[string]*combat.Dungeon
-	story    *Story
+	Monsters     map[string]*combat.Enemy
+	Dungeons     map[string]*combat.Dungeon
+	story        *Story
+	manualCombat *combat.AutoCombat
 }
 
 func NewCombatSystem() *CombatSystem {
@@ -27,10 +28,6 @@ func NewCombatSystem() *CombatSystem {
 
 func (c *CombatSystem) GetEnemy(name string) *combat.Enemy {
 	return c.Monsters[name]
-}
-
-func (c *CombatSystem) StartCombat(actors []*combat.Actor, enemies []*combat.Enemy) {
-	combat.NewCombat(actors, enemies, c).Start()
 }
 
 func (c *CombatSystem) ChallengeDungeon(name string) error {
@@ -50,8 +47,42 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	for _, group := range dg.Groups {
 		log.Info("start combat group %s", group.Name)
 		enemies := combat.CreateEnemyGroup(group)
-		combat.NewCombat(actors, enemies.Enemies, c).Start()
+		params := combat.CombatParams{
+			Actors:  actors,
+			Enemies: enemies.Enemies,
+			Client:  c,
+		}
+		combat.NewAutoCombat(&params).Start()
 	}
+	return nil
+}
+
+func (c *CombatSystem) ChallengeTower(name string) error {
+	player := c.story.GetPlayer("0")
+	player.AddCareer("doctor")
+	actor := combat.NewActor(player.GetCombatableBase(), player)
+	petName := "dog_pet"
+	player.AddPet(petName)
+	pet := player.GetPet(petName)
+	npcName := "SunWuKong"
+	player.AddNpc(npcName)
+	npc := player.GetNpc(npcName)
+	npcActor := combat.NewActor(npc.GetCombatableBase(), npc)
+	petActor := combat.NewActor(pet.GetCombatableBase(), pet)
+	actors := []*combat.Actor{actor, petActor, npcActor}
+	enimies := []*combat.Enemy{c.Monsters["pig"], c.Monsters["dog"]}
+	params := combat.CombatParams{
+		Actors:  actors,
+		Enemies: enimies,
+		Client:  c,
+	}
+	c.manualCombat = combat.NewManualCombat(&params)
+	c.manualCombat.Start()
+	return nil
+}
+
+func (c *CombatSystem) ContinueTower(name string) error {
+	c.manualCombat.Continue()
 	return nil
 }
 

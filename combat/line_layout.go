@@ -4,17 +4,17 @@ import (
 	"my_test/log"
 )
 
-type LineCombat struct {
-	*Combat
+type LineLayout struct {
+	*AutoCombat
 }
 
-func NewLineCombat(combat *Combat) *LineCombat {
-	return &LineCombat{
+func NewLineLayout(combat *AutoCombat) *LineLayout {
+	return &LineLayout{
 		combat,
 	}
 }
 
-func (c *LineCombat) ChooseDefender(attacker Combatable) Combatable {
+func (c *LineLayout) ChooseDefender(attacker Combatable) Combatable {
 	if attacker.GetCombatType() == ACTOR {
 		return c.enemies[0]
 	} else if attacker.GetCombatType() == ENEMY {
