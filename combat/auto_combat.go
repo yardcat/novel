@@ -6,50 +6,12 @@ import (
 	"my_test/util"
 )
 
-const (
-	MAX_STEP = 100.0
-)
-
-type CombatClient interface {
-	OnLose()
-	OnWin()
-	OnDraw()
-	OnKill(Combatable)
-	OnDead(Combatable)
-}
-
-type Record struct {
-	actorCastDamage  int
-	actorIncurDamage int
-	turns            int
-}
-
-type CombatResult struct {
-	LifeCost  int
-	MagicCost int
-}
-
-type CombatStrategy interface {
-	ChooseDefender(attacker Combatable) Combatable
-}
-
-type CombatParams struct {
-	Actors  []*Actor
-	Enemies []*Enemy
-	Client  CombatClient
-}
-
-type CombatOnceResult struct {
-	attackerDead bool
-	defenderDead bool
-}
-
 type AutoCombat struct {
 	combatables []Combatable
 	actors      []*Actor
 	enemies     []*Enemy
 	client      CombatClient
-	layout      CombatStrategy
+	layout      CombatLayout
 	Record
 }
 
@@ -69,7 +31,7 @@ func NewAutoCombat(p *CombatParams) *AutoCombat {
 		c.combatables[i] = enemy
 		i++
 	}
-	c.layout = NewGridCombat(c)
+	c.layout = NewGridLayout(c)
 	return c
 }
 
@@ -106,6 +68,18 @@ func (c *AutoCombat) Start() {
 		c.client.OnDraw()
 	}
 	c.onCombatFinish()
+}
+
+func (c *AutoCombat) Enemies() []*Enemy {
+	return c.enemies
+}
+
+func (c *AutoCombat) Actors() []*Actor {
+	return c.actors
+}
+
+func (c *AutoCombat) Combatables() []Combatable {
+	return c.combatables
 }
 
 func (c *AutoCombat) ChooseAttacker() Combatable {
@@ -196,20 +170,4 @@ func (c *AutoCombat) onCombatFinish() {
 		result := CombatResult{LifeCost: c.actorIncurDamage}
 		actor.OnCombatDone(result)
 	}
-}
-
-func (c *AutoCombat) getEnemyAsCombatable() []Combatable {
-	enemies := make([]Combatable, len(c.enemies))
-	for i, enemy := range c.enemies {
-		enemies[i] = enemy
-	}
-	return enemies
-}
-
-func (c *AutoCombat) getActorAsCombatable() []Combatable {
-	actors := make([]Combatable, len(c.actors))
-	for i, actor := range c.actors {
-		actors[i] = actor
-	}
-	return actors
 }

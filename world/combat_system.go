@@ -15,7 +15,7 @@ type CombatSystem struct {
 	Monsters     map[string]*combat.Enemy
 	Dungeons     map[string]*combat.Dungeon
 	story        *Story
-	manualCombat *combat.AutoCombat
+	manualCombat *combat.ManualCombat
 }
 
 func NewCombatSystem() *CombatSystem {
@@ -82,7 +82,8 @@ func (c *CombatSystem) ChallengeTower(name string) error {
 }
 
 func (c *CombatSystem) ContinueTower(name string) error {
-	c.manualCombat.Continue()
+	action := combat.Action{}
+	c.manualCombat.OneTurn(action)
 	return nil
 }
 

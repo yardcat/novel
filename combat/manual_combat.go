@@ -11,8 +11,13 @@ type ManualCombat struct {
 	actors      []*Actor
 	enemies     []*Enemy
 	client      CombatClient
-	strategy    CombatStrategy
+	strategy    CombatLayout
 	Record
+}
+
+type Action struct {
+	Cards    []int
+	Discards []int
 }
 
 func NewManualCombat(p *CombatParams) *ManualCombat {
@@ -31,7 +36,7 @@ func NewManualCombat(p *CombatParams) *ManualCombat {
 		c.combatables[i] = enemy
 		i++
 	}
-	c.strategy = NewGridCombat(c)
+	c.strategy = NewGridLayout(c)
 	return c
 }
 
@@ -68,6 +73,25 @@ func (c *ManualCombat) Start() {
 		c.client.OnDraw()
 	}
 	c.onCombatFinish()
+}
+
+func (c *ManualCombat) Enemies() []*Enemy {
+	return c.enemies
+}
+
+func (c *ManualCombat) Actors() []*Actor {
+	return c.actors
+}
+
+func (c *ManualCombat) Combatables() []Combatable {
+	return c.combatables
+}
+
+func (c *ManualCombat) OneTurn(action Action) {
+	for _, card := range action.Cards {
+	}
+	for _, discard := range action.Discards {
+	}
 }
 
 func (c *ManualCombat) ChooseAttacker() Combatable {
@@ -158,20 +182,4 @@ func (c *ManualCombat) onCombatFinish() {
 		result := CombatResult{LifeCost: c.actorIncurDamage}
 		actor.OnCombatDone(result)
 	}
-}
-
-func (c *ManualCombat) getEnemyAsCombatable() []Combatable {
-	enemies := make([]Combatable, len(c.enemies))
-	for i, enemy := range c.enemies {
-		enemies[i] = enemy
-	}
-	return enemies
-}
-
-func (c *ManualCombat) getActorAsCombatable() []Combatable {
-	actors := make([]Combatable, len(c.actors))
-	for i, actor := range c.actors {
-		actors[i] = actor
-	}
-	return actors
 }

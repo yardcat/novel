@@ -11,12 +11,12 @@ const (
 )
 
 type GridLayout struct {
-	*AutoCombat
+	combat   Combat
 	pos2comb map[int]Combatable
 	comb2pos map[Combatable]int
 }
 
-func NewGridCombat(combat *AutoCombat) *GridLayout {
+func NewGridLayout(combat Combat) *GridLayout {
 	g := &GridLayout{
 		combat,
 		make(map[int]Combatable),
@@ -75,9 +75,10 @@ func (g *GridLayout) cord2Index(x, y int) int {
 }
 
 func (g *GridLayout) placeCombatables() {
-	for i := 0; i < len(g.combatables); i++ {
+	for i := 0; i < len(g.combat.Combatables()); i++ {
 		pos := util.GetRandomInt(GRID_WIDTH*GRID_HEIGHT*0.5 - 1)
-		if g.combatables[i].GetCombatType() == ENEMY {
+		combatables := g.combat.Combatables()
+		if combatables[i].GetCombatType() == ENEMY {
 			pos += GRID_WIDTH * GRID_HEIGHT * 0.5
 		}
 		_, exist := g.pos2comb[pos]
@@ -85,7 +86,23 @@ func (g *GridLayout) placeCombatables() {
 			i--
 			continue
 		}
-		g.pos2comb[pos] = g.combatables[i]
-		g.comb2pos[g.combatables[i]] = pos
+		g.pos2comb[pos] = combatables[i]
+		g.comb2pos[combatables[i]] = pos
 	}
+}
+
+func (c *GridLayout) getEnemyAsCombatable() []Combatable {
+	enemies := make([]Combatable, len(c.combat.Enemies()))
+	for i, enemy := range enemies {
+		enemies[i] = enemy
+	}
+	return enemies
+}
+
+func (c *GridLayout) getActorAsCombatable() []Combatable {
+	actors := make([]Combatable, len(c.combat.Actors()))
+	for i, actor := range actors {
+		actors[i] = actor
+	}
+	return actors
 }

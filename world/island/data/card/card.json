@@ -1,0 +1,10 @@
+{
+  "ci": {
+    "name": "ci",
+    "description": "ci",
+    "attributes": {
+      "attack": 10,
+      "power": 10
+    }
+  }
+}

@@ -5,20 +5,20 @@ import (
 )
 
 type LineLayout struct {
-	*AutoCombat
+	combat Combat
 }
 
-func NewLineLayout(combat *AutoCombat) *LineLayout {
+func NewLineCombat(combat Combat) *LineLayout {
 	return &LineLayout{
-		combat,
+		combat: combat,
 	}
 }
 
 func (c *LineLayout) ChooseDefender(attacker Combatable) Combatable {
 	if attacker.GetCombatType() == ACTOR {
-		return c.enemies[0]
+		return c.combat.Enemies()[0]
 	} else if attacker.GetCombatType() == ENEMY {
-		return c.actors[0]
+		return c.combat.Actors()[0]
 	} else {
 		log.Info("unknown attacker type %d", attacker.GetCombatType())
 	}
