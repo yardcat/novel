@@ -6,26 +6,28 @@ import (
 	"my_test/util"
 )
 
-type ManualCombat struct {
+type CardCombat struct {
 	combatables []Combatable
 	actors      []*Actor
 	enemies     []*Enemy
 	client      CombatClient
 	strategy    CombatLayout
 	Record
+	cardSystem *CardSystem
 }
 
 type Action struct {
-	Cards    []int
-	Discards []int
+	Cards    []string
+	Discards []string
 }
 
-func NewManualCombat(p *CombatParams) *ManualCombat {
-	c := &ManualCombat{
+func NewCardCombat(p *CombatParams) *CardCombat {
+	c := &CardCombat{
 		actors:      p.Actors,
 		enemies:     p.Enemies,
 		client:      p.Client,
 		combatables: make([]Combatable, len(p.Actors)+len(p.Enemies)),
+		cardSystem:  NewCardSystem(),
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -40,7 +42,7 @@ func NewManualCombat(p *CombatParams) *ManualCombat {
 	return c
 }
 
-func (c *ManualCombat) Start() {
+func (c *CardCombat) Start() {
 	for len(c.actors) > 0 && len(c.enemies) > 0 {
 		attacker := c.ChooseAttacker()
 		defender := c.strategy.ChooseDefender(attacker)
@@ -75,26 +77,48 @@ func (c *ManualCombat) Start() {
 	c.onCombatFinish()
 }
 
-func (c *ManualCombat) Enemies() []*Enemy {
-	return c.enemies
+func (c *CardCombat) Enemies() []Combatable {
+	result := make([]Combatable, len(c.enemies))
+	for i, enemy := range c.enemies {
+		result[i] = enemy
+	}
+	return result
 }
 
-func (c *ManualCombat) Actors() []*Actor {
-	return c.actors
+func (c *CardCombat) Actors() []Combatable {
+	result := make([]Combatable, len(c.actors))
+	for i, actor := range c.actors {
+		result[i] = actor
+	}
+	return result
 }
 
-func (c *ManualCombat) Combatables() []Combatable {
+func (c *CardCombat) Combatables() []Combatable {
 	return c.combatables
 }
 
-func (c *ManualCombat) OneTurn(action Action) {
-	for _, card := range action.Cards {
+func (c *CardCombat) RunOneTurn(action Action) {
+	cardsToUse := []*Card{}
+	for _, name := range action.Cards {
+		card := c.cardSystem.GetCard(name)
+		if card != nil {
+			cardsToUse = append(cardsToUse, card)
+		}
 	}
-	for _, discard := range action.Discards {
+
+	if len(cardsToUse) > 0 {
+		c.cardSystem.Use(cardsToUse, c.Actors(), c.Enemies())
+	}
+
+	for _, discardName := range action.Discards {
+		card := c.cardSystem.GetCard(discardName)
+		if card != nil {
+			c.cardSystem.DiscardCard(card)
+		}
 	}
 }
 
-func (c *ManualCombat) ChooseAttacker() Combatable {
+func (c *CardCombat) ChooseAttacker() Combatable {
 	fast := MAX_STEP
 	fast_idx := 0
 	for i, comb := range c.combatables {
@@ -111,7 +135,7 @@ func (c *ManualCombat) ChooseAttacker() Combatable {
 	return c.combatables[fast_idx]
 }
 
-func (c *ManualCombat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
+func (c *CardCombat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
 	attacker.OnAttack(defender)
 	damage := c.cacDamage(attacker, defender)
 	if c.shouldDodge(attacker, defender) {
@@ -135,7 +159,7 @@ func (c *ManualCombat) CombatOnce(attacker Combatable, defender Combatable, isAc
 	}
 }
 
-func (c *ManualCombat) cacDamage(attacker Combatable, defender Combatable) int {
+func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {
 	attack := attacker.GetAttack()
 	defense := defender.GetDefense()
 	damage_reduce_factor := 0.0
@@ -143,13 +167,13 @@ func (c *ManualCombat) cacDamage(attacker Combatable, defender Combatable) int {
 	return max(damage, 0)
 }
 
-func (c *ManualCombat) shouldDodge(_ Combatable, defender Combatable) bool {
+func (c *CardCombat) shouldDodge(_ Combatable, defender Combatable) bool {
 	randomNumber := util.GetRandomInt(100)
 	dodge := defender.GetDodge()
 	return randomNumber < dodge
 }
 
-func (c *ManualCombat) removeCombatable(combatable Combatable) {
+func (c *CardCombat) removeCombatable(combatable Combatable) {
 	switch combatable.GetCombatType() {
 	case ACTOR:
 		for i, actor := range c.actors {
@@ -176,7 +200,7 @@ func (c *ManualCombat) removeCombatable(combatable Combatable) {
 	}
 }
 
-func (c *ManualCombat) onCombatFinish() {
+func (c *CardCombat) onCombatFinish() {
 	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage", c.turns, c.actorCastDamage, c.actorIncurDamage)
 	for _, actor := range c.actors {
 		result := CombatResult{LifeCost: c.actorIncurDamage}

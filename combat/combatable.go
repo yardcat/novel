@@ -30,14 +30,19 @@ type CombatableBase struct {
 	AttackStep  float64
 	Attack      int
 	Life        int
+	MaxLife     int
 	Defense     int
 	Dodge       int
 	CombatType  int
+	Statuses    []Status
 }
 
 func NewCombatableBase(id int, name string) *CombatableBase {
 	return &CombatableBase{
-		Name: name,
+		Name:     name,
+		Statuses: []Status{},
+		MaxLife:  100,
+		Life:     100,
 	}
 }
 
@@ -80,6 +85,19 @@ func (c *CombatableBase) OnAttack(defender Combatable) {
 }
 
 func (c *CombatableBase) OnDamage(damage int, attacker Combatable) {
+	vulnerable := c.GetStatusValue(STATUS_VULNERABLE)
+	if vulnerable > 0 {
+		damage = int(float64(damage) * 1.5)
+	}
+
+	weak := c.GetStatusValue(STATUS_WEAK)
+	if weak > 0 {
+		damage = int(float64(damage) * 0.75)
+	}
+
+	defense := c.GetStatusValue(STATUS_DEFENSE)
+	damage = max(0, damage-defense)
+
 	c.Life -= damage
 }
 
@@ -89,4 +107,35 @@ func (c *CombatableBase) OnDead(Combatable) {
 
 func (c *CombatableBase) OnKill(Combatable) {
 
+}
+
+func (c *CombatableBase) AddStatus(status Status) {
+	c.Statuses = append(c.Statuses, status)
+}
+
+func (c *CombatableBase) RemoveStatus(statusType int) {
+	for i := len(c.Statuses) - 1; i >= 0; i-- {
+		if c.Statuses[i].Type == statusType {
+			c.Statuses = append(c.Statuses[:i], c.Statuses[i+1:]...)
+		}
+	}
+}
+
+func (c *CombatableBase) GetStatusValue(statusType int) int {
+	value := 0
+	for _, status := range c.Statuses {
+		if status.Type == statusType {
+			value += status.Value
+		}
+	}
+	return value
+}
+
+func (c *CombatableBase) UpdateStatus() {
+	for i := len(c.Statuses) - 1; i >= 0; i-- {
+		c.Statuses[i].Turn--
+		if c.Statuses[i].Turn <= 0 {
+			c.Statuses = append(c.Statuses[:i], c.Statuses[i+1:]...)
+		}
+	}
 }

@@ -40,7 +40,13 @@ type CombatOnceResult struct {
 
 type Combat interface {
 	Start()
-	Actors() []*Actor
-	Enemies() []*Enemy
+	Actors() []Combatable
+	Enemies() []Combatable
 	Combatables() []Combatable
+}
+
+type Status struct {
+	Type  int
+	Value int
+	Turn  int
 }
