@@ -16,8 +16,8 @@ type ManualCombat struct {
 }
 
 type Action struct {
-	Cards    []int
-	Discards []int
+	Cards    []string
+	Discards []string
 }
 
 func NewManualCombat(p *CombatParams) *ManualCombat {
