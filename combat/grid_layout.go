@@ -34,9 +34,9 @@ func (g *GridLayout) getComb(x, y int) Combatable {
 func (g *GridLayout) ChooseDefender(attacker Combatable) Combatable {
 	var near Combatable
 	if attacker.GetCombatType() == ACTOR {
-		near = g.getNearDefender(attacker, g.getEnemyAsCombatable())
+		near = g.getNearDefender(attacker, g.combat.Enemies())
 	} else if attacker.GetCombatType() == ENEMY {
-		near = g.getNearDefender(attacker, g.getActorAsCombatable())
+		near = g.getNearDefender(attacker, g.combat.Enemies())
 	} else {
 		log.Info("unknown attacker type %d", attacker.GetCombatType())
 	}
@@ -89,20 +89,4 @@ func (g *GridLayout) placeCombatables() {
 		g.pos2comb[pos] = combatables[i]
 		g.comb2pos[combatables[i]] = pos
 	}
-}
-
-func (c *GridLayout) getEnemyAsCombatable() []Combatable {
-	enemies := make([]Combatable, len(c.combat.Enemies()))
-	for i, enemy := range enemies {
-		enemies[i] = enemy
-	}
-	return enemies
-}
-
-func (c *GridLayout) getActorAsCombatable() []Combatable {
-	actors := make([]Combatable, len(c.combat.Actors()))
-	for i, actor := range actors {
-		actors[i] = actor
-	}
-	return actors
 }

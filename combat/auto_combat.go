@@ -70,12 +70,20 @@ func (c *AutoCombat) Start() {
 	c.onCombatFinish()
 }
 
-func (c *AutoCombat) Enemies() []*Enemy {
-	return c.enemies
+func (c *AutoCombat) Enemies() []Combatable {
+	result := make([]Combatable, len(c.enemies))
+	for i, enemy := range c.enemies {
+		result[i] = enemy
+	}
+	return result
 }
 
-func (c *AutoCombat) Actors() []*Actor {
-	return c.actors
+func (c *AutoCombat) Actors() []Combatable {
+	result := make([]Combatable, len(c.actors))
+	for i, actor := range c.actors {
+		result[i] = actor
+	}
+	return result
 }
 
 func (c *AutoCombat) Combatables() []Combatable {
