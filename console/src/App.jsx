@@ -4,6 +4,7 @@ import { PlayerInfo } from './PlayerInfo';
 import { Bag } from './Bag';
 import { Action } from './Action';
 import { Chat } from './Chat';
+import { Deck } from './Deck';
 import { socket } from './Socket';
 import { initConfig } from './Config';
 import { Layout } from 'antd';
@@ -42,8 +43,11 @@ const App = () => {
         </Sider>
         <Content>
           <Chat></Chat>
-          <Action addApiHandler={addApiHandler} actions={actions}></Action>
+          <Deck addApiHandler={addApiHandler} actions={actions}></Deck>
         </Content>
+        <Sider width="20%">
+          <Action addApiHandler={addApiHandler} actions={actions}></Action>
+        </Sider>
       </Layout>
     </Layout>
   );
