@@ -41,10 +41,33 @@ func (w *World) GetUiInfo(c *gin.Context) {
 }
 
 func (w *World) CardStart(c *gin.Context) {
-	w.story.ChallengeTower()
-	jsonStr, err := json.Marshal()
+	event := &world.StartCardEvent{}
+	replay := w.story.ChallengeTower(event)
+	jsonStr, err := json.Marshal(replay)
 	if err != nil {
-		log.Info("GetUiInfo json marshal err %v", err)
+		log.Info("CardStart json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
+}
+
+func (w *World) CardTurnStart(c *gin.Context) {
+	event := &world.CardTurnStartEvent{}
+	replay := w.story.ChallengeTower(event)
+	jsonStr, err := json.Marshal(replay)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+
+}
+
+func (w *World) CardTurnEnd(c *gin.Context) {
+	start := &world.CardTurnEndEvent{}
+	replay := w.story.ChallengeTower(start)
+	jsonStr, err := json.Marshal(replay)
+	if err != nil {
+		log.Info("CardTurnEnd json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+
 }

@@ -48,7 +48,7 @@ const MyCard = ({ name, isSelected, onClick }) => {
 
 const Deck = () => {
   const [turnInfo, setTurnInfo] = useState({
-    handCard: ['1', '2'],
+    handCard: [],
   });
   const [drawCount, setDrawCount] = useState(0);
   const [selectedCards, setSelectedCards] = useState([]);

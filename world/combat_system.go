@@ -81,9 +81,15 @@ func (c *CombatSystem) ChallengeTower(name *StartCardEvent) error {
 	return nil
 }
 
-func (c *CombatSystem) ContinueTower(name string) error {
+func (c *CombatSystem) StartTurn(ev *CardTurnStartEvent) *CardTurnStartEventReply {
 	action := combat.Action{}
-	c.manualCombat.RunOneTurn(action)
+	c.manualCombat.StartTurn(action)
+	return nil
+}
+
+func (c *CombatSystem) EndTurn(ev *CardTurnEndEvent) *CardTurnEndEventReply {
+	action := combat.Action{}
+	c.manualCombat.EndTurn(action)
 	return nil
 }
 

@@ -313,4 +313,15 @@ func (s *Story) ChallengeDungeon(name string) {
 
 func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
 	s.combatSystem.ChallengeTower(ev)
+	return StartCardEventReply{}
+}
+
+func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
+	s.combatSystem.ChallengeTower(ev)
+	return StartCardEventReply{}
+}
+
+func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
+	s.combatSystem.ChallengeTower(ev)
+	return StartCardEventReply{}
 }

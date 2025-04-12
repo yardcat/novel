@@ -97,7 +97,28 @@ func (c *CardCombat) Combatables() []Combatable {
 	return c.combatables
 }
 
-func (c *CardCombat) RunOneTurn(action Action) {
+func (c *CardCombat) StartTurn(action Action) {
+	cardsToUse := []*Card{}
+	for _, name := range action.Cards {
+		card := c.cardSystem.GetCard(name)
+		if card != nil {
+			cardsToUse = append(cardsToUse, card)
+		}
+	}
+
+	if len(cardsToUse) > 0 {
+		c.cardSystem.Use(cardsToUse, c.Actors(), c.Enemies())
+	}
+
+	for _, discardName := range action.Discards {
+		card := c.cardSystem.GetCard(discardName)
+		if card != nil {
+			c.cardSystem.DiscardCard(card)
+		}
+	}
+}
+
+func (c *CardCombat) EndTurn(action Action) {
 	cardsToUse := []*Card{}
 	for _, name := range action.Cards {
 		card := c.cardSystem.GetCard(name)
