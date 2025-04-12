@@ -39,3 +39,12 @@ func (w *World) GetUiInfo(c *gin.Context) {
 	}
 	c.JSON(200, string(jsonStr))
 }
+
+func (w *World) CardStart(c *gin.Context) {
+	w.story.ChallengeTower()
+	jsonStr, err := json.Marshal()
+	if err != nil {
+		log.Info("GetUiInfo json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+}

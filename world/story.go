@@ -88,7 +88,6 @@ func (s *Story) Init() {
 	s.careerSystem = NewCareerSystem(s)
 	s.exploreSystem = NewExploreSystem(s)
 	s.combatSystem = NewCombatSystem()
-	s.combatSystem.ChallengeDungeon("test")
 	s.RegisterEventHandler()
 	NewFarm(s)
 }
@@ -306,4 +305,12 @@ func (s *Story) HandleDayEvent(action string, params map[string]string) {
 
 func (s *Story) GetCollectable() []string {
 	return s.itemSystem.GetCollectable()
+}
+
+func (s *Story) ChallengeDungeon(name string) {
+	s.combatSystem.ChallengeDungeon(name)
+}
+
+func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
+	s.combatSystem.ChallengeTower(ev)
 }

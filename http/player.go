@@ -60,3 +60,11 @@ func (u *Player) Fish(c *gin.Context) {
 		c.JSON(200, response)
 	})
 }
+
+func (u *Player) StartCard(c *gin.Context) {
+	log.Info("sell")
+	time := c.PostForm("time")
+	world.GetStory().PostReplyEvent("ChallengeSub", time, func(response string) {
+		c.JSON(200, response)
+	})
+}

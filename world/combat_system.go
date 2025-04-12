@@ -57,7 +57,7 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	return nil
 }
 
-func (c *CombatSystem) ChallengeTower(name string) error {
+func (c *CombatSystem) ChallengeTower(name *StartCardEvent) error {
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)

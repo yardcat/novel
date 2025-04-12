@@ -33,3 +33,27 @@ type CollectEventReply struct {
 type CombatWinEvent struct {
 	Result string
 }
+
+type StartCardEvent struct {
+	Event string
+}
+
+type StartCardEventReply struct {
+	Card string
+}
+
+type CardTurnStartEvent struct {
+	Card string
+}
+
+type CardTurnStartEventReply struct {
+	Card string
+}
+
+type CardTurnEndEvent struct {
+	Card string
+}
+
+type CardTurnEndEventReply struct {
+	Card string
+}

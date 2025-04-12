@@ -29,6 +29,9 @@ func NewGinRouter() *gin.Engine {
 	worldRouterGroup := r.Group("/world")
 	{
 		worldRouterGroup.POST("/get_ui_info", w.GetUiInfo)
+		worldRouterGroup.POST("/card_start", w.CardStart)
+		worldRouterGroup.POST("/card_turn_start", w.GetUiInfo)
+		worldRouterGroup.POST("/card_turn_end", w.GetUiInfo)
 	}
 
 	return r
