@@ -27,9 +27,14 @@ type CombatLayout interface {
 	ChooseDefender(attacker Combatable) Combatable
 }
 
+type PathProvider interface {
+	GetPath(path string) string
+}
+
 type CombatParams struct {
 	Actors  []*Actor
 	Enemies []*Enemy
+	Path    PathProvider
 	Client  CombatClient
 }
 

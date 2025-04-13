@@ -1,7 +1,10 @@
 package combat
 
 import (
+	"encoding/json"
 	"my_test/util"
+	"os"
+	"path/filepath"
 )
 
 const (
@@ -43,29 +46,51 @@ type Card struct {
 	Effects     []CardEffect `json:"effects"`
 }
 
-type CardSystem struct {
-	cards   map[string]*Card
-	deck    []*Card
-	hand    []*Card
-	discard []*Card
-	remove  []*Card
+type CardCareer struct {
+	InitCards []*Card
 }
 
-func NewCardSystem() *CardSystem {
-	return &CardSystem{
-		cards: make(map[string]*Card),
-		deck:  make([]*Card, 0),
+type CardTurnInfo struct {
+	Cards        []string
+	DrawCount    int
+	DiscardCount int
+	RemoveCount  int
+	Energy       int
+}
+
+func (c *CardCombat) GetCard(name string) *Card {
+	return c.cardMap[name]
+}
+
+func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
+	info := &CardTurnInfo{
+		Cards:        make([]string, len(c.Hand)),
+		DrawCount:    len(c.deck),
+		DiscardCount: len(c.discard),
+		RemoveCount:  len(c.remove),
+		Energy:       c.energy,
 	}
+	for i, card := range c.Hand {
+		info.Cards[i] = card.Name
+	}
+	return info
 }
 
-func (c *CardSystem) GetCard(name string) *Card {
-	return c.cards[name]
+func (c *CardCombat) PrepareCard() {
+	career := c.careerMap["kongfu"]
+	c.deck = append(c.deck, career.InitCards...)
+	c.ShuffleDeck()
+	c.DrawCard(c.maxCard)
 }
 
-func (c *CardSystem) AddCard() {
+func (c *CardCombat) GenerateChooseEvents() []string {
+	return []string{"strength", "max_health", "draw_card"}
 }
 
-func (c *CardSystem) DrawCard(n int) []*Card {
+func (c *CardCombat) HandleChooseEvents(event string) {
+}
+
+func (c *CardCombat) DrawCard(n int) []*Card {
 	cards := make([]*Card, 0, n)
 
 	for i := 0; i < n; i++ {
@@ -73,38 +98,41 @@ func (c *CardSystem) DrawCard(n int) []*Card {
 			if len(c.discard) == 0 {
 				break
 			}
-			c.ShuffleDiscardPile()
+			c.deck = append(c.deck, c.discard...)
+			c.discard = make([]*Card, 0)
+			c.ShuffleDeck()
 		}
 		card := c.deck[0]
 		c.deck = c.deck[1:]
-		c.hand = append(c.hand, card)
+		c.Hand = append(c.Hand, card)
 		cards = append(cards, card)
 	}
 
 	return cards
 }
 
-func (c *CardSystem) DiscardCard(card *Card) {
-	for i, v := range c.hand {
+func (c *CardCombat) DiscardCard(card *Card) {
+	for i, v := range c.Hand {
 		if v == card {
-			c.hand = append(c.hand[:i], c.hand[i+1:]...)
+			c.Hand = append(c.Hand[:i], c.Hand[i+1:]...)
 			c.discard = append(c.discard, card)
 			return
 		}
 	}
 }
 
-func (c *CardSystem) ShuffleDiscardPile() {
-	c.deck = append(c.deck, c.discard...)
-	c.discard = nil
+func (c *CardCombat) RemoveCard(card *Card) {
+	c.remove = append(c.remove, card)
+}
 
+func (c *CardCombat) ShuffleDeck() {
 	for i := len(c.deck) - 1; i > 0; i-- {
 		j := util.GetRandomInt(i + 1)
 		c.deck[i], c.deck[j] = c.deck[j], c.deck[i]
 	}
 }
 
-func (c *CardSystem) Use(cards []*Card, actors []Combatable, enemies []Combatable) {
+func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatable) {
 	for _, card := range cards {
 		for _, effect := range card.Effects {
 			switch effect.Effect {
@@ -166,4 +194,51 @@ func (c *CardSystem) Use(cards []*Card, actors []Combatable, enemies []Combatabl
 			}
 		}
 	}
+}
+
+func (c *CardCombat) loadData(dir string) error {
+	err := c.loadCard(filepath.Join(dir, "card.json"))
+	if err != nil {
+		return err
+	}
+	err = c.loadCareer(filepath.Join(dir, "career.json"))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CardCombat) loadCard(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &c.cardMap)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CardCombat) loadCareer(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	adapter := map[string]struct {
+		Cards []string `json:"init_cards"`
+	}{}
+	err = json.Unmarshal(data, &adapter)
+	for k, v := range adapter {
+		c.careerMap[k] = &CardCareer{
+			InitCards: make([]*Card, 0, len(v.Cards)),
+		}
+		for _, card := range v.Cards {
+			c.careerMap[k].InitCards = append(c.careerMap[k].InitCards, c.cardMap[card])
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }

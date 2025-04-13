@@ -311,17 +311,17 @@ func (s *Story) ChallengeDungeon(name string) {
 	s.combatSystem.ChallengeDungeon(name)
 }
 
-func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
-	s.combatSystem.ChallengeTower(ev)
-	return StartCardEventReply{}
+func (s *Story) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
+	log.Info("challenge tower %s", ev.Difficulty)
+	return s.combatSystem.ChallengeTower(ev)
 }
 
-func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
-	s.combatSystem.ChallengeTower(ev)
-	return StartCardEventReply{}
+func (s *Story) StartTurn(ev *CardTurnStartEvent) *CardTurnStartEventReply {
+	s.combatSystem.StartTurn(ev)
+	return nil
 }
 
-func (s *Story) ChallengeTower(ev *StartCardEvent) StartCardEventReply {
-	s.combatSystem.ChallengeTower(ev)
-	return StartCardEventReply{}
+func (s *Story) EndTurn(ev *CardTurnEndEvent) *CardTurnEndEventReply {
+	s.combatSystem.EndTurn(ev)
+	return nil
 }

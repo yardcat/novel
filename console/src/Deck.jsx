@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Badge, Card, Button, Tag } from 'antd';
+import { message, Select, Badge, Card, Button, Tag, Modal, Radio } from 'antd';
 import { Config } from './Config';
 import { CallAPI } from './Net';
 
 class StartInfo {
-  actor = {};
-  enemy = {};
-  handCard = [];
+  difficuty = '';
 }
 
 class RecvTurnInfo {
-  handCard = [];
+  handCards = [];
   discardCard = 0;
   deckCard = 0;
   health = 0;
@@ -48,10 +46,16 @@ const MyCard = ({ name, isSelected, onClick }) => {
 
 const Deck = () => {
   const [turnInfo, setTurnInfo] = useState({
-    handCard: [],
+    handCards: [],
   });
   const [drawCount, setDrawCount] = useState(0);
+  const [discardCount, setDiscardCount] = useState(0);
+  const [difficuty, setDifficuty] = useState('Difficuty');
   const [selectedCards, setSelectedCards] = useState([]);
+  const [chooseEvents, setChooseEvents] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -62,9 +66,20 @@ const Deck = () => {
   };
 
   const startPlay = () => {
-    const sendTurnInfo = new SendTurnInfo();
-    sendTurnInfo.useCard = selectedCards;
-    CallAPI('card/start', (startInfo) => {});
+    if (difficuty === 'Difficuty') {
+      message.error('Please select difficuty');
+      return;
+    }
+    const sendTurnInfo = new StartInfo();
+    sendTurnInfo.difficuty = difficuty;
+    CallAPI('world/card_start', {}, (reply) => {
+      setTurnInfo(reply);
+      setDrawCount(reply.deckCount);
+      setDiscardCount(0);
+      setChooseEvents(reply.events);
+      setIsModalVisible(true);
+      setIsPlaying(true); // 设置为正在游戏中
+    });
   };
 
   const sendTurnInfo = () => {
@@ -77,6 +92,15 @@ const Deck = () => {
     const sendTurnInfo = new SendTurnInfo();
     sendTurnInfo.useCard = [1, 2, 3];
     CallAPI('card/end_turn', () => {});
+  };
+
+  const handleOk = () => {
+    console.log('Selected Event:', selectedEvent);
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
   };
 
   return (
@@ -93,27 +117,47 @@ const Deck = () => {
         </Card>
 
         <div style={{ display: 'flex', flexDirection: 'row', width: '80%' }}>
-          {turnInfo.handCard &&
-            turnInfo.handCard.map((card) => (
+          {turnInfo.handCards &&
+            turnInfo.handCards.map((name, idx) => (
               <MyCard
-                key={card}
-                name={card}
-                isSelected={selectedCards.includes(card)}
-                onClick={() => toggleCardSelection(card)}
+                key={idx}
+                name={name}
+                isSelected={selectedCards.includes(idx)}
+                onClick={() => toggleCardSelection(idx)}
               />
             ))}
         </div>
 
         <Card>
-          <h3>Discard Area</h3>
+          discard
+          <h3>{discardCount}</h3>
         </Card>
       </div>
 
       <Card>
-        <Button onClick={startPlay}>Start</Button>
-        <Button onClick={sendTurnInfo}>Send</Button>
-        <Button onClick={endPlay}>End Turn</Button>
+        <Select defaultValue="Difficuty" onChange={setDifficuty}>
+          <Select.Option value="Easy">Easy</Select.Option>
+          <Select.Option value="Normal">Normal</Select.Option>
+          <Select.Option value="Hard">Hard</Select.Option>
+        </Select>
+        {!isPlaying && <Button onClick={startPlay}>Start</Button>}
+        {isPlaying && (
+          <>
+            <Button onClick={sendTurnInfo}>Send</Button>
+            <Button onClick={endPlay}>End Turn</Button>
+          </>
+        )}
       </Card>
+
+      <Modal title="Choose Event" open={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+        <Radio.Group onChange={(e) => setSelectedEvent(e.target.value)} value={selectedEvent}>
+          {chooseEvents.map((event, index) => (
+            <Radio key={index} value={event}>
+              {event}
+            </Radio>
+          ))}
+        </Radio.Group>
+      </Modal>
     </Card>
   );
 };

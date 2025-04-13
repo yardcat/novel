@@ -1,9 +1,13 @@
 package combat
 
 import (
-	"fmt"
 	"my_test/log"
 	"my_test/util"
+)
+
+const (
+	CARD_COUNT  = 3
+	ENERGY_INIT = 3
 )
 
 type CardCombat struct {
@@ -11,9 +15,15 @@ type CardCombat struct {
 	actors      []*Actor
 	enemies     []*Enemy
 	client      CombatClient
-	strategy    CombatLayout
 	Record
-	cardSystem *CardSystem
+	cardMap   map[string]*Card
+	careerMap map[string]*CardCareer
+	deck      []*Card
+	Hand      []*Card
+	discard   []*Card
+	remove    []*Card
+	maxCard   int
+	energy    int
 }
 
 type Action struct {
@@ -27,7 +37,11 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 		enemies:     p.Enemies,
 		client:      p.Client,
 		combatables: make([]Combatable, len(p.Actors)+len(p.Enemies)),
-		cardSystem:  NewCardSystem(),
+		cardMap:     make(map[string]*Card),
+		careerMap:   make(map[string]*CardCareer),
+		deck:        make([]*Card, 0),
+		maxCard:     CARD_COUNT,
+		energy:      ENERGY_INIT,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -38,43 +52,22 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 		c.combatables[i] = enemy
 		i++
 	}
-	c.strategy = NewGridLayout(c)
+
+	err := c.loadData(p.Path.GetPath("card"))
+	if err != nil {
+		panic(err)
+	}
 	return c
 }
 
-func (c *CardCombat) Start() {
-	for len(c.actors) > 0 && len(c.enemies) > 0 {
-		attacker := c.ChooseAttacker()
-		defender := c.strategy.ChooseDefender(attacker)
-		if defender == nil {
-			log.Info("attacker %s can't find defender", attacker.GetName())
-			continue
-		}
-		isActorAttacker := attacker.GetCombatType() == ACTOR
-		result := c.CombatOnce(attacker, defender, isActorAttacker)
-		c.turns++
-		if result.attackerDead {
-			defender.OnKill(attacker)
-			attacker.OnDead(defender)
-			c.removeCombatable(attacker)
-		}
-		if result.defenderDead {
-			attacker.OnKill(defender)
-			defender.OnDead(attacker)
-			c.removeCombatable(defender)
-		}
-	}
-	if len(c.actors) != 0 {
-		fmt.Println("win")
-		c.client.OnWin()
-	} else if len(c.enemies) != 0 {
-		fmt.Println("lose")
-		c.client.OnLose()
-	} else {
-		fmt.Println("draw")
-		c.client.OnDraw()
-	}
-	c.onCombatFinish()
+func (c *CardCombat) Start(difficuty string) error {
+	log.Info("start card, difficulty:%s", difficuty)
+	c.PrepareCard()
+	return nil
+}
+
+func (c *CardCombat) ChooseDefender(attacker Combatable) Combatable {
+	return c.enemies[0]
 }
 
 func (c *CardCombat) Enemies() []Combatable {
@@ -100,20 +93,20 @@ func (c *CardCombat) Combatables() []Combatable {
 func (c *CardCombat) StartTurn(action Action) {
 	cardsToUse := []*Card{}
 	for _, name := range action.Cards {
-		card := c.cardSystem.GetCard(name)
+		card := c.GetCard(name)
 		if card != nil {
 			cardsToUse = append(cardsToUse, card)
 		}
 	}
 
 	if len(cardsToUse) > 0 {
-		c.cardSystem.Use(cardsToUse, c.Actors(), c.Enemies())
+		c.Use(cardsToUse, c.Actors(), c.Enemies())
 	}
 
 	for _, discardName := range action.Discards {
-		card := c.cardSystem.GetCard(discardName)
+		card := c.GetCard(discardName)
 		if card != nil {
-			c.cardSystem.DiscardCard(card)
+			c.DiscardCard(card)
 		}
 	}
 }
@@ -121,20 +114,20 @@ func (c *CardCombat) StartTurn(action Action) {
 func (c *CardCombat) EndTurn(action Action) {
 	cardsToUse := []*Card{}
 	for _, name := range action.Cards {
-		card := c.cardSystem.GetCard(name)
+		card := c.GetCard(name)
 		if card != nil {
 			cardsToUse = append(cardsToUse, card)
 		}
 	}
 
 	if len(cardsToUse) > 0 {
-		c.cardSystem.Use(cardsToUse, c.Actors(), c.Enemies())
+		c.Use(cardsToUse, c.Actors(), c.Enemies())
 	}
 
 	for _, discardName := range action.Discards {
-		card := c.cardSystem.GetCard(discardName)
+		card := c.GetCard(discardName)
 		if card != nil {
-			c.cardSystem.DiscardCard(card)
+			c.DiscardCard(card)
 		}
 	}
 }

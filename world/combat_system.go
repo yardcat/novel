@@ -12,10 +12,10 @@ import (
 )
 
 type CombatSystem struct {
-	Monsters     map[string]*combat.Enemy
-	Dungeons     map[string]*combat.Dungeon
-	story        *Story
-	manualCombat *combat.CardCombat
+	Monsters   map[string]*combat.Enemy
+	Dungeons   map[string]*combat.Dungeon
+	story      *Story
+	cardCombat *combat.CardCombat
 }
 
 func NewCombatSystem() *CombatSystem {
@@ -57,39 +57,47 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	return nil
 }
 
-func (c *CombatSystem) ChallengeTower(name *StartCardEvent) error {
+func (c *CombatSystem) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)
-	petName := "dog_pet"
-	player.AddPet(petName)
-	pet := player.GetPet(petName)
-	npcName := "SunWuKong"
-	player.AddNpc(npcName)
-	npc := player.GetNpc(npcName)
-	npcActor := combat.NewActor(npc.GetCombatableBase(), npc)
-	petActor := combat.NewActor(pet.GetCombatableBase(), pet)
-	actors := []*combat.Actor{actor, petActor, npcActor}
+	// petName := "dog_pet"
+	// player.AddPet(petName)
+	// pet := player.GetPet(petName)
+	// npcName := "SunWuKong"
+	// player.AddNpc(npcName)
+	// npc := player.GetNpc(npcName)
+	// npcActor := combat.NewActor(npc.GetCombatableBase(), npc)
+	// petActor := combat.NewActor(pet.GetCombatableBase(), pet)
+	// actors := []*combat.Actor{actor, petActor, npcActor}
+	actors := []*combat.Actor{actor}
 	enimies := []*combat.Enemy{c.Monsters["pig"], c.Monsters["dog"]}
 	params := combat.CombatParams{
 		Actors:  actors,
 		Enemies: enimies,
+		Path:    c,
 		Client:  c,
 	}
-	c.manualCombat = combat.NewCardCombat(&params)
-	c.manualCombat.Start()
-	return nil
+	c.cardCombat = combat.NewCardCombat(&params)
+	c.cardCombat.Start(ev.Difficulty)
+	info := c.cardCombat.GetCardTurnInfo()
+	replay := &CardStartEventReply{
+		Cards:     info.Cards,
+		DeckCount: info.DrawCount,
+		Events:    c.cardCombat.GenerateChooseEvents(),
+	}
+	return replay
 }
 
 func (c *CombatSystem) StartTurn(ev *CardTurnStartEvent) *CardTurnStartEventReply {
 	action := combat.Action{}
-	c.manualCombat.StartTurn(action)
+	c.cardCombat.StartTurn(action)
 	return nil
 }
 
 func (c *CombatSystem) EndTurn(ev *CardTurnEndEvent) *CardTurnEndEventReply {
 	action := combat.Action{}
-	c.manualCombat.EndTurn(action)
+	c.cardCombat.EndTurn(action)
 	return nil
 }
 
@@ -120,6 +128,10 @@ func (c *CombatSystem) OnWin() {
 		time.Sleep(1 * time.Second)
 		push.PushEvent(CombatWinEvent{Result: "win"})
 	}()
+}
+
+func (c *CombatSystem) GetPath(path string) string {
+	return c.story.GetResources().GetPath(path)
 }
 
 func (c *CombatSystem) loadData() error {

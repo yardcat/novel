@@ -1,10 +1,30 @@
 {
-  "ci": {
-    "name": "ci",
-    "description": "ci",
-    "attributes": {
-      "attack": 10,
-      "power": 10
-    }
+  "quan": {
+    "name": "quan",
+    "description": "quan",
+    "type": 0,
+    "cost": 1,
+    "effects": [{ "effect": 0, "value": 5 }]
+  },
+  "zhang": {
+    "name": "zhang",
+    "description": "zhang",
+    "type": 0,
+    "cost": 1,
+    "effects": [{ "effect": 0, "value": 3 }]
+  },
+  "zhou": {
+    "name": "zhou",
+    "description": "zhou",
+    "type": 0,
+    "cost": 1,
+    "effects": [{ "effect": 0, "value": 8 }]
+  },
+  "jiao": {
+    "name": "jiao",
+    "description": "jiao",
+    "type": 0,
+    "cost": 1,
+    "effects": [{ "effect": 0, "value": 10 }]
   }
 }

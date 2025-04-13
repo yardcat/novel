@@ -34,20 +34,21 @@ type CombatWinEvent struct {
 	Result string
 }
 
-type StartCardEvent struct {
-	Event string
+type CardStartEvent struct {
+	Difficulty string
 }
 
-type StartCardEventReply struct {
-	Card  string
-	Event []string
+type CardStartEventReply struct {
+	Events    []string `json:"events"`
+	Cards     []string `json:"handCards"`
+	DeckCount int      `json:"deckCount"`
 }
 
-type ChooseStartEvent struct {
+type CardChooseStartEvent struct {
 	Card string
 }
 
-type ChooseStartEventReply struct {
+type CardChooseStartEventReply struct {
 	Card string
 }
 
