@@ -24,6 +24,7 @@ const (
 	DAMAGE_DEFENSE
 	WEAK
 	STRENGTH
+	HEALTH
 
 	STATUS_VULNERABLE = iota
 	STATUS_WEAK
@@ -32,8 +33,8 @@ const (
 )
 
 type CardEffect struct {
-	Effect int `json:"effect"`
-	Value  int `json:"value"`
+	Effect string `json:"effect"`
+	Value  any    `json:"value"`
 }
 
 type Card struct {
@@ -48,6 +49,12 @@ type Card struct {
 
 type CardCareer struct {
 	InitCards []*Card
+}
+
+type CardEvent struct {
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Effects     []CardEffect `json:"effects"`
 }
 
 type CardTurnInfo struct {
@@ -88,6 +95,23 @@ func (c *CardCombat) GenerateChooseEvents() []string {
 }
 
 func (c *CardCombat) HandleChooseEvents(event string) {
+	for _, e := range c.eventMap[event].Effects {
+		switch c.EffectFromString(e.Effect) {
+		case STRENGTH:
+			c.actors[0].Strength += e.Value.(int)
+		case HEALTH:
+			c.actors[0].Life += e.Value.(int)
+		case ADD_CARD:
+			cards := e.Value.([]string)
+			for _, card := range cards {
+				c.AddCard(c.GetCard(card))
+			}
+		}
+	}
+}
+
+func (c *CardCombat) AddCard(card *Card) {
+	c.Hand = append(c.Hand, card)
 }
 
 func (c *CardCombat) DrawCard(n int) []*Card {
@@ -132,19 +156,44 @@ func (c *CardCombat) ShuffleDeck() {
 	}
 }
 
+func (c *CardCombat) EffectFromString(effect string) int {
+	switch effect {
+	case "damage":
+		return DAMAGE
+	case "add_card":
+		return ADD_CARD
+	case "multi_damage":
+		return MULTI_DAMAGE
+	case "damage_defense":
+		return DAMAGE_DEFENSE
+	case "vulnerable":
+		return VULNERABLE
+	case "defend":
+		return DEFEND
+	case "weak":
+		return WEAK
+	case "strength":
+		return STRENGTH
+	case "health":
+		return HEALTH
+	default:
+		return 0
+	}
+}
+
 func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatable) {
 	for _, card := range cards {
 		for _, effect := range card.Effects {
-			switch effect.Effect {
+			switch c.EffectFromString(effect.Effect) {
 			case DAMAGE:
 				for _, enemy := range enemies {
-					enemy.OnDamage(effect.Value, nil)
+					enemy.OnDamage(effect.Value.(int), nil)
 				}
 			case VULNERABLE:
 				for _, enemy := range enemies {
 					enemy.GetBase().AddStatus(Status{
 						Type:  STATUS_VULNERABLE,
-						Value: effect.Value,
+						Value: effect.Value.(int),
 						Turn:  2,
 					})
 				}
@@ -152,26 +201,26 @@ func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatabl
 				for _, actor := range actors {
 					actor.GetBase().AddStatus(Status{
 						Type:  STATUS_DEFENSE,
-						Value: effect.Value,
+						Value: effect.Value.(int),
 						Turn:  1,
 					})
 				}
 			case ADD_CARD:
 			case MULTI_DAMAGE:
-				n := effect.Value
+				n := effect.Value.(int)
 				for i := 0; i < n; i++ {
 					for _, enemy := range enemies {
-						enemy.OnDamage(effect.Value, nil)
+						enemy.OnDamage(effect.Value.(int), nil)
 					}
 				}
 			case DAMAGE_DEFENSE:
 				for _, enemy := range enemies {
-					enemy.OnDamage(effect.Value, nil)
+					enemy.OnDamage(effect.Value.(int), nil)
 				}
 				for _, actor := range actors {
 					actor.GetBase().AddStatus(Status{
 						Type:  STATUS_DEFENSE,
-						Value: effect.Value,
+						Value: effect.Value.(int),
 						Turn:  1,
 					})
 				}
@@ -179,7 +228,7 @@ func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatabl
 				for _, enemy := range enemies {
 					enemy.GetBase().AddStatus(Status{
 						Type:  STATUS_WEAK,
-						Value: effect.Value,
+						Value: effect.Value.(int),
 						Turn:  2,
 					})
 				}
@@ -187,7 +236,7 @@ func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatabl
 				for _, actor := range actors {
 					actor.GetBase().AddStatus(Status{
 						Type:  STATUS_STRENGTH,
-						Value: effect.Value,
+						Value: effect.Value.(int),
 						Turn:  1,
 					})
 				}
@@ -202,6 +251,10 @@ func (c *CardCombat) loadData(dir string) error {
 		return err
 	}
 	err = c.loadCareer(filepath.Join(dir, "career.json"))
+	if err != nil {
+		return err
+	}
+	err = c.loadEvent(filepath.Join(dir, "event.json"))
 	if err != nil {
 		return err
 	}
@@ -237,6 +290,18 @@ func (c *CardCombat) loadCareer(path string) error {
 			c.careerMap[k].InitCards = append(c.careerMap[k].InitCards, c.cardMap[card])
 		}
 	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CardCombat) loadEvent(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &c.eventMap)
 	if err != nil {
 		return err
 	}

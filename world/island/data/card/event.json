@@ -1,26 +1,35 @@
 {
   "strength": {
+    "name": "strength",
     "description": "增加攻击力",
     "effects": [
       {
-        "streath": 2
+        "effect": "strength",
+        "value": 2
       }
     ]
   },
   "max_health": {
+    "name": "max_health",
     "description": "增加生命值",
     "effects": [
       {
-        "health": 5
+        "effect": "health",
+        "value": 5
       }
     ]
   },
   "draw_card": {
+    "name": "draw_card",
     "description": "抽卡",
     "effects": [
       {
-        "card": ["ci", "ci", "ci"],
-        "health": -1
+        "effect": "add_card",
+        "value": ["quan", "jiao", "zhou"]
+      },
+      {
+        "effect": "health",
+        "value": -1
       }
     ]
   }

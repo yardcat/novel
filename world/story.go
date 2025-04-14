@@ -316,6 +316,11 @@ func (s *Story) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
 	return s.combatSystem.ChallengeTower(ev)
 }
 
+func (s *Story) CardChooseEvent(ev *CardChooseStartEvent) *CardChooseStartEventReply {
+	s.combatSystem.HandleChooseEvent(ev)
+	return nil
+}
+
 func (s *Story) StartTurn(ev *CardTurnStartEvent) *CardTurnStartEventReply {
 	s.combatSystem.StartTurn(ev)
 	return nil

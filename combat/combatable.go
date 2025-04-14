@@ -29,6 +29,7 @@ type CombatableBase struct {
 	AttackRange int
 	AttackStep  float64
 	Attack      int
+	Strength    int
 	Life        int
 	MaxLife     int
 	Defense     int

@@ -96,6 +96,7 @@ const Deck = () => {
 
   const handleOk = () => {
     console.log('Selected Event:', selectedEvent);
+    CallAPI('world/card_choose_event', { event: selectedEvent });
     setIsModalVisible(false);
   };
 

@@ -51,6 +51,19 @@ func (w *World) CardStart(c *gin.Context) {
 	c.JSON(200, string(jsonStr))
 }
 
+func (w *World) CardChooseEvent(c *gin.Context) {
+	event := &world.CardChooseStartEvent{
+		Event: c.PostForm("event"),
+	}
+	replay := w.story.CardChooseEvent(event)
+	jsonStr, err := json.Marshal(replay)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+
+}
+
 func (w *World) CardTurnStart(c *gin.Context) {
 	event := &world.CardTurnStartEvent{}
 	replay := w.story.StartTurn(event)

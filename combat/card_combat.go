@@ -18,6 +18,7 @@ type CardCombat struct {
 	Record
 	cardMap   map[string]*Card
 	careerMap map[string]*CardCareer
+	eventMap  map[string]*CardEvent
 	deck      []*Card
 	Hand      []*Card
 	discard   []*Card

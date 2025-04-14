@@ -45,7 +45,7 @@ type CardStartEventReply struct {
 }
 
 type CardChooseStartEvent struct {
-	Card string
+	Event string
 }
 
 type CardChooseStartEventReply struct {

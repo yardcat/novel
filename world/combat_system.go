@@ -101,6 +101,11 @@ func (c *CombatSystem) EndTurn(ev *CardTurnEndEvent) *CardTurnEndEventReply {
 	return nil
 }
 
+func (c *CombatSystem) HandleChooseEvent(ev *CardChooseStartEvent) *CardChooseStartEventReply {
+	c.cardCombat.HandleChooseEvents(ev.Event)
+	return nil
+}
+
 // OnDead implements combat.CombatClient.
 func (c *CombatSystem) OnDead(combat.Combatable) {
 	log.Info("OnDead is unimplemented")
