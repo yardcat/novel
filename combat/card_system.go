@@ -2,6 +2,8 @@ package combat
 
 import (
 	"encoding/json"
+	"my_test/event"
+	"my_test/push"
 	"my_test/util"
 	"os"
 	"path/filepath"
@@ -94,20 +96,29 @@ func (c *CardCombat) GenerateChooseEvents() []string {
 	return []string{"strength", "max_health", "draw_card"}
 }
 
-func (c *CardCombat) HandleChooseEvents(event string) {
-	for _, e := range c.eventMap[event].Effects {
+func (c *CardCombat) HandleChooseEvents(ev string) {
+	for _, e := range c.eventMap[ev].Effects {
 		switch c.EffectFromString(e.Effect) {
 		case STRENGTH:
 			c.actors[0].Strength += e.Value.(int)
 		case HEALTH:
-			c.actors[0].Life += e.Value.(int)
+			c.actors[0].Life += int(e.Value.(float64))
 		case ADD_CARD:
-			cards := e.Value.([]string)
+			cards := e.Value.([]any)
 			for _, card := range cards {
-				c.AddCard(c.GetCard(card))
+				c.AddCard(c.GetCard(card.(string)))
 			}
+			push.PushEvent(event.CardUpdateHandEvent{Cards: c.getHandString()})
 		}
 	}
+}
+
+func (c *CardCombat) getHandString() []string {
+	strs := make([]string, 0, len(c.Hand))
+	for _, card := range c.Hand {
+		strs = append(strs, card.Name)
+	}
+	return strs
 }
 
 func (c *CardCombat) AddCard(card *Card) {
@@ -187,13 +198,13 @@ func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatabl
 			switch c.EffectFromString(effect.Effect) {
 			case DAMAGE:
 				for _, enemy := range enemies {
-					enemy.OnDamage(effect.Value.(int), nil)
+					enemy.OnDamage(int(effect.Value.(float64)), nil)
 				}
 			case VULNERABLE:
 				for _, enemy := range enemies {
 					enemy.GetBase().AddStatus(Status{
 						Type:  STATUS_VULNERABLE,
-						Value: effect.Value.(int),
+						Value: int(effect.Value.(float64)),
 						Turn:  2,
 					})
 				}
@@ -241,6 +252,16 @@ func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatabl
 					})
 				}
 			}
+		}
+		c.removeHandCard(card)
+	}
+}
+
+func (c *CardCombat) removeHandCard(card *Card) {
+	for i, v := range c.Hand {
+		if v == card {
+			c.Hand = append(c.Hand[:i], c.Hand[i+1:]...)
+			return
 		}
 	}
 }

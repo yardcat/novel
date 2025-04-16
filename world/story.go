@@ -3,6 +3,7 @@ package world
 import (
 	"context"
 	"encoding/json"
+	"my_test/event"
 	"my_test/log"
 	"os"
 	"path/filepath"
@@ -311,22 +312,20 @@ func (s *Story) ChallengeDungeon(name string) {
 	s.combatSystem.ChallengeDungeon(name)
 }
 
-func (s *Story) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
+func (s *Story) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventReply {
 	log.Info("challenge tower %s", ev.Difficulty)
 	return s.combatSystem.ChallengeTower(ev)
 }
 
-func (s *Story) CardChooseEvent(ev *CardChooseStartEvent) *CardChooseStartEventReply {
-	s.combatSystem.HandleChooseEvent(ev)
+func (s *Story) CardChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {
+	return s.combatSystem.HandleChooseEvent(ev)
+}
+
+func (s *Story) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
+	s.combatSystem.SendCards(ev)
 	return nil
 }
 
-func (s *Story) StartTurn(ev *CardTurnStartEvent) *CardTurnStartEventReply {
-	s.combatSystem.StartTurn(ev)
-	return nil
-}
-
-func (s *Story) EndTurn(ev *CardTurnEndEvent) *CardTurnEndEventReply {
-	s.combatSystem.EndTurn(ev)
-	return nil
+func (s *Story) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
+	return s.combatSystem.EndTurn(ev)
 }

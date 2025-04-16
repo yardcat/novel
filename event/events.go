@@ -1,4 +1,4 @@
-package world
+package event
 
 type ChangeStatusEvent struct {
 	Type  string
@@ -49,21 +49,37 @@ type CardChooseStartEvent struct {
 }
 
 type CardChooseStartEventReply struct {
-	Card string
+	Status string
 }
 
-type CardTurnStartEvent struct {
-	Card string
+type CardSendCards struct {
+	Cards []int
 }
 
-type CardTurnStartEventReply struct {
-	Card string
+type CardSendCardsReply struct {
+	Status string
 }
 
 type CardTurnEndEvent struct {
-	Card string
 }
 
 type CardTurnEndEventReply struct {
-	Card string
+	DiscardCount int
+	Damage       int
+	NextAction   int
+	ActionValue  int
+	HandCards    string
+	ActorHP      int
+	ActorMaxHP   int
+	EnemyHP      int
+	EnemyMaxHP   int
+}
+
+type CardUpdateHandEvent struct {
+	Cards []string `json:"cards"`
+}
+
+type CardUpdateUIEvent struct {
+	Element string `json:"element"`
+	Value   string `json:"value"`
 }

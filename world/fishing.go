@@ -13,14 +13,14 @@ type Fish struct {
 }
 
 type Fishing struct {
-	fishMap map[string]Fish `json:"fishMap"`
+	FishMap map[string]Fish `json:"fishMap"`
 	fishes  []string
 	story   *Story
 }
 
 func NewFish(story *Story) *Fishing {
 	f := &Fishing{
-		fishMap: make(map[string]Fish),
+		FishMap: make(map[string]Fish),
 		story:   story,
 	}
 	f.loadData()
@@ -36,13 +36,13 @@ func (f *Fishing) Explore() int {
 }
 
 func (f *Fishing) Fish() {
-	keys := make([]string, 0, len(f.fishMap))
-	for k := range f.fishMap {
+	keys := make([]string, 0, len(f.FishMap))
+	for k := range f.FishMap {
 		keys = append(keys, k)
 	}
 	idx := util.GetRandomInt(len(keys))
 	rate := util.GetRandomInt(100)
-	if rate < f.fishMap[keys[idx]].Rate {
+	if rate < f.FishMap[keys[idx]].Rate {
 		f.fishes = append(f.fishes, keys[idx])
 	} else {
 		log.Info("fish nothing")

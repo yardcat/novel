@@ -3,6 +3,7 @@ package world
 import (
 	"encoding/json"
 	"my_test/combat"
+	"my_test/event"
 	"my_test/log"
 	"my_test/push"
 	"my_test/util"
@@ -57,7 +58,7 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	return nil
 }
 
-func (c *CombatSystem) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
+func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventReply {
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)
@@ -81,7 +82,7 @@ func (c *CombatSystem) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
 	c.cardCombat = combat.NewCardCombat(&params)
 	c.cardCombat.Start(ev.Difficulty)
 	info := c.cardCombat.GetCardTurnInfo()
-	replay := &CardStartEventReply{
+	replay := &event.CardStartEventReply{
 		Cards:     info.Cards,
 		DeckCount: info.DrawCount,
 		Events:    c.cardCombat.GenerateChooseEvents(),
@@ -89,21 +90,18 @@ func (c *CombatSystem) ChallengeTower(ev *CardStartEvent) *CardStartEventReply {
 	return replay
 }
 
-func (c *CombatSystem) StartTurn(ev *CardTurnStartEvent) *CardTurnStartEventReply {
-	action := combat.Action{}
-	c.cardCombat.StartTurn(action)
-	return nil
+func (c *CombatSystem) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
+	c.cardCombat.UseCards(ev.Cards)
+	return &event.CardSendCardsReply{Status: "ok"}
 }
 
-func (c *CombatSystem) EndTurn(ev *CardTurnEndEvent) *CardTurnEndEventReply {
-	action := combat.Action{}
-	c.cardCombat.EndTurn(action)
-	return nil
+func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
+	return c.cardCombat.EndTurn(ev)
 }
 
-func (c *CombatSystem) HandleChooseEvent(ev *CardChooseStartEvent) *CardChooseStartEventReply {
+func (c *CombatSystem) HandleChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {
 	c.cardCombat.HandleChooseEvents(ev.Event)
-	return nil
+	return &event.CardChooseStartEventReply{Status: "ok"}
 }
 
 // OnDead implements combat.CombatClient.
@@ -131,7 +129,7 @@ func (c *CombatSystem) OnWin() {
 	log.Info("OnWin is unimplemented")
 	go func() {
 		time.Sleep(1 * time.Second)
-		push.PushEvent(CombatWinEvent{Result: "win"})
+		push.PushEvent(event.CombatWinEvent{Result: "win"})
 	}()
 }
 

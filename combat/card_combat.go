@@ -1,12 +1,15 @@
 package combat
 
 import (
+	"my_test/event"
 	"my_test/log"
+	"my_test/push"
 	"my_test/util"
+	"strings"
 )
 
 const (
-	CARD_COUNT  = 3
+	CARD_COUNT  = 5
 	ENERGY_INIT = 3
 )
 
@@ -25,6 +28,14 @@ type CardCombat struct {
 	remove    []*Card
 	maxCard   int
 	energy    int
+	turnNum   int
+}
+
+type EnemyTurnResult struct {
+	damage     int
+	nextAction int
+	actorDead  bool
+	enemyDead  bool
 }
 
 type Action struct {
@@ -64,6 +75,7 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 func (c *CardCombat) Start(difficuty string) error {
 	log.Info("start card, difficulty:%s", difficuty)
 	c.PrepareCard()
+	c.turnNum = 0
 	return nil
 }
 
@@ -91,46 +103,51 @@ func (c *CardCombat) Combatables() []Combatable {
 	return c.combatables
 }
 
-func (c *CardCombat) StartTurn(action Action) {
-	cardsToUse := []*Card{}
-	for _, name := range action.Cards {
-		card := c.GetCard(name)
-		if card != nil {
-			cardsToUse = append(cardsToUse, card)
-		}
-	}
-
-	if len(cardsToUse) > 0 {
-		c.Use(cardsToUse, c.Actors(), c.Enemies())
-	}
-
-	for _, discardName := range action.Discards {
-		card := c.GetCard(discardName)
-		if card != nil {
-			c.DiscardCard(card)
-		}
-	}
+func (c *CardCombat) StartTurn() {
+	c.energy = ENERGY_INIT
+	drawCount := c.maxCard - len(c.Hand)
+	c.DrawCard(drawCount)
 }
 
-func (c *CardCombat) EndTurn(action Action) {
+func (c *CardCombat) UseCards(cards []int) {
 	cardsToUse := []*Card{}
-	for _, name := range action.Cards {
-		card := c.GetCard(name)
-		if card != nil {
-			cardsToUse = append(cardsToUse, card)
-		}
+	for _, idx := range cards {
+		cardsToUse = append(cardsToUse, c.Hand[idx])
 	}
+	c.Use(cardsToUse, c.Actors(), c.Enemies())
+}
 
-	if len(cardsToUse) > 0 {
-		c.Use(cardsToUse, c.Actors(), c.Enemies())
+func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
+	reply := &event.CardTurnEndEventReply{}
+	discardCount := len(c.Hand) - c.maxCard
+	if discardCount > 0 {
+		reply.DiscardCount = discardCount
+		c.Hand = c.Hand[:c.maxCard]
 	}
+	result := c.EnemyTurn()
+	reply.Damage = result.damage
+	reply.NextAction = result.nextAction
 
-	for _, discardName := range action.Discards {
-		card := c.GetCard(discardName)
-		if card != nil {
-			c.DiscardCard(card)
-		}
-	}
+	c.StartTurn()
+	reply.HandCards = strings.Join(c.getHandString(), ",")
+	reply.ActorHP = c.actors[0].Life
+	reply.ActorMaxHP = c.actors[0].MaxLife
+	reply.EnemyHP = c.enemies[0].Life
+	reply.EnemyMaxHP = c.enemies[0].MaxLife
+	return reply
+}
+
+func (c *CardCombat) EnemyTurn() EnemyTurnResult {
+	result := EnemyTurnResult{}
+	result.damage = c.cacDamage(c.enemies[0], c.actors[0])
+	result.nextAction = 0
+	result.actorDead = c.actors[0].GetLife() <= 0
+	result.enemyDead = c.enemies[0].GetLife() <= 0
+	return result
+}
+
+func (c *CardCombat) UpdateUI(element string, value any) {
+	push.PushEvent(event.CardUpdateUIEvent{})
 }
 
 func (c *CardCombat) ChooseAttacker() Combatable {
@@ -148,30 +165,6 @@ func (c *CardCombat) ChooseAttacker() Combatable {
 	}
 	c.combatables[fast_idx].GetBase().AttackStep = 0
 	return c.combatables[fast_idx]
-}
-
-func (c *CardCombat) CombatOnce(attacker Combatable, defender Combatable, isActorAttacker bool) CombatOnceResult {
-	attacker.OnAttack(defender)
-	damage := c.cacDamage(attacker, defender)
-	if c.shouldDodge(attacker, defender) {
-		log.Info("%s dodge damage %d on %s", attacker.GetName(), damage, defender.GetName())
-		return CombatOnceResult{
-			attackerDead: false,
-			defenderDead: false,
-		}
-	}
-	defender.OnDamage(damage, attacker)
-	if isActorAttacker {
-		c.actorCastDamage += damage
-	} else {
-		c.actorIncurDamage += damage
-
-	}
-	log.Info("%s cast damage %d on %s", attacker.GetName(), damage, defender.GetName())
-	return CombatOnceResult{
-		attackerDead: !attacker.IsAlive(),
-		defenderDead: !defender.IsAlive(),
-	}
 }
 
 func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {

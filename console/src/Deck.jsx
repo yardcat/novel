@@ -2,21 +2,26 @@ import { useState, useEffect } from 'react';
 import { message, Select, Badge, Card, Button, Tag, Modal, Radio } from 'antd';
 import { Config } from './Config';
 import { CallAPI } from './Net';
+import { socket } from './Socket';
 
 class StartInfo {
   difficuty = '';
 }
 
-class RecvTurnInfo {
+class SendCards {
+  cards = [];
+}
+
+class SendCardsResult {}
+
+class EndTurn {}
+
+class TurnInfo {
   handCards = [];
   discardCard = 0;
   deckCard = 0;
   health = 0;
   status = [];
-}
-
-class SendTurnInfo {
-  useCard = [];
 }
 
 const Status = ({ name, count }) => {
@@ -45,12 +50,11 @@ const MyCard = ({ name, isSelected, onClick }) => {
 };
 
 const Deck = () => {
-  const [turnInfo, setTurnInfo] = useState({
-    handCards: [],
-  });
+  const [turnInfo, setTurnInfo] = useState({});
+  const [handCards, setHandCards] = useState([]);
   const [drawCount, setDrawCount] = useState(0);
   const [discardCount, setDiscardCount] = useState(0);
-  const [difficuty, setDifficuty] = useState('Difficuty');
+  const [difficuty, setDifficuty] = useState('Easy');
   const [selectedCards, setSelectedCards] = useState([]);
   const [chooseEvents, setChooseEvents] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -65,6 +69,12 @@ const Deck = () => {
     }
   };
 
+  useEffect(() => {
+    socket.onMsg('event.CardUpdateHandEvent', (data) => {
+      setHandCards(data.cards);
+    });
+  }, []);
+
   const startPlay = () => {
     if (difficuty === 'Difficuty') {
       message.error('Please select difficuty');
@@ -74,29 +84,27 @@ const Deck = () => {
     sendTurnInfo.difficuty = difficuty;
     CallAPI('world/card_start', {}, (reply) => {
       setTurnInfo(reply);
+      setHandCards(reply.handCards);
       setDrawCount(reply.deckCount);
       setDiscardCount(0);
       setChooseEvents(reply.events);
       setIsModalVisible(true);
-      setIsPlaying(true); // 设置为正在游戏中
+      setIsPlaying(true);
     });
   };
 
-  const sendTurnInfo = () => {
-    const sendTurnInfo = new SendTurnInfo();
-    sendTurnInfo.useCard = [1, 2, 3];
-    CallAPI('card/send_turn', () => {});
+  const sendCards = (cards) => {
+    let cards_param = cards.join(',');
+    CallAPI('world/send_cards', { cards: cards_param }, (result) => {});
   };
 
-  const endPlay = () => {
-    const sendTurnInfo = new SendTurnInfo();
-    sendTurnInfo.useCard = [1, 2, 3];
-    CallAPI('card/end_turn', () => {});
+  const endTurn = () => {
+    const sendTurnInfo = new EndTurn();
+    CallAPI('world/end_turn', (turnInfo) => {});
   };
 
   const handleOk = () => {
-    console.log('Selected Event:', selectedEvent);
-    CallAPI('world/card_choose_event', { event: selectedEvent });
+    CallAPI('world/card_choose_event', { event: selectedEvent }, () => {});
     setIsModalVisible(false);
   };
 
@@ -118,8 +126,8 @@ const Deck = () => {
         </Card>
 
         <div style={{ display: 'flex', flexDirection: 'row', width: '80%' }}>
-          {turnInfo.handCards &&
-            turnInfo.handCards.map((name, idx) => (
+          {handCards &&
+            handCards.map((name, idx) => (
               <MyCard
                 key={idx}
                 name={name}
@@ -136,16 +144,28 @@ const Deck = () => {
       </div>
 
       <Card>
-        <Select defaultValue="Difficuty" onChange={setDifficuty}>
-          <Select.Option value="Easy">Easy</Select.Option>
-          <Select.Option value="Normal">Normal</Select.Option>
-          <Select.Option value="Hard">Hard</Select.Option>
-        </Select>
-        {!isPlaying && <Button onClick={startPlay}>Start</Button>}
+        {!isPlaying && (
+          <>
+            <Select defaultValue="Easy" onChange={setDifficuty}>
+              <Select.Option value="Easy">Easy</Select.Option>
+              <Select.Option value="Normal">Normal</Select.Option>
+              <Select.Option value="Hard">Hard</Select.Option>
+            </Select>
+            <Button onClick={startPlay}>Start</Button>
+          </>
+        )}
         {isPlaying && (
           <>
-            <Button onClick={sendTurnInfo}>Send</Button>
-            <Button onClick={endPlay}>End Turn</Button>
+            <Button
+              onClick={() => {
+                sendCards(selectedCards);
+                setHandCards(handCards.filter((card, idx) => !selectedCards.includes(idx)));
+                setSelectedCards([]);
+              }}
+            >
+              Send
+            </Button>
+            <Button onClick={endTurn}>End</Button>
           </>
         )}
       </Card>

@@ -30,9 +30,9 @@ func NewGinRouter() *gin.Engine {
 	{
 		worldRouterGroup.POST("/get_ui_info", w.GetUiInfo)
 		worldRouterGroup.POST("/card_start", w.CardStart)
-		worldRouterGroup.POST("/card_choose_event", w.CardStart)
-		worldRouterGroup.POST("/card_turn_start", w.CardTurnStart)
-		worldRouterGroup.POST("/card_turn_end", w.CardTurnEnd)
+		worldRouterGroup.POST("/card_choose_event", w.CardChooseEvent)
+		worldRouterGroup.POST("/send_cards", w.CardSendCards)
+		worldRouterGroup.POST("/end_turn", w.CardEndTurn)
 	}
 
 	return r

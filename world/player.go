@@ -6,6 +6,7 @@ import (
 	"my_test/career"
 	"my_test/combat"
 	"my_test/equip"
+	"my_test/event"
 	"my_test/log"
 	"os"
 )
@@ -71,9 +72,9 @@ func (p *Player) RegisterEventHander(maps map[string]any) {
 	maps["Collect"] = p.Collect
 }
 
-func (p *Player) Collect(event CollectEvent) CollectEventReply {
-	reply := CollectEventReply{}
-	for _, i := range event.Items {
+func (p *Player) Collect(ev event.CollectEvent) event.CollectEventReply {
+	reply := event.CollectEventReply{}
+	for _, i := range ev.Items {
 		if p.Energy >= 10 {
 			p.Energy -= 10
 			p.Bag.Add(p.Story.itemSystem.GetItemByName(i.Item), i.Count)
@@ -140,14 +141,14 @@ func (p *Player) GetNpc(name string) *Npc {
 	return nil
 }
 
-func (p *Player) OnChangeStatus(event ChangeStatusEvent) {
+func (p *Player) OnChangeStatus(event event.ChangeStatusEvent) {
 	switch event.Type {
 	case "hp":
 		p.Health += event.Value
 	}
 }
 
-func (p *Player) OnBonus(event BonusEvent) {
+func (p *Player) OnBonus(event event.BonusEvent) {
 	p.Bag.Add(p.Story.itemSystem.GetItemByName(event.Item), event.Count)
 }
 

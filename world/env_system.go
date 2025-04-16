@@ -1,6 +1,9 @@
 package world
 
-import "strconv"
+import (
+	"my_test/event"
+	"strconv"
+)
 
 const (
 	Rain = iota
@@ -24,7 +27,7 @@ func (s *EnvSystem) RegisterEventHander(maps map[string]any) {
 	maps["ChangeEnv"] = s.OnChangeEnv
 }
 
-func (s *EnvSystem) OnChangeEnv(event ChangeEnvEvent) {
+func (s *EnvSystem) OnChangeEnv(event event.ChangeEnvEvent) {
 	switch event.Type {
 	case "temperature":
 		value, _ := strconv.Atoi(event.Value)

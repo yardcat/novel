@@ -2,8 +2,11 @@ package http
 
 import (
 	"encoding/json"
+	"my_test/event"
 	"my_test/log"
 	"my_test/world"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +45,7 @@ func (w *World) GetUiInfo(c *gin.Context) {
 
 func (w *World) CardStart(c *gin.Context) {
 	difficuty := c.PostForm("difficuty")
-	event := &world.CardStartEvent{Difficulty: difficuty}
+	event := &event.CardStartEvent{Difficulty: difficuty}
 	replay := w.story.ChallengeTower(event)
 	jsonStr, err := json.Marshal(replay)
 	if err != nil {
@@ -52,21 +55,28 @@ func (w *World) CardStart(c *gin.Context) {
 }
 
 func (w *World) CardChooseEvent(c *gin.Context) {
-	event := &world.CardChooseStartEvent{
+	event := &event.CardChooseStartEvent{
 		Event: c.PostForm("event"),
 	}
 	replay := w.story.CardChooseEvent(event)
 	jsonStr, err := json.Marshal(replay)
 	if err != nil {
-		log.Info("CardTurnStart json marshal err %v", err)
+		log.Info("CardChooseEvent json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
 
 }
 
-func (w *World) CardTurnStart(c *gin.Context) {
-	event := &world.CardTurnStartEvent{}
-	replay := w.story.StartTurn(event)
+func (w *World) CardSendCards(c *gin.Context) {
+	cardsParam := c.PostForm("cards")
+	strIdx := strings.Split(cardsParam, ",")
+	ev := &event.CardSendCards{
+		Cards: make([]int, len(strIdx)),
+	}
+	for i, v := range strIdx {
+		ev.Cards[i], _ = strconv.Atoi(v)
+	}
+	replay := w.story.SendCards(ev)
 	jsonStr, err := json.Marshal(replay)
 	if err != nil {
 		log.Info("CardTurnStart json marshal err %v", err)
@@ -75,8 +85,8 @@ func (w *World) CardTurnStart(c *gin.Context) {
 
 }
 
-func (w *World) CardTurnEnd(c *gin.Context) {
-	start := &world.CardTurnEndEvent{}
+func (w *World) CardEndTurn(c *gin.Context) {
+	start := &event.CardTurnEndEvent{}
 	replay := w.story.EndTurn(start)
 	jsonStr, err := json.Marshal(replay)
 	if err != nil {
