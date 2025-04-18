@@ -39,9 +39,14 @@ type CardStartEvent struct {
 }
 
 type CardStartEventReply struct {
-	Events    []string `json:"events"`
-	Cards     []string `json:"handCards"`
-	DeckCount int      `json:"deckCount"`
+	Events     []string `json:"events"`
+	Cards      []string `json:"handCards"`
+	DeckCount  int      `json:"deckCount"`
+	ActorHP    int      `json:"actorHP"`
+	ActorMaxHP int      `json:"actorMaxHP"`
+	EnemyHP    int      `json:"enemyHP"`
+	EnemyMaxHP int      `json:"enemyMaxHP"`
+	Energy     int      `json:"energy"`
 }
 
 type CardChooseStartEvent struct {
@@ -49,7 +54,8 @@ type CardChooseStartEvent struct {
 }
 
 type CardChooseStartEventReply struct {
-	Status string
+	Results map[string]any
+	Status  string
 }
 
 type CardSendCards struct {
@@ -57,7 +63,7 @@ type CardSendCards struct {
 }
 
 type CardSendCardsReply struct {
-	Status string
+	Results map[string]any
 }
 
 type CardTurnEndEvent struct {

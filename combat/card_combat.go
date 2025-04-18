@@ -27,7 +27,7 @@ type CardCombat struct {
 	discard   []*Card
 	remove    []*Card
 	maxCard   int
-	energy    int
+	Energy    int
 	turnNum   int
 }
 
@@ -53,7 +53,7 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 		careerMap:   make(map[string]*CardCareer),
 		deck:        make([]*Card, 0),
 		maxCard:     CARD_COUNT,
-		energy:      ENERGY_INIT,
+		Energy:      ENERGY_INIT,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -104,17 +104,23 @@ func (c *CardCombat) Combatables() []Combatable {
 }
 
 func (c *CardCombat) StartTurn() {
-	c.energy = ENERGY_INIT
+	c.Energy = ENERGY_INIT
 	drawCount := c.maxCard - len(c.Hand)
 	c.DrawCard(drawCount)
 }
 
-func (c *CardCombat) UseCards(cards []int) {
+func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
+	reply := &event.CardSendCardsReply{}
 	cardsToUse := []*Card{}
 	for _, idx := range cards {
 		cardsToUse = append(cardsToUse, c.Hand[idx])
 	}
-	c.Use(cardsToUse, c.Actors(), c.Enemies())
+	results := make(map[string]any)
+	for _, card := range cardsToUse {
+		c.Use(card, results)
+	}
+	reply.Results = results
+	return reply
 }
 
 func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
@@ -137,8 +143,8 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 	return reply
 }
 
-func (c *CardCombat) EnemyTurn() EnemyTurnResult {
-	result := EnemyTurnResult{}
+func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
+	result := &EnemyTurnResult{}
 	result.damage = c.cacDamage(c.enemies[0], c.actors[0])
 	result.nextAction = 0
 	result.actorDead = c.actors[0].GetLife() <= 0

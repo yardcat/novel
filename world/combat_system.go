@@ -72,7 +72,7 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 	// petActor := combat.NewActor(pet.GetCombatableBase(), pet)
 	// actors := []*combat.Actor{actor, petActor, npcActor}
 	actors := []*combat.Actor{actor}
-	enimies := []*combat.Enemy{c.Monsters["pig"], c.Monsters["dog"]}
+	enimies := []*combat.Enemy{combat.CreateEnemy(c.Monsters["cat"])}
 	params := combat.CombatParams{
 		Actors:  actors,
 		Enemies: enimies,
@@ -83,16 +83,20 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 	c.cardCombat.Start(ev.Difficulty)
 	info := c.cardCombat.GetCardTurnInfo()
 	replay := &event.CardStartEventReply{
-		Cards:     info.Cards,
-		DeckCount: info.DrawCount,
-		Events:    c.cardCombat.GenerateChooseEvents(),
+		Cards:      info.Cards,
+		DeckCount:  info.DrawCount,
+		Events:     c.cardCombat.GenerateChooseEvents(),
+		ActorHP:    actors[0].Life,
+		ActorMaxHP: actors[0].MaxLife,
+		EnemyHP:    enimies[0].Life,
+		EnemyMaxHP: enimies[0].MaxLife,
+		Energy:     c.cardCombat.Energy,
 	}
 	return replay
 }
 
 func (c *CombatSystem) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
-	c.cardCombat.UseCards(ev.Cards)
-	return &event.CardSendCardsReply{Status: "ok"}
+	return c.cardCombat.UseCards(ev.Cards)
 }
 
 func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
@@ -100,8 +104,7 @@ func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEve
 }
 
 func (c *CombatSystem) HandleChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {
-	c.cardCombat.HandleChooseEvents(ev.Event)
-	return &event.CardChooseStartEventReply{Status: "ok"}
+	return c.cardCombat.HandleChooseEvents(ev.Event)
 }
 
 // OnDead implements combat.CombatClient.

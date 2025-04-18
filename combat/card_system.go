@@ -26,7 +26,13 @@ const (
 	DAMAGE_DEFENSE
 	WEAK
 	STRENGTH
-	HEALTH
+	HEAL
+	MAX_HEALTH
+
+	UI_ACTOR_HP = iota
+	UI_ACTOR_MAX_HP
+	UI_ENEMY_HP
+	UI_ENEMY_MAX_HP
 
 	STATUS_VULNERABLE = iota
 	STATUS_WEAK
@@ -77,7 +83,7 @@ func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
 		DrawCount:    len(c.deck),
 		DiscardCount: len(c.discard),
 		RemoveCount:  len(c.remove),
-		Energy:       c.energy,
+		Energy:       c.Energy,
 	}
 	for i, card := range c.Hand {
 		info.Cards[i] = card.Name
@@ -96,21 +102,14 @@ func (c *CardCombat) GenerateChooseEvents() []string {
 	return []string{"strength", "max_health", "draw_card"}
 }
 
-func (c *CardCombat) HandleChooseEvents(ev string) {
-	for _, e := range c.eventMap[ev].Effects {
-		switch c.EffectFromString(e.Effect) {
-		case STRENGTH:
-			c.actors[0].Strength += e.Value.(int)
-		case HEALTH:
-			c.actors[0].Life += int(e.Value.(float64))
-		case ADD_CARD:
-			cards := e.Value.([]any)
-			for _, card := range cards {
-				c.AddCard(c.GetCard(card.(string)))
-			}
-			push.PushEvent(event.CardUpdateHandEvent{Cards: c.getHandString()})
-		}
+func (c *CardCombat) HandleChooseEvents(ev string) *event.CardChooseStartEventReply {
+	reply := &event.CardChooseStartEventReply{
+		Results: make(map[string]any),
 	}
+	for _, effect := range c.eventMap[ev].Effects {
+		c.handCardEffect(&effect, reply.Results)
+	}
+	return reply
 }
 
 func (c *CardCombat) getHandString() []string {
@@ -185,75 +184,95 @@ func (c *CardCombat) EffectFromString(effect string) int {
 		return WEAK
 	case "strength":
 		return STRENGTH
-	case "health":
-		return HEALTH
+	case "heal":
+		return HEAL
+	case "max_health":
+		return MAX_HEALTH
 	default:
 		return 0
 	}
 }
 
-func (c *CardCombat) Use(cards []*Card, actors []Combatable, enemies []Combatable) {
-	for _, card := range cards {
-		for _, effect := range card.Effects {
-			switch c.EffectFromString(effect.Effect) {
-			case DAMAGE:
-				for _, enemy := range enemies {
-					enemy.OnDamage(int(effect.Value.(float64)), nil)
-				}
-			case VULNERABLE:
-				for _, enemy := range enemies {
-					enemy.GetBase().AddStatus(Status{
-						Type:  STATUS_VULNERABLE,
-						Value: int(effect.Value.(float64)),
-						Turn:  2,
-					})
-				}
-			case DEFEND:
-				for _, actor := range actors {
-					actor.GetBase().AddStatus(Status{
-						Type:  STATUS_DEFENSE,
-						Value: effect.Value.(int),
-						Turn:  1,
-					})
-				}
-			case ADD_CARD:
-			case MULTI_DAMAGE:
-				n := effect.Value.(int)
-				for i := 0; i < n; i++ {
-					for _, enemy := range enemies {
-						enemy.OnDamage(effect.Value.(int), nil)
-					}
-				}
-			case DAMAGE_DEFENSE:
-				for _, enemy := range enemies {
-					enemy.OnDamage(effect.Value.(int), nil)
-				}
-				for _, actor := range actors {
-					actor.GetBase().AddStatus(Status{
-						Type:  STATUS_DEFENSE,
-						Value: effect.Value.(int),
-						Turn:  1,
-					})
-				}
-			case WEAK:
-				for _, enemy := range enemies {
-					enemy.GetBase().AddStatus(Status{
-						Type:  STATUS_WEAK,
-						Value: effect.Value.(int),
-						Turn:  2,
-					})
-				}
-			case STRENGTH:
-				for _, actor := range actors {
-					actor.GetBase().AddStatus(Status{
-						Type:  STATUS_STRENGTH,
-						Value: effect.Value.(int),
-						Turn:  1,
-					})
-				}
+func (c *CardCombat) Use(card *Card, results map[string]any) {
+	for _, effect := range card.Effects {
+		c.handCardEffect(&effect, results)
+	}
+	c.removeHandCard(card)
+}
+
+func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) {
+	switch c.EffectFromString(effect.Effect) {
+	case DAMAGE:
+		value := util.Anytoi(effect.Value)
+		c.enemies[0].OnDamage(value, nil)
+		if value > 0 {
+			results["enemyHP"] = c.enemies[0].GetLife()
+		}
+	case VULNERABLE:
+		for _, enemy := range c.enemies {
+			enemy.AddStatus(Status{
+				Type:  STATUS_VULNERABLE,
+				Value: util.Anytoi(effect.Value),
+				Turn:  2,
+			})
+		}
+	case DEFEND:
+		for _, actor := range c.actors {
+			actor.AddStatus(Status{
+				Type:  STATUS_DEFENSE,
+				Value: util.Anytoi(effect.Value),
+				Turn:  1,
+			})
+		}
+	case MULTI_DAMAGE:
+		n := util.Anytoi(effect.Value)
+		for i := 0; i < n; i++ {
+			for _, enemy := range c.enemies {
+				enemy.OnDamage(util.Anytoi(effect.Value), nil)
 			}
 		}
-		c.removeHandCard(card)
+	case DAMAGE_DEFENSE:
+		for _, enemy := range c.enemies {
+			enemy.OnDamage(util.Anytoi(effect.Value), nil)
+		}
+		for _, actor := range c.actors {
+			actor.AddStatus(Status{
+				Type:  STATUS_DEFENSE,
+				Value: util.Anytoi(effect.Value),
+				Turn:  1,
+			})
+		}
+	case WEAK:
+		for _, enemy := range c.enemies {
+			enemy.AddStatus(Status{
+				Type:  STATUS_WEAK,
+				Value: util.Anytoi(effect.Value),
+				Turn:  2,
+			})
+		}
+	case STRENGTH:
+		for _, actor := range c.actors {
+			actor.AddStatus(Status{
+				Type:  STATUS_STRENGTH,
+				Value: util.Anytoi(effect.Value),
+				Turn:  1,
+			})
+		}
+	case HEAL:
+		life := c.actors[0].Life + util.Anytoi(effect.Value)
+		c.actors[0].Life = max(life, c.actors[0].MaxLife)
+		results["actorHP"] = c.actors[0].Life
+	case MAX_HEALTH:
+		c.actors[0].MaxLife += util.Anytoi(effect.Value)
+		results["actorMaxHP"] = c.actors[0].MaxLife
+		c.actors[0].Life = c.actors[0].Life + util.Anytoi(effect.Value)
+		results["actorHP"] = c.actors[0].Life
+	case ADD_CARD:
+		cards := effect.Value.([]any)
+		for _, card := range cards {
+			c.AddCard(c.GetCard(card.(string)))
+		}
+		push.PushEvent(event.CardUpdateHandEvent{Cards: c.getHandString()})
 	}
 }
 

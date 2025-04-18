@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { message, Select, Badge, Card, Button, Tag, Modal, Radio } from 'antd';
+import { Panel } from './Panel';
 import { Config } from './Config';
 import { CallAPI } from './Net';
 import { socket } from './Socket';
@@ -24,13 +25,20 @@ class TurnInfo {
   status = [];
 }
 
-const Status = ({ name, count }) => {
-  return (
-    <Tag bordered={false} color="success">
-      {name} : {count}
-    </Tag>
-  );
-};
+class Status {
+  constructor({
+    actorHP = 0,
+    actorMaxHP = 0,
+    enemyHP = 0,
+    enemyMaxHP = 0,
+    energy = 0,
+    strength = 0,
+    defense = 0,
+    buffs = [],
+  } = {}) {
+    Object.assign(this, { actorHP, actorMaxHP, enemyHP, enemyMaxHP, energy, strength, defense, buffs });
+  }
+}
 
 const MyCard = ({ name, isSelected, onClick }) => {
   return (
@@ -60,6 +68,7 @@ const Deck = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hp, setHP] = useState(new Status());
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -90,12 +99,35 @@ const Deck = () => {
       setChooseEvents(reply.events);
       setIsModalVisible(true);
       setIsPlaying(true);
+      setHP(
+        new Status({
+          actorHP: reply.actorHP,
+          actorMaxHP: reply.actorMaxHP,
+          enemyHP: reply.enemyHP,
+          enemyMaxHP: reply.enemyMaxHP,
+        }),
+      );
     });
+  };
+
+  const handleUI = (results) => {
+    if (results != null) {
+      let newHP = new Status({
+        actorHP: results['actorHP'] != null ? results['actorHP'] : hp.actorHP,
+        actorMaxHP: results['actorMaxHP'] != null ? results['actorMaxHP'] : hp.actorMaxHP,
+        enemyHP: results['enemyHP'] != null ? results['enemyHP'] : hp.enemyHP,
+        enemyMaxHP: results['enemyMaxHP'] != null ? results['enemyMaxHP'] : hp.enemyMaxHP,
+      });
+      setHP(newHP);
+    }
   };
 
   const sendCards = (cards) => {
     let cards_param = cards.join(',');
-    CallAPI('world/send_cards', { cards: cards_param }, (result) => {});
+    CallAPI('world/send_cards', { cards: cards_param }, (reply) => {
+      let results = reply['Results'];
+      handleUI(results);
+    });
   };
 
   const endTurn = () => {
@@ -104,7 +136,10 @@ const Deck = () => {
   };
 
   const handleOk = () => {
-    CallAPI('world/card_choose_event', { event: selectedEvent }, () => {});
+    CallAPI('world/card_choose_event', { event: selectedEvent }, (reply) => {
+      let results = reply['Results'];
+      handleUI(results);
+    });
     setIsModalVisible(false);
   };
 
@@ -114,10 +149,10 @@ const Deck = () => {
 
   return (
     <Card title="Deck">
-      <Card>
-        <Status name="Health" count={1} />
-        <Status name="dfs" count={2} />
-      </Card>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', border: '1px' }}>
+        <Panel info={turnInfo} style={{ width: '45%' }}></Panel>
+        <Panel info={turnInfo} style={{ width: '45%' }}></Panel>
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
         <Card style={{ width: '10%' }}>

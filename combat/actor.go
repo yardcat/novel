@@ -13,11 +13,13 @@ type Actor struct {
 }
 
 func NewActor(base CombatableBase, c ActorClient) *Actor {
-	return &Actor{
+	a := &Actor{
 		CombatableBase: base,
 		Magic:          100,
 		client:         c,
 	}
+	a.MaxLife = a.Life
+	return a
 }
 
 func (a *Actor) GetBase() *CombatableBase {

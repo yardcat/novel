@@ -14,7 +14,7 @@
     "description": "增加生命值",
     "effects": [
       {
-        "effect": "health",
+        "effect": "max_health",
         "value": 5
       }
     ]

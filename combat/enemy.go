@@ -10,6 +10,7 @@ func CreateEnemy(proto *Enemy) *Enemy {
 	}
 	ret.CombatType = ENEMY
 	ret.AttackStep = 0
+	ret.MaxLife = ret.Life
 	return ret
 }
 

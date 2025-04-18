@@ -322,8 +322,7 @@ func (s *Story) CardChooseEvent(ev *event.CardChooseStartEvent) *event.CardChoos
 }
 
 func (s *Story) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
-	s.combatSystem.SendCards(ev)
-	return nil
+	return s.combatSystem.SendCards(ev)
 }
 
 func (s *Story) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
