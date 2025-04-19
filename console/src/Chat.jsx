@@ -15,7 +15,7 @@ const Chat = () => {
   }, []);
 
   return (
-    <Card title="Chat" style={{ height: '40vh' }}>
+    <Card style={{ height: '60vh' }}>
       <List dataSource={chats} renderItem={(item) => <List.Item>{item}</List.Item>} />
     </Card>
   );

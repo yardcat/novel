@@ -12,16 +12,28 @@ const Buff = ({ name, value }) => {
   );
 };
 
+const panelStyle = {
+  border: '1px solid gray',
+  borderRadius: '10px',
+  padding: '0px 10px',
+  margin: '5px 0px',
+  width: '40vw',
+};
+
 const Panel = ({ info }) => {
   return (
-    <div style={{ bordered: '1px' }}>
+    <div style={panelStyle}>
       <p>name: {info.name}</p>
       <p>
         HP: {info.hp} / {info.maxHP}
       </p>
       <p> strength: {info.strength} </p>
       <p> defense: {info.defense} </p>
-      {info.buffs && info.buffs.map((buff) => <Buff key={buff.name} name={buff.name} count={buff.value} />)}
+      <p> energy: {info.energy} </p>
+      <p>
+        {' '}
+        status: {info.buffs && info.buffs.map((buff) => <Buff key={buff.name} name={buff.name} count={buff.value} />)}
+      </p>
     </div>
   );
 };

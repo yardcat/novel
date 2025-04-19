@@ -7,7 +7,7 @@ import { Chat } from './Chat';
 import { Deck } from './Deck';
 import { socket } from './Socket';
 import { initConfig } from './Config';
-import { Layout } from 'antd';
+import { Layout, Tabs } from 'antd';
 
 const { Header, Footer, Sider, Content } = Layout;
 
@@ -31,6 +31,19 @@ const App = () => {
     socket.initSocket();
   }, []);
 
+  const items = [
+    {
+      key: '1',
+      label: 'Deck',
+      children: <Deck addApiHandler={addApiHandler} actions={actions}></Deck>,
+    },
+    {
+      key: '2',
+      label: 'Chat',
+      children: <Chat></Chat>,
+    },
+  ];
+
   return (
     <Layout>
       <Header>
@@ -42,8 +55,7 @@ const App = () => {
           <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
         </Sider>
         <Content>
-          <Chat></Chat>
-          <Deck addApiHandler={addApiHandler} actions={actions}></Deck>
+          <Tabs defaultActiveKey="1" items={items} type="card"></Tabs>
         </Content>
         <Sider width="20%">
           <Action addApiHandler={addApiHandler} actions={actions}></Action>

@@ -8,6 +8,7 @@ const themes = {
     Layout: {
       siderBg: '#fff',
       headerBg: '#fff',
+      bodyBg: '#fff',
     },
   },
 };

@@ -148,7 +148,7 @@ const Deck = () => {
   };
 
   return (
-    <Card title="Deck">
+    <Card>
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', border: '1px' }}>
         <Panel info={turnInfo} style={{ width: '45%' }}></Panel>
         <Panel info={turnInfo} style={{ width: '45%' }}></Panel>
