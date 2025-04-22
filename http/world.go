@@ -76,8 +76,26 @@ func (w *World) CardSendCards(c *gin.Context) {
 	for i, v := range strIdx {
 		ev.Cards[i], _ = strconv.Atoi(v)
 	}
-	replay := w.story.SendCards(ev)
-	jsonStr, err := json.Marshal(replay)
+	reply := w.story.SendCards(ev)
+	jsonStr, err := json.Marshal(reply)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+
+}
+
+func (w *World) CardDiscardCards(c *gin.Context) {
+	cardsParam := c.PostForm("cards")
+	strIdx := strings.Split(cardsParam, ",")
+	ev := &event.CardDiscardCards{
+		Cards: make([]int, len(strIdx)),
+	}
+	for i, v := range strIdx {
+		ev.Cards[i], _ = strconv.Atoi(v)
+	}
+	reply := w.story.DiscardCards(ev)
+	jsonStr, err := json.Marshal(reply)
 	if err != nil {
 		log.Info("CardTurnStart json marshal err %v", err)
 	}

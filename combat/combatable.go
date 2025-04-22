@@ -29,12 +29,12 @@ type CombatableBase struct {
 	AttackRange int
 	AttackStep  float64
 	Attack      int
-	Strength    int
 	Life        int
 	MaxLife     int
-	Defense     int
 	Dodge       int
 	CombatType  int
+	Strength    int
+	Defense     int
 	Statuses    []Status
 }
 
@@ -126,7 +126,7 @@ func (c *CombatableBase) GetStatusValue(statusType int) int {
 	value := 0
 	for _, status := range c.Statuses {
 		if status.Type == statusType {
-			value += status.Value
+			value += status.Turn
 		}
 	}
 	return value

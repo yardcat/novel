@@ -26,17 +26,18 @@ class TurnInfo {
 }
 
 class Status {
-  constructor({
-    actorHP = 0,
-    actorMaxHP = 0,
-    enemyHP = 0,
-    enemyMaxHP = 0,
-    energy = 0,
-    strength = 0,
-    defense = 0,
-    buffs = [],
-  } = {}) {
-    Object.assign(this, { actorHP, actorMaxHP, enemyHP, enemyMaxHP, energy, strength, defense, buffs });
+  constructor({ name = '', HP = 0, maxHP = 0, energy = 0, strength = 0, defense = 0, buffs = [] } = {}) {
+    Object.assign(this, { name, HP, maxHP, energy, strength, defense, buffs });
+  }
+
+  update(status) {
+    this.name = status['name'] != null ? status['name'] : this.name;
+    this.HP = status['HP'] != null ? status['HP'] : this.HP;
+    this.maxHP = status['maxHP'] != null ? status['maxHP'] : this.maxHP;
+    this.energy = status['energy'] != null ? status['energy'] : this.energy;
+    this.strength = status['strength'] != null ? status['strength'] : this.strength;
+    this.defense = status['defense'] != null ? status['defense'] : this.defense;
+    this.buffs = status['buffs'] != null ? status['buffs'] : this.buffs;
   }
 }
 
@@ -68,7 +69,8 @@ const Deck = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hp, setHP] = useState(new Status());
+  const [actorStatus, setActorStatus] = useState(new Status());
+  const [enemyStatus, setEnemyStatus] = useState(new Status());
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -99,46 +101,47 @@ const Deck = () => {
       setChooseEvents(reply.events);
       setIsModalVisible(true);
       setIsPlaying(true);
-      setHP(
-        new Status({
-          actorHP: reply.actorHP,
-          actorMaxHP: reply.actorMaxHP,
-          enemyHP: reply.enemyHP,
-          enemyMaxHP: reply.enemyMaxHP,
-        }),
-      );
     });
   };
 
-  const handleUI = (results) => {
+  const updateStatus = (results) => {
     if (results != null) {
-      let newHP = new Status({
-        actorHP: results['actorHP'] != null ? results['actorHP'] : hp.actorHP,
-        actorMaxHP: results['actorMaxHP'] != null ? results['actorMaxHP'] : hp.actorMaxHP,
-        enemyHP: results['enemyHP'] != null ? results['enemyHP'] : hp.enemyHP,
-        enemyMaxHP: results['enemyMaxHP'] != null ? results['enemyMaxHP'] : hp.enemyMaxHP,
-      });
-      setHP(newHP);
+      let as = new Status();
+      Object.assign(as, actorStatus);
+      as.update(results['actorStatus']);
+      setActorStatus(as);
+      let es = new Status();
+      Object.assign(es, enemyStatus);
+      es.update(results['enemyStatus']);
+      setEnemyStatus(es);
     }
   };
 
   const sendCards = (cards) => {
     let cards_param = cards.join(',');
     CallAPI('world/send_cards', { cards: cards_param }, (reply) => {
-      let results = reply['Results'];
-      handleUI(results);
+      updateStatus(reply);
+      setDrawCount(reply.drawCount);
+    });
+  };
+
+  const discardCards = (cards) => {
+    let cards_param = cards.join(',');
+    CallAPI('world/discard_cards', { cards: cards_param }, (reply) => {
+      setDiscardCount(reply.discardCount);
     });
   };
 
   const endTurn = () => {
     const sendTurnInfo = new EndTurn();
-    CallAPI('world/end_turn', (turnInfo) => {});
+    CallAPI('world/end_turn', {}, (reply) => {
+      updateStatus(reply);
+    });
   };
 
-  const handleOk = () => {
+  const handleChooseEvent = () => {
     CallAPI('world/card_choose_event', { event: selectedEvent }, (reply) => {
-      let results = reply['Results'];
-      handleUI(results);
+      updateStatus(reply);
     });
     setIsModalVisible(false);
   };
@@ -150,8 +153,8 @@ const Deck = () => {
   return (
     <Card>
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', border: '1px' }}>
-        <Panel info={turnInfo} style={{ width: '45%' }}></Panel>
-        <Panel info={turnInfo} style={{ width: '45%' }}></Panel>
+        <Panel info={actorStatus} style={{ width: '45%' }}></Panel>
+        <Panel info={enemyStatus} style={{ width: '45%' }}></Panel>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
@@ -200,12 +203,21 @@ const Deck = () => {
             >
               Send
             </Button>
+            <Button
+              onClick={() => {
+                discardCards(selectedCards);
+                setHandCards(handCards.filter((card, idx) => !selectedCards.includes(idx)));
+                setSelectedCards([]);
+              }}
+            >
+              Discard
+            </Button>
             <Button onClick={endTurn}>End</Button>
           </>
         )}
       </Card>
 
-      <Modal title="Choose Event" open={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+      <Modal title="Choose Event" open={isModalVisible} onOk={handleChooseEvent} onCancel={handleCancel}>
         <Radio.Group onChange={(e) => setSelectedEvent(e.target.value)} value={selectedEvent}>
           {chooseEvents.map((event, index) => (
             <Radio key={index} value={event}>

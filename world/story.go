@@ -325,6 +325,10 @@ func (s *Story) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
 	return s.combatSystem.SendCards(ev)
 }
 
+func (s *Story) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
+	return s.combatSystem.DiscardCards(ev)
+}
+
 func (s *Story) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
 	return s.combatSystem.EndTurn(ev)
 }

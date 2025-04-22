@@ -62,6 +62,7 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)
+	actor.Name = "winter"
 	// petName := "dog_pet"
 	// player.AddPet(petName)
 	// pet := player.GetPet(petName)
@@ -83,20 +84,19 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 	c.cardCombat.Start(ev.Difficulty)
 	info := c.cardCombat.GetCardTurnInfo()
 	replay := &event.CardStartEventReply{
-		Cards:      info.Cards,
-		DeckCount:  info.DrawCount,
-		Events:     c.cardCombat.GenerateChooseEvents(),
-		ActorHP:    actors[0].Life,
-		ActorMaxHP: actors[0].MaxLife,
-		EnemyHP:    enimies[0].Life,
-		EnemyMaxHP: enimies[0].MaxLife,
-		Energy:     c.cardCombat.Energy,
+		Cards:     info.Cards,
+		DeckCount: info.DrawCount,
+		Events:    c.cardCombat.GenerateChooseEvents(),
 	}
 	return replay
 }
 
 func (c *CombatSystem) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
 	return c.cardCombat.UseCards(ev.Cards)
+}
+
+func (c *CombatSystem) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
+	return c.cardCombat.DiscardCards(ev)
 }
 
 func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {

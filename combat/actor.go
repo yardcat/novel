@@ -9,6 +9,7 @@ type ActorClient interface {
 type Actor struct {
 	CombatableBase
 	Magic  int
+	Energy int
 	client ActorClient
 }
 

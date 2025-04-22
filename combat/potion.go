@@ -55,17 +55,15 @@ func (ps *PotionSystem) UsePotion(index int, cbt Combat) bool {
 		case POTION_EFFECT_STRENGTH:
 			for _, actor := range cbt.Actors() {
 				actor.GetBase().AddStatus(Status{
-					Type:  STATUS_STRENGTH,
-					Value: effect.Value,
-					Turn:  1,
+					Type: STATUS_STRENGTH,
+					Turn: effect.Value,
 				})
 			}
 		case POTION_EFFECT_DEXTERITY:
 			for _, actor := range cbt.Actors() {
 				actor.GetBase().AddStatus(Status{
-					Type:  STATUS_DEFENSE,
-					Value: effect.Value,
-					Turn:  1,
+					Type: STATUS_DEFENSE,
+					Turn: effect.Value,
 				})
 			}
 		}

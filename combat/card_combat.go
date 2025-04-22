@@ -1,11 +1,17 @@
 package combat
 
 import (
+	"encoding/json"
 	"my_test/event"
 	"my_test/log"
 	"my_test/push"
 	"my_test/util"
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
+
+	"github.com/jinzhu/copier"
 )
 
 const (
@@ -27,7 +33,6 @@ type CardCombat struct {
 	discard   []*Card
 	remove    []*Card
 	maxCard   int
-	Energy    int
 	turnNum   int
 }
 
@@ -53,7 +58,6 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 		careerMap:   make(map[string]*CardCareer),
 		deck:        make([]*Card, 0),
 		maxCard:     CARD_COUNT,
-		Energy:      ENERGY_INIT,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -75,6 +79,7 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 func (c *CardCombat) Start(difficuty string) error {
 	log.Info("start card, difficulty:%s", difficuty)
 	c.PrepareCard()
+	c.StartTurn()
 	c.turnNum = 0
 	return nil
 }
@@ -104,7 +109,7 @@ func (c *CardCombat) Combatables() []Combatable {
 }
 
 func (c *CardCombat) StartTurn() {
-	c.Energy = ENERGY_INIT
+	c.actors[0].Energy = ENERGY_INIT
 	drawCount := c.maxCard - len(c.Hand)
 	c.DrawCard(drawCount)
 }
@@ -117,9 +122,36 @@ func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
 	}
 	results := make(map[string]any)
 	for _, card := range cardsToUse {
-		c.Use(card, results)
+		if c.actors[0].Energy >= card.Cost {
+			c.actors[0].Energy -= card.Cost
+			c.Use(card, results)
+		}
 	}
-	reply.Results = results
+	reply.ActorStatus.Name = c.actors[0].Name
+	reply.ActorStatus.Life = c.actors[0].Life
+	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
+	reply.ActorStatus.Energy = c.actors[0].Energy
+	reply.ActorStatus.Strength = c.actors[0].Strength
+	reply.ActorStatus.Defense = c.actors[0].Defense
+	copier.Copy(reply.ActorStatus.Statuses, c.actors[0].Statuses)
+	reply.EnemyStatus.Name = c.enemies[0].Name
+	reply.EnemyStatus.Life = c.enemies[0].Life
+	reply.EnemyStatus.MaxLife = c.enemies[0].MaxLife
+	reply.EnemyStatus.Strength = c.enemies[0].Strength
+	reply.EnemyStatus.Defense = c.enemies[0].Defense
+	copier.Copy(reply.EnemyStatus.Statuses, c.enemies[0].Statuses)
+	return reply
+}
+
+func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
+	discard := []*Card{}
+	for _, idx := range ev.Cards {
+		discard = append(discard, c.Hand[idx])
+		c.Hand = slices.Delete(c.Hand, idx, idx+1)
+	}
+	reply := &event.CardDiscardCardsReply{
+		DiscardCount: len(discard),
+	}
 	return reply
 }
 
@@ -128,18 +160,30 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 	discardCount := len(c.Hand) - c.maxCard
 	if discardCount > 0 {
 		reply.DiscardCount = discardCount
+		c.discard = append(c.discard, c.Hand[c.maxCard:]...)
 		c.Hand = c.Hand[:c.maxCard]
 	}
 	result := c.EnemyTurn()
 	reply.Damage = result.damage
 	reply.NextAction = result.nextAction
+	c.actors[0].OnDamage(result.damage, c.enemies[0])
 
 	c.StartTurn()
+
 	reply.HandCards = strings.Join(c.getHandString(), ",")
-	reply.ActorHP = c.actors[0].Life
-	reply.ActorMaxHP = c.actors[0].MaxLife
-	reply.EnemyHP = c.enemies[0].Life
-	reply.EnemyMaxHP = c.enemies[0].MaxLife
+	reply.ActorStatus.Name = c.actors[0].Name
+	reply.ActorStatus.Life = c.actors[0].Life
+	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
+	reply.ActorStatus.Energy = c.actors[0].Energy
+	reply.ActorStatus.Strength = c.actors[0].Strength
+	reply.ActorStatus.Defense = c.actors[0].Defense
+	copier.Copy(reply.ActorStatus.Statuses, c.actors[0].Statuses)
+	reply.EnemyStatus.Name = c.enemies[0].Name
+	reply.EnemyStatus.Life = c.enemies[0].Life
+	reply.EnemyStatus.MaxLife = c.enemies[0].MaxLife
+	reply.EnemyStatus.Strength = c.enemies[0].Strength
+	reply.EnemyStatus.Defense = c.enemies[0].Defense
+	copier.Copy(reply.EnemyStatus.Statuses, c.enemies[0].Statuses)
 	return reply
 }
 
@@ -220,4 +264,284 @@ func (c *CardCombat) onCombatFinish() {
 		result := CombatResult{LifeCost: c.actorIncurDamage}
 		actor.OnCombatDone(result)
 	}
+}
+
+func (c *CardCombat) GetCard(name string) *Card {
+	return c.cardMap[name]
+}
+
+func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
+	info := &CardTurnInfo{
+		Cards:        make([]string, len(c.Hand)),
+		DrawCount:    len(c.deck),
+		DiscardCount: len(c.discard),
+		RemoveCount:  len(c.remove),
+		Energy:       c.actors[0].Energy,
+	}
+	for i, card := range c.Hand {
+		info.Cards[i] = card.Name
+	}
+	return info
+}
+
+func (c *CardCombat) PrepareCard() {
+	career := c.careerMap["kongfu"]
+	c.deck = append(c.deck, career.InitCards...)
+	c.ShuffleDeck()
+}
+
+func (c *CardCombat) GenerateChooseEvents() []string {
+	return []string{"strength", "max_health", "draw_card"}
+}
+
+func (c *CardCombat) HandleChooseEvents(ev string) *event.CardChooseStartEventReply {
+	reply := &event.CardChooseStartEventReply{
+		Results: make(map[string]any),
+	}
+	for _, effect := range c.eventMap[ev].Effects {
+		c.handCardEffect(&effect, reply.Results)
+	}
+
+	reply.ActorStatus.Name = c.actors[0].Name
+	reply.ActorStatus.Life = c.actors[0].Life
+	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
+	reply.ActorStatus.Energy = c.actors[0].Energy
+	reply.ActorStatus.Strength = c.actors[0].Strength
+	reply.ActorStatus.Defense = c.actors[0].Defense
+	copier.Copy(reply.ActorStatus.Statuses, c.actors[0].Statuses)
+	reply.EnemyStatus.Name = c.enemies[0].Name
+	reply.EnemyStatus.Life = c.enemies[0].Life
+	reply.EnemyStatus.MaxLife = c.enemies[0].MaxLife
+	reply.EnemyStatus.Strength = c.enemies[0].Strength
+	reply.EnemyStatus.Defense = c.enemies[0].Defense
+	copier.Copy(reply.EnemyStatus.Statuses, c.enemies[0].Statuses)
+	return reply
+}
+
+func (c *CardCombat) getHandString() []string {
+	strs := make([]string, 0, len(c.Hand))
+	for _, card := range c.Hand {
+		strs = append(strs, card.Name)
+	}
+	return strs
+}
+
+func (c *CardCombat) AddCard(card *Card) {
+	c.Hand = append(c.Hand, card)
+}
+
+func (c *CardCombat) DrawCard(n int) []*Card {
+	cards := make([]*Card, 0, n)
+
+	for i := 0; i < n; i++ {
+		if len(c.deck) == 0 {
+			if len(c.discard) == 0 {
+				break
+			}
+			c.deck = append(c.deck, c.discard...)
+			c.discard = make([]*Card, 0)
+			c.ShuffleDeck()
+		}
+		card := c.deck[0]
+		c.deck = c.deck[1:]
+		c.Hand = append(c.Hand, card)
+		cards = append(cards, card)
+	}
+
+	return cards
+}
+
+func (c *CardCombat) DiscardCard(card *Card) {
+	for i, v := range c.Hand {
+		if v == card {
+			c.Hand = append(c.Hand[:i], c.Hand[i+1:]...)
+			c.discard = append(c.discard, card)
+			return
+		}
+	}
+}
+
+func (c *CardCombat) RemoveCard(card *Card) {
+	c.remove = append(c.remove, card)
+}
+
+func (c *CardCombat) ShuffleDeck() {
+	for i := len(c.deck) - 1; i > 0; i-- {
+		j := util.GetRandomInt(i + 1)
+		c.deck[i], c.deck[j] = c.deck[j], c.deck[i]
+	}
+}
+
+func (c *CardCombat) EffectFromString(effect string) int {
+	switch effect {
+	case "damage":
+		return DAMAGE
+	case "add_card":
+		return ADD_CARD
+	case "multi_damage":
+		return MULTI_DAMAGE
+	case "damage_defense":
+		return DAMAGE_DEFENSE
+	case "vulnerable":
+		return VULNERABLE
+	case "defend":
+		return DEFEND
+	case "weak":
+		return WEAK
+	case "strength":
+		return STRENGTH
+	case "heal":
+		return HEAL
+	case "max_health":
+		return MAX_HEALTH
+	default:
+		return 0
+	}
+}
+
+func (c *CardCombat) Use(card *Card, results map[string]any) {
+	for _, effect := range card.Effects {
+		c.handCardEffect(&effect, results)
+	}
+	c.removeHandCard(card)
+}
+
+func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) {
+	switch c.EffectFromString(effect.Effect) {
+	case DAMAGE:
+		value := util.Anytoi(effect.Value)
+		c.enemies[0].OnDamage(value, nil)
+		if value > 0 {
+			results["enemyHP"] = c.enemies[0].GetLife()
+		}
+	case VULNERABLE:
+		for _, enemy := range c.enemies {
+			enemy.AddStatus(Status{
+				Type: STATUS_VULNERABLE,
+				Turn: util.Anytoi(effect.Value),
+			})
+		}
+	case DEFEND:
+		for _, actor := range c.actors {
+			actor.AddStatus(Status{
+				Type: STATUS_DEFENSE,
+				Turn: util.Anytoi(effect.Value),
+			})
+		}
+	case MULTI_DAMAGE:
+		n := util.Anytoi(effect.Value)
+		for i := 0; i < n; i++ {
+			for _, enemy := range c.enemies {
+				enemy.OnDamage(util.Anytoi(effect.Value), nil)
+			}
+		}
+	case DAMAGE_DEFENSE:
+		for _, enemy := range c.enemies {
+			enemy.OnDamage(util.Anytoi(effect.Value), nil)
+		}
+		for _, actor := range c.actors {
+			actor.AddStatus(Status{
+				Type: STATUS_DEFENSE,
+				Turn: util.Anytoi(effect.Value),
+			})
+		}
+	case WEAK:
+		for _, enemy := range c.enemies {
+			enemy.AddStatus(Status{
+				Type: STATUS_WEAK,
+				Turn: util.Anytoi(effect.Value),
+			})
+		}
+	case STRENGTH:
+		value := util.Anytoi(effect.Value)
+		c.actors[0].Strength += value
+		results["strength"] = c.actors[0].Strength
+	case HEAL:
+		life := c.actors[0].Life + util.Anytoi(effect.Value)
+		c.actors[0].Life = max(life, c.actors[0].MaxLife)
+		results["actorHP"] = c.actors[0].Life
+	case MAX_HEALTH:
+		c.actors[0].MaxLife += util.Anytoi(effect.Value)
+		results["actorMaxHP"] = c.actors[0].MaxLife
+		c.actors[0].Life = c.actors[0].Life + util.Anytoi(effect.Value)
+		results["actorHP"] = c.actors[0].Life
+	case ADD_CARD:
+		cards := effect.Value.([]any)
+		for _, card := range cards {
+			c.AddCard(c.GetCard(card.(string)))
+		}
+		push.PushEvent(event.CardUpdateHandEvent{Cards: c.getHandString()})
+	}
+}
+
+func (c *CardCombat) removeHandCard(card *Card) {
+	for i, v := range c.Hand {
+		if v == card {
+			c.Hand = append(c.Hand[:i], c.Hand[i+1:]...)
+			return
+		}
+	}
+}
+
+func (c *CardCombat) loadData(dir string) error {
+	err := c.loadCard(filepath.Join(dir, "card.json"))
+	if err != nil {
+		return err
+	}
+	err = c.loadCareer(filepath.Join(dir, "career.json"))
+	if err != nil {
+		return err
+	}
+	err = c.loadEvent(filepath.Join(dir, "event.json"))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CardCombat) loadCard(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &c.cardMap)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CardCombat) loadCareer(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	adapter := map[string]struct {
+		Cards []string `json:"init_cards"`
+	}{}
+	err = json.Unmarshal(data, &adapter)
+	for k, v := range adapter {
+		c.careerMap[k] = &CardCareer{
+			InitCards: make([]*Card, 0, len(v.Cards)),
+		}
+		for _, card := range v.Cards {
+			c.careerMap[k].InitCards = append(c.careerMap[k].InitCards, c.cardMap[card])
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CardCombat) loadEvent(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &c.eventMap)
+	if err != nil {
+		return err
+	}
+	return nil
 }

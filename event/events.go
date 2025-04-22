@@ -1,5 +1,18 @@
 package event
 
+type CardStatus struct {
+	Name     string `json:"name"`
+	Life     int    `json:"HP"`
+	MaxLife  int    `json:"maxHP"`
+	Energy   int    `json:"energy"`
+	Strength int    `json:"strength"`
+	Defense  int    `json:"defense"`
+	Statuses []struct {
+		Buff  string `json:"buff"`
+		Value int    `json:"value"`
+	} `json:"statuses"`
+}
+
 type ChangeStatusEvent struct {
 	Type  string
 	Value int
@@ -39,14 +52,9 @@ type CardStartEvent struct {
 }
 
 type CardStartEventReply struct {
-	Events     []string `json:"events"`
-	Cards      []string `json:"handCards"`
-	DeckCount  int      `json:"deckCount"`
-	ActorHP    int      `json:"actorHP"`
-	ActorMaxHP int      `json:"actorMaxHP"`
-	EnemyHP    int      `json:"enemyHP"`
-	EnemyMaxHP int      `json:"enemyMaxHP"`
-	Energy     int      `json:"energy"`
+	Events    []string `json:"events"`
+	Cards     []string `json:"handCards"`
+	DeckCount int      `json:"deckCount"`
 }
 
 type CardChooseStartEvent struct {
@@ -54,8 +62,9 @@ type CardChooseStartEvent struct {
 }
 
 type CardChooseStartEventReply struct {
-	Results map[string]any
-	Status  string
+	Results     map[string]any
+	ActorStatus CardStatus `json:"actorStatus"`
+	EnemyStatus CardStatus `json:"enemyStatus"`
 }
 
 type CardSendCards struct {
@@ -63,7 +72,17 @@ type CardSendCards struct {
 }
 
 type CardSendCardsReply struct {
-	Results map[string]any
+	DrawCount   int        `json:"drawCount"`
+	ActorStatus CardStatus `json:"actorStatus"`
+	EnemyStatus CardStatus `json:"enemyStatus"`
+}
+
+type CardDiscardCards struct {
+	Cards []int
+}
+
+type CardDiscardCardsReply struct {
+	DiscardCount int `json:"discardCount"`
 }
 
 type CardTurnEndEvent struct {
@@ -75,10 +94,8 @@ type CardTurnEndEventReply struct {
 	NextAction   int
 	ActionValue  int
 	HandCards    string
-	ActorHP      int
-	ActorMaxHP   int
-	EnemyHP      int
-	EnemyMaxHP   int
+	ActorStatus  CardStatus `json:"actorStatus"`
+	EnemyStatus  CardStatus `json:"enemyStatus"`
 }
 
 type CardUpdateHandEvent struct {

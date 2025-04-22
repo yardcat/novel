@@ -25,15 +25,12 @@ const Panel = ({ info }) => {
     <div style={panelStyle}>
       <p>name: {info.name}</p>
       <p>
-        HP: {info.hp} / {info.maxHP}
+        HP: {info.HP} / {info.maxHP}
       </p>
       <p> strength: {info.strength} </p>
       <p> defense: {info.defense} </p>
       <p> energy: {info.energy} </p>
-      <p>
-        {' '}
-        status: {info.buffs && info.buffs.map((buff) => <Buff key={buff.name} name={buff.name} count={buff.value} />)}
-      </p>
+      <p>Buff: {info.buffs && info.buffs.map((buff) => <Buff key={buff.name} name={buff.name} count={buff.turn} />)}</p>
     </div>
   );
 };
