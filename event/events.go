@@ -13,6 +13,27 @@ type CardStatus struct {
 	} `json:"statuses"`
 }
 
+type CardUI struct {
+	Name     string `json:"name"`
+	Life     int    `json:"HP"`
+	MaxLife  int    `json:"maxHP"`
+	Energy   int    `json:"energy"`
+	Strength int    `json:"strength"`
+	Defense  int    `json:"defense"`
+	Statuses []struct {
+		Buff  string `json:"buff"`
+		Value int    `json:"value"`
+	} `json:"statuses"`
+}
+
+type DeckUI struct {
+	DrawCount    int      `json:"drawCount"`
+	DiscardCount int      `json:"discardCount"`
+	HandCards    []string `json:"handCards"`
+	NextAction   int      `json:"nextAction"`
+	ActionValue  int      `json:"actionValue"`
+}
+
 type ChangeStatusEvent struct {
 	Type  string
 	Value int
@@ -106,6 +127,7 @@ type CardUpdateHandEvent struct {
 }
 
 type CardUpdateUIEvent struct {
-	Element string `json:"element"`
-	Value   string `json:"value"`
+	Actor []CardUI `json:"actorUI"`
+	Enemy []CardUI `json:"enemyUI"`
+	Deck  DeckUI   `json:"deckUI"`
 }

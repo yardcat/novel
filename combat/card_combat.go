@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/jinzhu/copier"
 )
@@ -29,6 +30,8 @@ type CardCombat struct {
 	remove    []*Card
 	maxCard   int
 	turnNum   int
+	uiDirty   bool
+	uiTimer   time.Ticker
 }
 
 type EnemyTurnResult struct {
@@ -49,6 +52,8 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 		careerMap:   make(map[string]*CardCareer),
 		deck:        make([]*Card, 0),
 		maxCard:     CARD_INIT,
+		uiDirty:     false,
+		uiTimer:     *time.NewTicker(time.Millisecond * 500),
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -68,9 +73,10 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 }
 
 func (c *CardCombat) Start() {
+	c.turnNum = 0
 	c.PrepareCard()
 	c.StartTurn()
-	c.turnNum = 0
+	go c.UpdateUI()
 }
 
 func (c *CardCombat) ChooseDefender(attacker Combatable) Combatable {
@@ -183,15 +189,49 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 	c.ai.EnemyAction(c.enemies[0], c.actors)
 	result := &EnemyTurnResult{}
-	result.damage = c.cacDamage(c.enemies[0], c.actors[0])
+	damage, armor := c.cacDamage(c.enemies[0], c.actors[0])
+	if armor <= 0 {
+		c.ChooseAttacker().GetBase().RemoveStatus(STATUS_ARMOR)
+		c.requestUpdateUI()
+	}
+	result.damage = damage
 	result.nextAction = 0
 	result.actorDead = c.actors[0].GetLife() <= 0
 	result.enemyDead = c.enemies[0].GetLife() <= 0
 	return result
 }
 
-func (c *CardCombat) UpdateUI(element string, value any) {
-	push.PushEvent(event.CardUpdateUIEvent{})
+// TODO: 当uiDirty为true时，才触发timer
+func (c *CardCombat) requestUpdateUI() {
+	c.uiDirty = true
+}
+
+// TODO: 线程安全问题
+func (c *CardCombat) UpdateUI() {
+	for {
+		<-c.uiTimer.C
+		if c.uiDirty {
+			ev := &event.CardUpdateUIEvent{
+				Actor: make([]event.CardUI, len(c.actors)),
+				Enemy: make([]event.CardUI, len(c.enemies)),
+				Deck: event.DeckUI{
+					DrawCount:    len(c.deck),
+					DiscardCount: len(c.discard),
+					HandCards:    c.getHandString(),
+					// NextAction:   c.nextAction,
+					// ActionValue:  c.actionValue,
+				},
+			}
+			for i := range c.actors {
+				copier.Copy(&ev.Actor[i], &c.actors[i])
+			}
+			for i := range c.enemies {
+				copier.Copy(&ev.Enemy[i], &c.enemies[i])
+			}
+			push.PushEvent(ev)
+			c.uiDirty = false
+		}
+	}
 }
 
 func (c *CardCombat) ChooseAttacker() Combatable {
@@ -211,12 +251,13 @@ func (c *CardCombat) ChooseAttacker() Combatable {
 	return c.combatables[fast_idx]
 }
 
-func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {
-	attack := attacker.GetAttack()
-	defense := defender.GetDefense()
-	damage_reduce_factor := 0.0
-	damage := int(float64(attack-defense) * (1 - damage_reduce_factor))
-	return max(damage, 0)
+func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) (int, int) {
+	attack := attacker.GetAttack() + attacker.GetBase().Strength
+	defense := defender.GetDefense() + defender.GetBase().Defense
+	damage := attack - defense
+	armor := defender.GetBase().GetStatusValue(STATUS_ARMOR)
+	damage -= armor
+	return max(damage, 0), armor - damage
 }
 
 func (c *CardCombat) removeCombatable(combatable Combatable) {
@@ -399,8 +440,14 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 	switch c.EffectFromString(effect.Effect) {
 	case DAMAGE:
 		value := util.Anytoi(effect.Value)
-		c.enemies[0].OnDamage(value, nil)
-		if value > 0 {
+		c.actors[0].Attack = value
+		damage, armor := c.cacDamage(c.actors[0], c.enemies[0])
+		if armor <= 0 {
+			c.ChooseAttacker().GetBase().RemoveStatus(STATUS_ARMOR)
+			c.requestUpdateUI()
+		}
+		c.enemies[0].OnDamage(damage, c.actors[0])
+		if damage > 0 {
 			results["enemyHP"] = c.enemies[0].GetLife()
 		}
 	case VULNERABLE:
@@ -413,8 +460,9 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 	case DEFEND:
 		for _, actor := range c.actors {
 			actor.AddStatus(Status{
-				Type: STATUS_DEFENSE,
-				Turn: util.Anytoi(effect.Value),
+				Type:  STATUS_ARMOR,
+				Value: util.Anytoi(effect.Value),
+				Turn:  1,
 			})
 		}
 	case MULTI_DAMAGE:
@@ -430,7 +478,7 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 		}
 		for _, actor := range c.actors {
 			actor.AddStatus(Status{
-				Type: STATUS_DEFENSE,
+				Type: STATUS_ARMOR,
 				Turn: util.Anytoi(effect.Value),
 			})
 		}

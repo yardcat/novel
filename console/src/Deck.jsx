@@ -81,8 +81,25 @@ const Deck = () => {
   };
 
   useEffect(() => {
-    socket.onMsg('event.CardUpdateHandEvent', (data) => {
-      setHandCards(data.cards);
+    socket.onMsg('event.CardUpdateHandEvent', (ev) => {
+      setHandCards(ev.cards);
+    });
+    socket.onMsg('event.CardUpdateUIEvent', (ev) => {
+      for (actor of ev.actorUI) {
+        let as = new Status();
+        Object.assign(as, actorStatus);
+        as.update(actor);
+        setActorStatus(as);
+      }
+      for (enemy of ev.enemyUI) {
+        let es = new Status();
+        Object.assign(es, enemyStatus);
+        es.update(enemy);
+        setEnemyStatus(es);
+      }
+      setDrawCount(ev.deckUI.drawCount);
+      setDiscardCount(ev.deckUI.discardCount);
+      setHandCards(ev.deckUI.handCards);
     });
   }, []);
 

@@ -51,6 +51,7 @@ type Combat interface {
 }
 
 type Status struct {
-	Type int
-	Turn int
+	Type  int
+	Value int
+	Turn  int
 }

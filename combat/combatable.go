@@ -96,7 +96,7 @@ func (c *CombatableBase) OnDamage(damage int, attacker Combatable) {
 		damage = int(float64(damage) * 0.75)
 	}
 
-	defense := c.GetStatusValue(STATUS_DEFENSE)
+	defense := c.GetStatusValue(STATUS_ARMOR)
 	damage = max(0, damage-defense)
 
 	c.Life -= damage
