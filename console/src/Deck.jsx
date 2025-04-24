@@ -118,10 +118,17 @@ const Deck = () => {
   };
 
   const sendCards = (cards) => {
+    if (cards.length === 0) {
+      return;
+    }
     let cards_param = cards.join(',');
     CallAPI('world/send_cards', { cards: cards_param }, (reply) => {
+      if (reply.status === 'no_card') {
+        return;
+      }
       updateStatus(reply);
       setDrawCount(reply.drawCount);
+      setDiscardCount(reply.discardCount);
     });
   };
 
@@ -136,6 +143,9 @@ const Deck = () => {
     const sendTurnInfo = new EndTurn();
     CallAPI('world/end_turn', {}, (reply) => {
       updateStatus(reply);
+      setHandCards(reply.handCards);
+      setDrawCount(reply.drawCount);
+      setDiscardCount(reply.discardCount);
     });
   };
 

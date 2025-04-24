@@ -81,7 +81,7 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 		Client:  c,
 	}
 	c.cardCombat = combat.NewCardCombat(&params)
-	c.cardCombat.Start(ev.Difficulty)
+	c.cardCombat.Start()
 	info := c.cardCombat.GetCardTurnInfo()
 	replay := &event.CardStartEventReply{
 		Cards:     info.Cards,

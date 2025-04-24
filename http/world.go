@@ -68,15 +68,20 @@ func (w *World) CardChooseEvent(c *gin.Context) {
 }
 
 func (w *World) CardSendCards(c *gin.Context) {
+	reply := &event.CardSendCardsReply{
+		Status: "no_card",
+	}
 	cardsParam := c.PostForm("cards")
-	strIdx := strings.Split(cardsParam, ",")
-	ev := &event.CardSendCards{
-		Cards: make([]int, len(strIdx)),
+	if len(cardsParam) != 0 {
+		strIdx := strings.Split(cardsParam, ",")
+		ev := &event.CardSendCards{
+			Cards: make([]int, len(strIdx)),
+		}
+		for i, v := range strIdx {
+			ev.Cards[i], _ = strconv.Atoi(v)
+		}
+		reply = w.story.SendCards(ev)
 	}
-	for i, v := range strIdx {
-		ev.Cards[i], _ = strconv.Atoi(v)
-	}
-	reply := w.story.SendCards(ev)
 	jsonStr, err := json.Marshal(reply)
 	if err != nil {
 		log.Info("CardTurnStart json marshal err %v", err)

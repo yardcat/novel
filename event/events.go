@@ -72,9 +72,11 @@ type CardSendCards struct {
 }
 
 type CardSendCardsReply struct {
-	DrawCount   int        `json:"drawCount"`
-	ActorStatus CardStatus `json:"actorStatus"`
-	EnemyStatus CardStatus `json:"enemyStatus"`
+	Status       string     `json:"status"`
+	DrawCount    int        `json:"drawCount"`
+	DiscardCount int        `json:"discardCount"`
+	ActorStatus  CardStatus `json:"actorStatus"`
+	EnemyStatus  CardStatus `json:"enemyStatus"`
 }
 
 type CardDiscardCards struct {
@@ -89,11 +91,12 @@ type CardTurnEndEvent struct {
 }
 
 type CardTurnEndEventReply struct {
-	DiscardCount int
+	DrawCount    int `json:"drawCount"`
+	DiscardCount int `json:"discardCount"`
 	Damage       int
 	NextAction   int
 	ActionValue  int
-	HandCards    string
+	HandCards    []string   `json:"handCards"`
 	ActorStatus  CardStatus `json:"actorStatus"`
 	EnemyStatus  CardStatus `json:"enemyStatus"`
 }

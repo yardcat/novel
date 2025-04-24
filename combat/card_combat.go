@@ -9,20 +9,15 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/jinzhu/copier"
-)
-
-const (
-	CARD_COUNT  = 5
-	ENERGY_INIT = 3
 )
 
 type CardCombat struct {
 	combatables []Combatable
 	actors      []*Actor
 	enemies     []*Enemy
+	ai          *EnemyAI
 	client      CombatClient
 	Record
 	cardMap   map[string]*Card
@@ -43,21 +38,17 @@ type EnemyTurnResult struct {
 	enemyDead  bool
 }
 
-type Action struct {
-	Cards    []string
-	Discards []string
-}
-
 func NewCardCombat(p *CombatParams) *CardCombat {
 	c := &CardCombat{
 		actors:      p.Actors,
 		enemies:     p.Enemies,
 		client:      p.Client,
+		ai:          NewEnemyAI(),
 		combatables: make([]Combatable, len(p.Actors)+len(p.Enemies)),
 		cardMap:     make(map[string]*Card),
 		careerMap:   make(map[string]*CardCareer),
 		deck:        make([]*Card, 0),
-		maxCard:     CARD_COUNT,
+		maxCard:     CARD_INIT,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -76,12 +67,10 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 	return c
 }
 
-func (c *CardCombat) Start(difficuty string) error {
-	log.Info("start card, difficulty:%s", difficuty)
+func (c *CardCombat) Start() {
 	c.PrepareCard()
 	c.StartTurn()
 	c.turnNum = 0
-	return nil
 }
 
 func (c *CardCombat) ChooseDefender(attacker Combatable) Combatable {
@@ -127,6 +116,10 @@ func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
 			c.Use(card, results)
 		}
 	}
+
+	reply.DrawCount = len(c.deck)
+	reply.DiscardCount = len(c.discard)
+
 	reply.ActorStatus.Name = c.actors[0].Name
 	reply.ActorStatus.Life = c.actors[0].Life
 	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
@@ -144,13 +137,12 @@ func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
 }
 
 func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
-	discard := []*Card{}
 	for _, idx := range ev.Cards {
-		discard = append(discard, c.Hand[idx])
+		c.discard = append(c.discard, c.Hand[idx])
 		c.Hand = slices.Delete(c.Hand, idx, idx+1)
 	}
 	reply := &event.CardDiscardCardsReply{
-		DiscardCount: len(discard),
+		DiscardCount: len(c.discard),
 	}
 	return reply
 }
@@ -159,7 +151,6 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 	reply := &event.CardTurnEndEventReply{}
 	discardCount := len(c.Hand) - c.maxCard
 	if discardCount > 0 {
-		reply.DiscardCount = discardCount
 		c.discard = append(c.discard, c.Hand[c.maxCard:]...)
 		c.Hand = c.Hand[:c.maxCard]
 	}
@@ -170,7 +161,9 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 
 	c.StartTurn()
 
-	reply.HandCards = strings.Join(c.getHandString(), ",")
+	reply.DrawCount = len(c.deck)
+	reply.DiscardCount = len(c.discard)
+	reply.HandCards = c.getHandString()
 	reply.ActorStatus.Name = c.actors[0].Name
 	reply.ActorStatus.Life = c.actors[0].Life
 	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
@@ -188,6 +181,7 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 }
 
 func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
+	c.ai.EnemyAction(c.enemies[0], c.actors)
 	result := &EnemyTurnResult{}
 	result.damage = c.cacDamage(c.enemies[0], c.actors[0])
 	result.nextAction = 0
@@ -223,12 +217,6 @@ func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {
 	damage_reduce_factor := 0.0
 	damage := int(float64(attack-defense) * (1 - damage_reduce_factor))
 	return max(damage, 0)
-}
-
-func (c *CardCombat) shouldDodge(_ Combatable, defender Combatable) bool {
-	randomNumber := util.GetRandomInt(100)
-	dodge := defender.GetDodge()
-	return randomNumber < dodge
 }
 
 func (c *CardCombat) removeCombatable(combatable Combatable) {
@@ -404,6 +392,7 @@ func (c *CardCombat) Use(card *Card, results map[string]any) {
 		c.handCardEffect(&effect, results)
 	}
 	c.removeHandCard(card)
+	c.discard = append(c.discard, card)
 }
 
 func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) {

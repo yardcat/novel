@@ -26,5 +26,12 @@
     "type": 0,
     "cost": 1,
     "effects": [{ "effect": "damage", "value": 10 }]
+  },
+  "dang": {
+    "name": "dang",
+    "description": "dang",
+    "type": 2,
+    "cost": 1,
+    "effects": [{ "effect": "defend", "value": 5 }]
   }
 }

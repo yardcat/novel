@@ -5,8 +5,9 @@ import "my_test/log"
 const (
 	ENEMY_BEHAVIOR_ATTACK = iota
 	ENEMY_BEHAVIOR_DEFEND
-	ENEMY_BEHAVIOR_BUFF
-	ENEMY_BEHAVIOR_DEBUFF
+	ENEMY_BEHAVIOR_ESCAPE
+	ENEMY_BEHAVIOR_SKILL
+	ENEMY_BEHAVIOR_COUNT
 )
 
 type EnemyBehavior struct {
@@ -21,42 +22,34 @@ type EnemyIntent struct {
 }
 
 type EnemyAI struct {
-	enemy     *Enemy
 	behaviors []EnemyBehavior
-	combat    Combat
 }
 
-func NewEnemyAI(enemy *Enemy, combat Combat) *EnemyAI {
+func NewEnemyAI() *EnemyAI {
 	return &EnemyAI{
-		enemy:     enemy,
 		behaviors: make([]EnemyBehavior, 0),
-		combat:    combat,
 	}
 }
 
-func (ai *EnemyAI) AddBehavior(behavior EnemyBehavior) {
-	ai.behaviors = append(ai.behaviors, behavior)
-}
-
-func (ai *EnemyAI) ChooseAction() EnemyIntent {
+func (ai *EnemyAI) EnemyAction(enemy *Enemy, actors []*Actor) EnemyIntent {
 	var intent EnemyIntent
 
-	if ai.enemy.GetBase().Life < ai.enemy.GetBase().MaxLife/2 {
+	if enemy.GetBase().Life < enemy.GetBase().MaxLife/2 {
 		for _, behavior := range ai.behaviors {
 			if behavior.Type == ENEMY_BEHAVIOR_DEFEND {
 				intent.Behavior = behavior
-				intent.Target = ai.enemy
+				intent.Target = enemy
 				return intent
 			}
 		}
 	}
 
-	if ai.enemy.GetBase().GetStatusValue(STATUS_STRENGTH) > 0 {
+	if enemy.GetBase().GetStatusValue(STATUS_STRENGTH) > 0 {
 		for _, behavior := range ai.behaviors {
 			if behavior.Type == ENEMY_BEHAVIOR_ATTACK {
 				intent.Behavior = behavior
-				if len(ai.combat.Actors()) > 0 {
-					intent.Target = ai.combat.Actors()[0]
+				if len(actors) > 0 {
+					intent.Target = actors[0]
 				}
 				return intent
 			}
@@ -65,10 +58,10 @@ func (ai *EnemyAI) ChooseAction() EnemyIntent {
 
 	for _, behavior := range ai.behaviors {
 		intent.Behavior = behavior
-		if behavior.Type == ENEMY_BEHAVIOR_ATTACK && len(ai.combat.Actors()) > 0 {
-			intent.Target = ai.combat.Actors()[0]
+		if behavior.Type == ENEMY_BEHAVIOR_ATTACK && len(actors) > 0 {
+			intent.Target = actors[0]
 		} else {
-			intent.Target = ai.enemy
+			intent.Target = enemy
 		}
 		return intent
 	}
@@ -82,9 +75,5 @@ func (ai *EnemyAI) ExecuteAction(intent EnemyIntent) {
 		log.Info("ai attack")
 	case ENEMY_BEHAVIOR_DEFEND:
 		log.Info("ai defend")
-	case ENEMY_BEHAVIOR_BUFF:
-		log.Info("buff")
-	case ENEMY_BEHAVIOR_DEBUFF:
-		log.Info("debuff")
 	}
 }

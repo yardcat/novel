@@ -31,6 +31,13 @@ const (
 	STATUS_DEFENSE
 )
 
+const (
+	CARD_INIT   = 5
+	CARD_MAX    = 10
+	ENERGY_INIT = 3
+	ENERGY_MAX  = 20
+)
+
 type CardBuff struct {
 	Buff  string
 	Value int
