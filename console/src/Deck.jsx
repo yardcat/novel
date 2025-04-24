@@ -80,26 +80,30 @@ const Deck = () => {
     }
   };
 
+  const updateUI = (ev) => {
+    for (const actor of ev.actorUI) {
+      let as = new Status();
+      Object.assign(as, actorStatus);
+      as.update(actor);
+      setActorStatus(as);
+    }
+    for (const enemy of ev.enemyUI) {
+      let es = new Status();
+      Object.assign(es, enemyStatus);
+      es.update(enemy);
+      setEnemyStatus(es);
+    }
+    setDrawCount(ev.deckUI.drawCount);
+    setDiscardCount(ev.deckUI.discardCount);
+    setHandCards(ev.deckUI.handCards);
+  };
+
   useEffect(() => {
     socket.onMsg('event.CardUpdateHandEvent', (ev) => {
       setHandCards(ev.cards);
     });
     socket.onMsg('event.CardUpdateUIEvent', (ev) => {
-      for (actor of ev.actorUI) {
-        let as = new Status();
-        Object.assign(as, actorStatus);
-        as.update(actor);
-        setActorStatus(as);
-      }
-      for (enemy of ev.enemyUI) {
-        let es = new Status();
-        Object.assign(es, enemyStatus);
-        es.update(enemy);
-        setEnemyStatus(es);
-      }
-      setDrawCount(ev.deckUI.drawCount);
-      setDiscardCount(ev.deckUI.discardCount);
-      setHandCards(ev.deckUI.handCards);
+      updateUI(ev);
     });
   }, []);
 
@@ -111,10 +115,6 @@ const Deck = () => {
     const sendTurnInfo = new StartInfo();
     sendTurnInfo.difficuty = difficuty;
     CallAPI('world/card_start', {}, (reply) => {
-      setTurnInfo(reply);
-      setHandCards(reply.handCards);
-      setDrawCount(reply.deckCount);
-      setDiscardCount(0);
       setChooseEvents(reply.events);
       setIsModalVisible(true);
       setIsPlaying(true);

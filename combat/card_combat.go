@@ -123,22 +123,8 @@ func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
 		}
 	}
 
-	reply.DrawCount = len(c.deck)
-	reply.DiscardCount = len(c.discard)
+	c.requestUpdateUI()
 
-	reply.ActorStatus.Name = c.actors[0].Name
-	reply.ActorStatus.Life = c.actors[0].Life
-	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
-	reply.ActorStatus.Energy = c.actors[0].Energy
-	reply.ActorStatus.Strength = c.actors[0].Strength
-	reply.ActorStatus.Defense = c.actors[0].Defense
-	copier.Copy(reply.ActorStatus.Statuses, c.actors[0].Statuses)
-	reply.EnemyStatus.Name = c.enemies[0].Name
-	reply.EnemyStatus.Life = c.enemies[0].Life
-	reply.EnemyStatus.MaxLife = c.enemies[0].MaxLife
-	reply.EnemyStatus.Strength = c.enemies[0].Strength
-	reply.EnemyStatus.Defense = c.enemies[0].Defense
-	copier.Copy(reply.EnemyStatus.Statuses, c.enemies[0].Statuses)
 	return reply
 }
 
@@ -167,22 +153,8 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 
 	c.StartTurn()
 
-	reply.DrawCount = len(c.deck)
-	reply.DiscardCount = len(c.discard)
-	reply.HandCards = c.getHandString()
-	reply.ActorStatus.Name = c.actors[0].Name
-	reply.ActorStatus.Life = c.actors[0].Life
-	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
-	reply.ActorStatus.Energy = c.actors[0].Energy
-	reply.ActorStatus.Strength = c.actors[0].Strength
-	reply.ActorStatus.Defense = c.actors[0].Defense
-	copier.Copy(reply.ActorStatus.Statuses, c.actors[0].Statuses)
-	reply.EnemyStatus.Name = c.enemies[0].Name
-	reply.EnemyStatus.Life = c.enemies[0].Life
-	reply.EnemyStatus.MaxLife = c.enemies[0].MaxLife
-	reply.EnemyStatus.Strength = c.enemies[0].Strength
-	reply.EnemyStatus.Defense = c.enemies[0].Defense
-	copier.Copy(reply.EnemyStatus.Statuses, c.enemies[0].Statuses)
+	c.requestUpdateUI()
+
 	return reply
 }
 
@@ -288,7 +260,8 @@ func (c *CardCombat) removeCombatable(combatable Combatable) {
 }
 
 func (c *CardCombat) onCombatFinish() {
-	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage", c.turns, c.actorCastDamage, c.actorIncurDamage)
+	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage",
+		c.turns, c.actorCastDamage, c.actorIncurDamage)
 	for _, actor := range c.actors {
 		result := CombatResult{LifeCost: c.actorIncurDamage}
 		actor.OnCombatDone(result)
@@ -330,20 +303,7 @@ func (c *CardCombat) HandleChooseEvents(ev string) *event.CardChooseStartEventRe
 	for _, effect := range c.eventMap[ev].Effects {
 		c.handCardEffect(&effect, reply.Results)
 	}
-
-	reply.ActorStatus.Name = c.actors[0].Name
-	reply.ActorStatus.Life = c.actors[0].Life
-	reply.ActorStatus.MaxLife = c.actors[0].MaxLife
-	reply.ActorStatus.Energy = c.actors[0].Energy
-	reply.ActorStatus.Strength = c.actors[0].Strength
-	reply.ActorStatus.Defense = c.actors[0].Defense
-	copier.Copy(reply.ActorStatus.Statuses, c.actors[0].Statuses)
-	reply.EnemyStatus.Name = c.enemies[0].Name
-	reply.EnemyStatus.Life = c.enemies[0].Life
-	reply.EnemyStatus.MaxLife = c.enemies[0].MaxLife
-	reply.EnemyStatus.Strength = c.enemies[0].Strength
-	reply.EnemyStatus.Defense = c.enemies[0].Defense
-	copier.Copy(reply.EnemyStatus.Statuses, c.enemies[0].Statuses)
+	c.requestUpdateUI()
 	return reply
 }
 
