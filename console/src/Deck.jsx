@@ -80,28 +80,25 @@ const Deck = () => {
     }
   };
 
-  const updateUI = (ev) => {
-    for (const actor of ev.actorUI) {
-      let as = new Status();
-      Object.assign(as, actorStatus);
-      as.update(actor);
-      setActorStatus(as);
-    }
-    for (const enemy of ev.enemyUI) {
-      let es = new Status();
-      Object.assign(es, enemyStatus);
-      es.update(enemy);
-      setEnemyStatus(es);
-    }
-    setDrawCount(ev.deckUI.drawCount);
-    setDiscardCount(ev.deckUI.discardCount);
-    setHandCards(ev.deckUI.handCards);
-  };
-
   useEffect(() => {
-    socket.onMsg('event.CardUpdateHandEvent', (ev) => {
-      setHandCards(ev.cards);
-    });
+    const updateUI = (ev) => {
+      for (const actor of ev.actorUI) {
+        let as = new Status();
+        Object.assign(as, actorStatus);
+        as.update(actor);
+        setActorStatus(as);
+      }
+      for (const enemy of ev.enemyUI) {
+        let es = new Status();
+        Object.assign(es, enemyStatus);
+        es.update(enemy);
+        setEnemyStatus(es);
+      }
+      setDrawCount(ev.deckUI.drawCount);
+      setDiscardCount(ev.deckUI.discardCount);
+      setHandCards(ev.deckUI.handCards);
+    };
+
     socket.onMsg('event.CardUpdateUIEvent', (ev) => {
       updateUI(ev);
     });
@@ -121,32 +118,12 @@ const Deck = () => {
     });
   };
 
-  const updateStatus = (results) => {
-    if (results != null) {
-      let as = new Status();
-      Object.assign(as, actorStatus);
-      as.update(results['actorStatus']);
-      setActorStatus(as);
-      let es = new Status();
-      Object.assign(es, enemyStatus);
-      es.update(results['enemyStatus']);
-      setEnemyStatus(es);
-    }
-  };
-
   const sendCards = (cards) => {
     if (cards.length === 0) {
       return;
     }
     let cards_param = cards.join(',');
-    CallAPI('world/send_cards', { cards: cards_param }, (reply) => {
-      if (reply.status === 'no_card') {
-        return;
-      }
-      updateStatus(reply);
-      setDrawCount(reply.drawCount);
-      setDiscardCount(reply.discardCount);
-    });
+    CallAPI('world/send_cards', { cards: cards_param }, (reply) => {});
   };
 
   const discardCards = (cards) => {
@@ -158,18 +135,11 @@ const Deck = () => {
 
   const endTurn = () => {
     const sendTurnInfo = new EndTurn();
-    CallAPI('world/end_turn', {}, (reply) => {
-      updateStatus(reply);
-      setHandCards(reply.handCards);
-      setDrawCount(reply.drawCount);
-      setDiscardCount(reply.discardCount);
-    });
+    CallAPI('world/end_turn', {}, (reply) => {});
   };
 
   const handleChooseEvent = () => {
-    CallAPI('world/card_choose_event', { event: selectedEvent }, (reply) => {
-      updateStatus(reply);
-    });
+    CallAPI('world/card_choose_event', { event: selectedEvent }, (reply) => {});
     setIsModalVisible(false);
   };
 

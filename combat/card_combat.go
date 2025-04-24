@@ -200,7 +200,7 @@ func (c *CardCombat) UpdateUI() {
 			for i := range c.enemies {
 				copier.Copy(&ev.Enemy[i], &c.enemies[i])
 			}
-			push.PushEvent(ev)
+			push.PushEvent(*ev)
 			c.uiDirty = false
 		}
 	}
