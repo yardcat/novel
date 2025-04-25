@@ -35,13 +35,13 @@ type CombatableBase struct {
 	CombatType  int
 	Strength    int
 	Defense     int
-	Statuses    []Status
+	Statuses    map[int]*Status
 }
 
 func NewCombatableBase(id int, name string) *CombatableBase {
 	return &CombatableBase{
 		Name:     name,
-		Statuses: []Status{},
+		Statuses: map[int]*Status{},
 		MaxLife:  100,
 		Life:     100,
 	}
@@ -111,32 +111,44 @@ func (c *CombatableBase) OnKill(Combatable) {
 }
 
 func (c *CombatableBase) AddStatus(status Status) {
-	c.Statuses = append(c.Statuses, status)
+	v, exist := c.Statuses[status.Type]
+	if exist {
+		switch v.Type {
+		case STATUS_VULNERABLE:
+		case STATUS_WEAK:
+			v.Turn = max(v.Turn, status.Turn)
+		case STATUS_STRENGTH:
+		case STATUS_ARMOR:
+			v.Value += status.Value
+		}
+	}
+	if !exist {
+		ns := &Status{}
+		*ns = status
+		c.Statuses[status.Type] = ns
+	}
 }
 
 func (c *CombatableBase) RemoveStatus(statusType int) {
-	for i := len(c.Statuses) - 1; i >= 0; i-- {
-		if c.Statuses[i].Type == statusType {
-			c.Statuses = append(c.Statuses[:i], c.Statuses[i+1:]...)
-		}
+	_, exist := c.Statuses[statusType]
+	if exist {
+		delete(c.Statuses, statusType)
 	}
 }
 
 func (c *CombatableBase) GetStatusValue(statusType int) int {
-	value := 0
-	for _, status := range c.Statuses {
-		if status.Type == statusType {
-			value += status.Turn
-		}
+	_, exist := c.Statuses[statusType]
+	if !exist {
+		return 0
 	}
-	return value
+	return c.Statuses[statusType].Value
 }
 
 func (c *CombatableBase) UpdateStatus() {
-	for i := len(c.Statuses) - 1; i >= 0; i-- {
-		c.Statuses[i].Turn--
-		if c.Statuses[i].Turn <= 0 {
-			c.Statuses = append(c.Statuses[:i], c.Statuses[i+1:]...)
+	for k, v := range c.Statuses {
+		v.Turn--
+		if v.Turn <= 0 {
+			delete(c.Statuses, k)
 		}
 	}
 }

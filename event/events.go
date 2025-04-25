@@ -1,18 +1,5 @@
 package event
 
-type CardStatus struct {
-	Name     string `json:"name"`
-	Life     int    `json:"HP"`
-	MaxLife  int    `json:"maxHP"`
-	Energy   int    `json:"energy"`
-	Strength int    `json:"strength"`
-	Defense  int    `json:"defense"`
-	Statuses []struct {
-		Buff  string `json:"buff"`
-		Value int    `json:"value"`
-	} `json:"statuses"`
-}
-
 type CardUI struct {
 	Name     string `json:"name"`
 	Life     int    `json:"HP"`
@@ -20,10 +7,11 @@ type CardUI struct {
 	Energy   int    `json:"energy"`
 	Strength int    `json:"strength"`
 	Defense  int    `json:"defense"`
-	Statuses []struct {
-		Buff  string `json:"buff"`
-		Value int    `json:"value"`
-	} `json:"statuses"`
+	Statuses map[int]struct {
+		Type  int `json:"type"`
+		Value int `json:"value"`
+		Turn  int `json:"turn"`
+	} `json:"buffs"`
 }
 
 type DeckUI struct {
@@ -83,9 +71,7 @@ type CardChooseStartEvent struct {
 }
 
 type CardChooseStartEventReply struct {
-	Results     map[string]any
-	ActorStatus CardStatus `json:"actorStatus"`
-	EnemyStatus CardStatus `json:"enemyStatus"`
+	Results map[string]any
 }
 
 type CardSendCards struct {
@@ -93,11 +79,9 @@ type CardSendCards struct {
 }
 
 type CardSendCardsReply struct {
-	Status       string     `json:"status"`
-	DrawCount    int        `json:"drawCount"`
-	DiscardCount int        `json:"discardCount"`
-	ActorStatus  CardStatus `json:"actorStatus"`
-	EnemyStatus  CardStatus `json:"enemyStatus"`
+	Status       string `json:"status"`
+	DrawCount    int    `json:"drawCount"`
+	DiscardCount int    `json:"discardCount"`
 }
 
 type CardDiscardCards struct {
@@ -117,9 +101,7 @@ type CardTurnEndEventReply struct {
 	Damage       int
 	NextAction   int
 	ActionValue  int
-	HandCards    []string   `json:"handCards"`
-	ActorStatus  CardStatus `json:"actorStatus"`
-	EnemyStatus  CardStatus `json:"enemyStatus"`
+	HandCards    []string `json:"handCards"`
 }
 
 type CardUpdateHandEvent struct {
@@ -130,4 +112,8 @@ type CardUpdateUIEvent struct {
 	Actor []CardUI `json:"actorUI"`
 	Enemy []CardUI `json:"enemyUI"`
 	Deck  DeckUI   `json:"deckUI"`
+}
+
+type ActionUpdateEvent struct {
+	Action string `json:"action"`
 }

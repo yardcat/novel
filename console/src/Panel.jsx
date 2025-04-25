@@ -4,11 +4,16 @@ import { Config } from './Config';
 import { CallAPI } from './Net';
 import { socket } from './Socket';
 
-const Buff = ({ name, value }) => {
+const Types = ['vulnerable', 'weak', 'strength', 'armor'];
+
+const Buff = ({ type, value, turn }) => {
+  let name = Types[type];
   return (
-    <Tag bordered={false} color="success">
-      {name} : {value}
-    </Tag>
+    <>
+      <Tag bordered={false} color="success">
+        {name} : {value} ({turn})
+      </Tag>
+    </>
   );
 };
 
@@ -30,7 +35,13 @@ const Panel = ({ info }) => {
       <p> strength: {info.strength} </p>
       <p> defense: {info.defense} </p>
       <p> energy: {info.energy} </p>
-      <p>Buff: {info.buffs && info.buffs.map((buff) => <Buff key={buff.name} name={buff.name} count={buff.turn} />)}</p>
+      <p>
+        Buff:
+        {info.buffs &&
+          Object.values(info.buffs).map((buff) => (
+            <Buff key={buff.type} type={buff.type} value={buff.value} turn={buff.turn} />
+          ))}
+      </p>
     </div>
   );
 };

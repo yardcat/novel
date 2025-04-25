@@ -3,7 +3,7 @@ import { InputNumber, List, Modal } from 'antd';
 import { CallAPI } from './Net';
 import { Config } from './Config';
 
-const Collectable = ({ showCollect, setShowCollect, setAction }) => {
+const Collectable = ({ showCollect, setShowCollect }) => {
   const onSubmit = () => {
     const listItems = document.querySelectorAll('#collectable .ant-list-item');
     const collectableData = Array.from(listItems)
@@ -23,7 +23,6 @@ const Collectable = ({ showCollect, setShowCollect, setAction }) => {
           log += item['count'] + ' ' + item['item'] + ',';
         });
         response['log'] = log;
-        setAction(response);
       }
     });
     setShowCollect(false);

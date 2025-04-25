@@ -19,6 +19,7 @@ func NewActor(base CombatableBase, c ActorClient) *Actor {
 		Magic:          100,
 		client:         c,
 	}
+	a.Statuses = make(map[int]*Status)
 	a.MaxLife = a.Life
 	return a
 }

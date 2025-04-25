@@ -1,23 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { List, Card } from 'antd';
+import { use } from 'react';
+import { socket } from './Socket.js';
 
-const Action = ({ addApiHandler, actions }) => {
+const Action = () => {
+  const [actions, setAction] = useState([]);
+
   useEffect(() => {
-    addApiHandler('player/collect', null);
+    socket.onMsg('event.ActionUpdateEvent', (ev) => {
+      setAction((prevActions) => [...prevActions, ev.action]);
+    });
   }, []);
 
   return (
-    <Card title="Action">
-      <List
-        itemLayout="horizontal"
-        dataSource={actions}
-        renderItem={(item) => (
-          <List.Item>
-            <List.Item.Meta title={item.action} description={<div> {item.log} </div>} />
-          </List.Item>
-        )}
-      />
-    </Card>
+    <List
+      style={{ height: '80vh' }}
+      size="small"
+      bordered
+      header={<div>Action</div>}
+      itemLayout="horizontal"
+      dataSource={actions}
+      renderItem={(item) => <List.Item>{item}</List.Item>}
+    />
   );
 };
 

@@ -51,7 +51,7 @@ function generateOptions(api_list) {
   return root.children;
 }
 
-const Navigator = ({ apiHandlers, addApiHandler, setAction }) => {
+const Navigator = ({ apiHandlers, addApiHandler }) => {
   const options = generateOptions(Object.keys(apiHandlers));
   const [showCollect, setShowCollect] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -78,7 +78,7 @@ const Navigator = ({ apiHandlers, addApiHandler, setAction }) => {
         onChange={(value) => handleChange(value, apiHandlers)}
         displayRender={(label) => 'Command'}
       />
-      <Collectable showCollect={showCollect} setShowCollect={setShowCollect} setAction={setAction} />
+      <Collectable showCollect={showCollect} setShowCollect={setShowCollect} />
       <Mp addApiHandler={addApiHandler} showMap={showMap} setShowMap={setShowMap} />
     </Flex>
   );

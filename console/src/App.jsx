@@ -13,17 +13,12 @@ const { Header, Footer, Sider, Content } = Layout;
 
 const App = () => {
   const [apiHandlers, setApiHandlers] = useState({});
-  const [actions, setAction] = useState([]);
 
   const addApiHandler = (path, handler) => {
     setApiHandlers((prevHandlers) => ({
       ...prevHandlers,
       [path]: handler,
     }));
-  };
-
-  const addAction = (action) => {
-    setAction((prevActions) => [...prevActions, action]);
   };
 
   useEffect(() => {
@@ -35,7 +30,7 @@ const App = () => {
     {
       key: '1',
       label: 'Deck',
-      children: <Deck addApiHandler={addApiHandler} actions={actions}></Deck>,
+      children: <Deck></Deck>,
     },
     {
       key: '2',
@@ -47,7 +42,7 @@ const App = () => {
   return (
     <Layout>
       <Header>
-        <Navigator apiHandlers={apiHandlers} addApiHandler={addApiHandler} setAction={addAction}></Navigator>
+        <Navigator apiHandlers={apiHandlers} addApiHandler={addApiHandler}></Navigator>
       </Header>
       <Layout>
         <Sider width="20%">
@@ -58,7 +53,7 @@ const App = () => {
           <Tabs defaultActiveKey="1" items={items} type="card"></Tabs>
         </Content>
         <Sider width="20%">
-          <Action addApiHandler={addApiHandler} actions={actions}></Action>
+          <Action></Action>
         </Sider>
       </Layout>
     </Layout>

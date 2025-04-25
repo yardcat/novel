@@ -8,7 +8,6 @@ import (
 	"my_test/util"
 	"os"
 	"path/filepath"
-	"slices"
 	"time"
 
 	"github.com/jinzhu/copier"
@@ -25,7 +24,7 @@ type CardCombat struct {
 	careerMap map[string]*CardCareer
 	eventMap  map[string]*CardEvent
 	deck      []*Card
-	Hand      []*Card
+	hand      []*Card
 	discard   []*Card
 	remove    []*Card
 	maxCard   int
@@ -76,6 +75,7 @@ func (c *CardCombat) Start() {
 	c.turnNum = 0
 	c.PrepareCard()
 	c.StartTurn()
+	push.PushAction("战斗开始")
 	go c.UpdateUI()
 }
 
@@ -105,15 +105,18 @@ func (c *CardCombat) Combatables() []Combatable {
 
 func (c *CardCombat) StartTurn() {
 	c.actors[0].Energy = ENERGY_INIT
-	drawCount := c.maxCard - len(c.Hand)
+	drawCount := c.maxCard - len(c.hand)
 	c.DrawCard(drawCount)
+	for _, actor := range c.actors {
+		actor.UpdateStatus()
+	}
 }
 
 func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
 	reply := &event.CardSendCardsReply{}
 	cardsToUse := []*Card{}
 	for _, idx := range cards {
-		cardsToUse = append(cardsToUse, c.Hand[idx])
+		cardsToUse = append(cardsToUse, c.hand[idx])
 	}
 	results := make(map[string]any)
 	for _, card := range cardsToUse {
@@ -130,9 +133,18 @@ func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
 
 func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
 	for _, idx := range ev.Cards {
-		c.discard = append(c.discard, c.Hand[idx])
-		c.Hand = slices.Delete(c.Hand, idx, idx+1)
+		c.discard = append(c.discard, c.hand[idx])
+		c.hand[idx] = nil
 	}
+
+	newHand := []*Card{}
+	for _, v := range c.hand {
+		if v != nil {
+			newHand = append(newHand, v)
+		}
+	}
+	c.hand = newHand
+
 	reply := &event.CardDiscardCardsReply{
 		DiscardCount: len(c.discard),
 	}
@@ -141,10 +153,10 @@ func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscard
 
 func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
 	reply := &event.CardTurnEndEventReply{}
-	discardCount := len(c.Hand) - c.maxCard
+	discardCount := len(c.hand) - c.maxCard
 	if discardCount > 0 {
-		c.discard = append(c.discard, c.Hand[c.maxCard:]...)
-		c.Hand = c.Hand[:c.maxCard]
+		c.discard = append(c.discard, c.hand[c.maxCard:]...)
+		c.hand = c.hand[:c.maxCard]
 	}
 	result := c.EnemyTurn()
 	reply.Damage = result.damage
@@ -163,13 +175,16 @@ func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 	result := &EnemyTurnResult{}
 	damage, armor := c.cacDamage(c.enemies[0], c.actors[0])
 	if armor <= 0 {
-		c.ChooseAttacker().GetBase().RemoveStatus(STATUS_ARMOR)
-		c.requestUpdateUI()
+		c.actors[0].RemoveStatus(STATUS_ARMOR)
 	}
 	result.damage = damage
 	result.nextAction = 0
 	result.actorDead = c.actors[0].GetLife() <= 0
 	result.enemyDead = c.enemies[0].GetLife() <= 0
+
+	c.requestUpdateUI()
+	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.enemies[0].GetName(), c.actors[0].GetName(), damage)
+
 	return result
 }
 
@@ -204,23 +219,6 @@ func (c *CardCombat) UpdateUI() {
 			c.uiDirty = false
 		}
 	}
-}
-
-func (c *CardCombat) ChooseAttacker() Combatable {
-	fast := MAX_STEP
-	fast_idx := 0
-	for i, comb := range c.combatables {
-		speed := (MAX_STEP - comb.GetBase().AttackStep) / float64(comb.GetAttackSpeed())
-		if speed < fast {
-			fast = speed
-			fast_idx = i
-		}
-	}
-	for _, comb := range c.combatables {
-		comb.GetBase().AttackStep += float64(comb.GetAttackSpeed()) * fast
-	}
-	c.combatables[fast_idx].GetBase().AttackStep = 0
-	return c.combatables[fast_idx]
 }
 
 func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) (int, int) {
@@ -274,13 +272,13 @@ func (c *CardCombat) GetCard(name string) *Card {
 
 func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
 	info := &CardTurnInfo{
-		Cards:        make([]string, len(c.Hand)),
+		Cards:        make([]string, len(c.hand)),
 		DrawCount:    len(c.deck),
 		DiscardCount: len(c.discard),
 		RemoveCount:  len(c.remove),
 		Energy:       c.actors[0].Energy,
 	}
-	for i, card := range c.Hand {
+	for i, card := range c.hand {
 		info.Cards[i] = card.Name
 	}
 	return info
@@ -308,15 +306,15 @@ func (c *CardCombat) HandleChooseEvents(ev string) *event.CardChooseStartEventRe
 }
 
 func (c *CardCombat) getHandString() []string {
-	strs := make([]string, 0, len(c.Hand))
-	for _, card := range c.Hand {
+	strs := make([]string, 0, len(c.hand))
+	for _, card := range c.hand {
 		strs = append(strs, card.Name)
 	}
 	return strs
 }
 
 func (c *CardCombat) AddCard(card *Card) {
-	c.Hand = append(c.Hand, card)
+	c.hand = append(c.hand, card)
 }
 
 func (c *CardCombat) DrawCard(n int) []*Card {
@@ -333,7 +331,7 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 		}
 		card := c.deck[0]
 		c.deck = c.deck[1:]
-		c.Hand = append(c.Hand, card)
+		c.hand = append(c.hand, card)
 		cards = append(cards, card)
 	}
 
@@ -341,9 +339,9 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 }
 
 func (c *CardCombat) DiscardCard(card *Card) {
-	for i, v := range c.Hand {
+	for i, v := range c.hand {
 		if v == card {
-			c.Hand = append(c.Hand[:i], c.Hand[i+1:]...)
+			c.hand = append(c.hand[:i], c.hand[i+1:]...)
 			c.discard = append(c.discard, card)
 			return
 		}
@@ -403,8 +401,9 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 		c.actors[0].Attack = value
 		damage, armor := c.cacDamage(c.actors[0], c.enemies[0])
 		if armor <= 0 {
-			c.ChooseAttacker().GetBase().RemoveStatus(STATUS_ARMOR)
+			c.enemies[0].RemoveStatus(STATUS_ARMOR)
 			c.requestUpdateUI()
+
 		}
 		c.enemies[0].OnDamage(damage, c.actors[0])
 		if damage > 0 {
@@ -472,9 +471,9 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 }
 
 func (c *CardCombat) removeHandCard(card *Card) {
-	for i, v := range c.Hand {
+	for i, v := range c.hand {
 		if v == card {
-			c.Hand = append(c.Hand[:i], c.Hand[i+1:]...)
+			c.hand = append(c.hand[:i], c.hand[i+1:]...)
 			return
 		}
 	}
