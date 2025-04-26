@@ -85,13 +85,13 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 	c.cardCombat = combat.NewCardCombat(&params)
 	action := c.cardCombat.Start()
 	info := c.cardCombat.GetCardTurnInfo()
-	replay := &event.CardStartEventReply{
+	reply := &event.CardStartEventReply{
 		Cards:     info.Cards,
 		DeckCount: info.DrawCount,
 		Events:    c.cardCombat.GenerateChooseEvents(),
 	}
-	copier.Copy(replay, action)
-	return replay
+	copier.Copy(reply, action)
+	return reply
 }
 
 func (c *CombatSystem) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {

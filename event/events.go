@@ -63,7 +63,7 @@ type CardStartEventReply struct {
 	Cards       []string `json:"handCards"`
 	DeckCount   int      `json:"deckCount"`
 	Action      string   `json:"action"`
-	ActionValue string   `json:"actionValue"`
+	ActionValue int      `json:"actionValue"`
 }
 
 type CardChooseStartEvent struct {

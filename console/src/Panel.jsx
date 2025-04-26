@@ -25,7 +25,7 @@ const panelStyle = {
   width: '40vw',
 };
 
-const Panel = ({ info }) => {
+const Panel = ({ role, info, intent }) => {
   return (
     <div style={panelStyle}>
       <p>name: {info.name}</p>
@@ -34,12 +34,22 @@ const Panel = ({ info }) => {
       </p>
       <p> strength: {info.strength} </p>
       <p> defense: {info.defense} </p>
-      <p> energy: {info.energy} </p>
+      {role == 'actor' && <p> energy: {info.energy} </p>}
+      {role == 'enemy' && (
+        <p>
+          intent: {intent.action} {intent.actionValue}
+        </p>
+      )}
       <p>
         Buff:
         {info.buffs &&
           Object.values(info.buffs).map((buff) => (
-            <Buff key={buff.type} type={buff.type} value={buff.value} turn={buff.turn} />
+            <Buff
+              key={buff.type}
+              type={buff.type}
+              value={buff.value}
+              turn={buff.turn}
+            />
           ))}
       </p>
     </div>

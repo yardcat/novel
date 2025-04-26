@@ -175,22 +175,35 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 }
 
 func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
-	c.ai.EnemyAction(c.enemies[0])
 	result := &EnemyTurnResult{}
-	damage, armor := c.cacDamage(c.enemies[0], c.actors[0])
-	if armor <= 0 {
-		c.actors[0].RemoveStatus(STATUS_ARMOR)
-	}
-	result.damage = damage
-	result.action = ""
-	result.actionValue = 0
-	result.actorDead = c.actors[0].GetLife() <= 0
-	result.enemyDead = c.enemies[0].GetLife() <= 0
 
-	c.ai.onEnemyTurnFinish()
+	for _, actor := range c.actors {
+		actor.UpdateStatus()
+	}
+
+	action := c.ai.EnemyAction(c.enemies[0])
+	if action.Action == ENEMY_BEHAVIOR_ATTACK {
+		damage := c.cacDamage(c.enemies[0], c.actors[0])
+		armorStatus := c.actors[0].GetBase().Statuses[STATUS_ARMOR]
+		if armorStatus != nil && armorStatus.Value <= 0 {
+			c.actors[0].RemoveStatus(STATUS_ARMOR)
+			c.requestUpdateUI()
+		}
+		result.damage = damage
+		result.actorDead = c.actors[0].GetLife() <= 0
+		result.enemyDead = c.enemies[0].GetLife() <= 0
+		push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.enemies[0].GetName(), c.actors[0].GetName(), damage)
+	} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
+		c.enemies[0].AddStatus(Status{
+			Type:  STATUS_ARMOR,
+			Value: 5,
+			Turn:  2,
+		})
+		push.PushAction("%s 施加了护盾", c.enemies[0].GetName())
+	}
 
 	c.requestUpdateUI()
-	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.enemies[0].GetName(), c.actors[0].GetName(), damage)
+	c.ai.onEnemyTurnFinish()
 
 	return result
 }
@@ -228,13 +241,18 @@ func (c *CardCombat) UpdateUI() {
 	}
 }
 
-func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) (int, int) {
+func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {
 	attack := attacker.GetAttack() + attacker.GetBase().Strength
 	defense := defender.GetDefense() + defender.GetBase().Defense
 	damage := attack - defense
-	armor := defender.GetBase().GetStatusValue(STATUS_ARMOR)
+	armorStatus := defender.GetBase().Statuses[STATUS_ARMOR]
+	var armor int = 0
+	if armorStatus != nil {
+		armor = armorStatus.Value
+		armorStatus.Value -= damage
+	}
 	damage -= armor
-	return max(damage, 0), armor - damage
+	return max(damage, 0)
 }
 
 func (c *CardCombat) removeCombatable(combatable Combatable) {
@@ -406,11 +424,11 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 	case DAMAGE:
 		value := util.Anytoi(effect.Value)
 		c.actors[0].Attack = value
-		damage, armor := c.cacDamage(c.actors[0], c.enemies[0])
-		if armor <= 0 {
+		damage := c.cacDamage(c.actors[0], c.enemies[0])
+		armorStatus := c.enemies[0].GetBase().Statuses[STATUS_ARMOR]
+		if armorStatus != nil && armorStatus.Value <= 0 {
 			c.enemies[0].RemoveStatus(STATUS_ARMOR)
 			c.requestUpdateUI()
-
 		}
 		c.enemies[0].OnDamage(damage, c.actors[0])
 		if damage > 0 {

@@ -81,6 +81,7 @@ const Deck = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [actorPanelInfo, setActorPanelInfo] = useState(new PanelInfo());
   const [enemyPanelInfo, setEnemyPanelInfo] = useState(new PanelInfo());
+  const [intent, setIntent] = useState({});
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -121,6 +122,7 @@ const Deck = () => {
       setChooseEvents(reply.events);
       setIsModalVisible(true);
       setIsPlaying(true);
+      setIntent({ action: reply.action, actionValue: reply.actionValue });
     });
   };
 
@@ -143,7 +145,9 @@ const Deck = () => {
 
   const endTurn = () => {
     const sendTurnInfo = new EndTurn();
-    CallAPI('world/end_turn', {}, (reply) => {});
+    CallAPI('world/end_turn', {}, (reply) => {
+      setIntent({ action: reply.action, actionValue: reply.actionValue });
+    });
   };
 
   const handleChooseEvent = () => {
@@ -165,8 +169,17 @@ const Deck = () => {
           border: '1px',
         }}
       >
-        <Panel info={actorPanelInfo} style={{ width: '45%' }}></Panel>
-        <Panel info={enemyPanelInfo} style={{ width: '45%' }}></Panel>
+        <Panel
+          role="actor"
+          info={actorPanelInfo}
+          style={{ width: '45%' }}
+        ></Panel>
+        <Panel
+          role="enemy"
+          info={enemyPanelInfo}
+          intent={intent}
+          style={{ width: '45%' }}
+        ></Panel>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>

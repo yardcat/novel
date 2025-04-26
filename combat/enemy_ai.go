@@ -16,8 +16,8 @@ type EnemyBehavior struct {
 }
 
 type EnemyAction struct {
-	Type        string
-	Value       int
+	Action      string
+	ActionValue int
 	Description string
 	Target      Combatable
 }
@@ -44,12 +44,17 @@ func NewEnemyAI(enemy []*Enemy) *EnemyAI {
 func (e *EnemyAI) PrepareAction(enemy *Enemy, actors []*Actor) {
 	var action EnemyAction
 
-	if enemy.Life < enemy.MaxLife/2 {
-		action.Type = ENEMY_BEHAVIOR_DEFEND
+	if enemy.Life > enemy.MaxLife/2 {
+		action.Action = ENEMY_BEHAVIOR_ATTACK
 		action.Target = actors[0]
-		action.Value = 5
+		action.ActionValue = enemy.Attack + enemy.Strength
+	} else if enemy.Life < enemy.MaxLife/2 {
+		action.Action = ENEMY_BEHAVIOR_DEFEND
+		action.Target = actors[0]
+		action.ActionValue = 5
 	}
 	e.currentTurnAction[enemy] = action
+	e.history[enemy].PushFront(action)
 }
 
 func (e *EnemyAI) EnemyAction(enemy *Enemy) EnemyAction {
@@ -60,8 +65,5 @@ func (e *EnemyAI) EnemyAction(enemy *Enemy) EnemyAction {
 }
 
 func (e *EnemyAI) onEnemyTurnFinish() {
-	for k, v := range e.currentTurnAction {
-		e.history[k].PushFront(v)
-	}
 	e.currentTurnAction = make(map[*Enemy]EnemyAction)
 }
