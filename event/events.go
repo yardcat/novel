@@ -18,8 +18,6 @@ type DeckUI struct {
 	DrawCount    int      `json:"drawCount"`
 	DiscardCount int      `json:"discardCount"`
 	HandCards    []string `json:"handCards"`
-	NextAction   int      `json:"nextAction"`
-	ActionValue  int      `json:"actionValue"`
 }
 
 type ChangeStatusEvent struct {
@@ -61,9 +59,11 @@ type CardStartEvent struct {
 }
 
 type CardStartEventReply struct {
-	Events    []string `json:"events"`
-	Cards     []string `json:"handCards"`
-	DeckCount int      `json:"deckCount"`
+	Events      []string `json:"events"`
+	Cards       []string `json:"handCards"`
+	DeckCount   int      `json:"deckCount"`
+	Action      string   `json:"action"`
+	ActionValue string   `json:"actionValue"`
 }
 
 type CardChooseStartEvent struct {
@@ -99,8 +99,8 @@ type CardTurnEndEventReply struct {
 	DrawCount    int `json:"drawCount"`
 	DiscardCount int `json:"discardCount"`
 	Damage       int
-	NextAction   int
-	ActionValue  int
+	Action       string   `json:"action"`
+	ActionValue  int      `json:"actionValue"`
 	HandCards    []string `json:"handCards"`
 }
 

@@ -34,10 +34,11 @@ type CardCombat struct {
 }
 
 type EnemyTurnResult struct {
-	damage     int
-	nextAction int
-	actorDead  bool
-	enemyDead  bool
+	damage      int
+	action      string
+	actionValue int
+	actorDead   bool
+	enemyDead   bool
 }
 
 func NewCardCombat(p *CombatParams) *CardCombat {
@@ -45,7 +46,7 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 		actors:      p.Actors,
 		enemies:     p.Enemies,
 		client:      p.Client,
-		ai:          NewEnemyAI(),
+		ai:          NewEnemyAI(p.Enemies),
 		combatables: make([]Combatable, len(p.Actors)+len(p.Enemies)),
 		cardMap:     make(map[string]*Card),
 		careerMap:   make(map[string]*CardCareer),
@@ -71,12 +72,13 @@ func NewCardCombat(p *CombatParams) *CardCombat {
 	return c
 }
 
-func (c *CardCombat) Start() {
+func (c *CardCombat) Start() EnemyAction {
 	c.turnNum = 0
 	c.PrepareCard()
 	c.StartTurn()
 	push.PushAction("战斗开始")
 	go c.UpdateUI()
+	return c.ai.EnemyAction(c.enemies[0])
 }
 
 func (c *CardCombat) ChooseDefender(attacker Combatable) Combatable {
@@ -110,6 +112,7 @@ func (c *CardCombat) StartTurn() {
 	for _, actor := range c.actors {
 		actor.UpdateStatus()
 	}
+	c.ai.PrepareAction(c.enemies[0], c.actors)
 }
 
 func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
@@ -160,10 +163,11 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 	}
 	result := c.EnemyTurn()
 	reply.Damage = result.damage
-	reply.NextAction = result.nextAction
 	c.actors[0].OnDamage(result.damage, c.enemies[0])
 
 	c.StartTurn()
+	action := c.ai.EnemyAction(c.enemies[0])
+	copier.Copy(reply, action)
 
 	c.requestUpdateUI()
 
@@ -171,16 +175,19 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 }
 
 func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
-	c.ai.EnemyAction(c.enemies[0], c.actors)
+	c.ai.EnemyAction(c.enemies[0])
 	result := &EnemyTurnResult{}
 	damage, armor := c.cacDamage(c.enemies[0], c.actors[0])
 	if armor <= 0 {
 		c.actors[0].RemoveStatus(STATUS_ARMOR)
 	}
 	result.damage = damage
-	result.nextAction = 0
+	result.action = ""
+	result.actionValue = 0
 	result.actorDead = c.actors[0].GetLife() <= 0
 	result.enemyDead = c.enemies[0].GetLife() <= 0
+
+	c.ai.onEnemyTurnFinish()
 
 	c.requestUpdateUI()
 	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.enemies[0].GetName(), c.actors[0].GetName(), damage)

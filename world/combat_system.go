@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/jinzhu/copier"
 )
 
 type CombatSystem struct {
@@ -81,13 +83,14 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 		Client:  c,
 	}
 	c.cardCombat = combat.NewCardCombat(&params)
-	c.cardCombat.Start()
+	action := c.cardCombat.Start()
 	info := c.cardCombat.GetCardTurnInfo()
 	replay := &event.CardStartEventReply{
 		Cards:     info.Cards,
 		DeckCount: info.DrawCount,
 		Events:    c.cardCombat.GenerateChooseEvents(),
 	}
+	copier.Copy(replay, action)
 	return replay
 }
 
