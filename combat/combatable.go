@@ -1,5 +1,7 @@
 package combat
 
+import "slices"
+
 const (
 	ACTOR = 1
 	ENEMY = 2
@@ -35,13 +37,13 @@ type CombatableBase struct {
 	CombatType  int
 	Strength    int
 	Defense     int
-	Statuses    map[int]*Status
+	Statuses    []*Status
 }
 
 func NewCombatableBase(id int, name string) *CombatableBase {
 	return &CombatableBase{
 		Name:     name,
-		Statuses: map[int]*Status{},
+		Statuses: make([]*Status, 0),
 		MaxLife:  100,
 		Life:     100,
 	}
@@ -111,8 +113,14 @@ func (c *CombatableBase) OnKill(Combatable) {
 }
 
 func (c *CombatableBase) AddStatus(status Status) {
-	v, exist := c.Statuses[status.Type]
-	if exist {
+	var idx int = -1
+	for i, v := range c.Statuses {
+		if status.Type == v.Type {
+			idx = i
+		}
+	}
+	if idx != -1 {
+		v := c.Statuses[idx]
 		switch v.Type {
 		case STATUS_VULNERABLE:
 		case STATUS_WEAK:
@@ -120,35 +128,51 @@ func (c *CombatableBase) AddStatus(status Status) {
 		case STATUS_STRENGTH:
 		case STATUS_ARMOR:
 			v.Value += status.Value
+		case STATUS_POISON:
+			idx = -1
 		}
 	}
-	if !exist {
-		ns := &Status{}
-		*ns = status
-		c.Statuses[status.Type] = ns
+	if idx == -1 {
+		c.Statuses = append(c.Statuses, &status)
 	}
 }
 
 func (c *CombatableBase) RemoveStatus(statusType int) {
-	_, exist := c.Statuses[statusType]
-	if exist {
-		delete(c.Statuses, statusType)
+	for i, v := range c.Statuses {
+		if v.Type == statusType {
+			c.Statuses = slices.Delete(c.Statuses, i, i+1)
+		}
 	}
+}
+
+func (c *CombatableBase) GetArmorStatus() *Status {
+	for _, v := range c.Statuses {
+		if v.Type == STATUS_ARMOR {
+			return v
+		}
+	}
+	return nil
 }
 
 func (c *CombatableBase) GetStatusValue(statusType int) int {
-	_, exist := c.Statuses[statusType]
-	if !exist {
-		return 0
+	for _, v := range c.Statuses {
+		if v.Type == statusType {
+			return v.Value
+		}
 	}
-	return c.Statuses[statusType].Value
+	return 0
 }
 
 func (c *CombatableBase) UpdateStatus() {
-	for k, v := range c.Statuses {
+	for i, v := range c.Statuses {
+		switch v.Type {
+		case STATUS_POISON:
+			c.OnDamage(v.Value, nil)
+		}
+
 		v.Turn--
 		if v.Turn <= 0 {
-			delete(c.Statuses, k)
+			c.Statuses = slices.Delete(c.Statuses, i, i+1)
 		}
 	}
 }

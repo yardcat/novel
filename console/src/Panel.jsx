@@ -36,14 +36,14 @@ const Panel = ({ role, info, intent }) => {
       <p> defense: {info.defense} </p>
       {role == 'actor' && <p> energy: {info.energy} </p>}
       {role == 'enemy' && (
-        <p>
-          intent: {intent.action} {intent.actionValue}
-        </p>
+        <strong>
+          intent: {intent.action} value: {intent.actionValue}
+        </strong>
       )}
       <p>
         Buff:
         {info.buffs &&
-          Object.values(info.buffs).map((buff) => (
+          info.buffs.map((buff) => (
             <Buff
               key={buff.type}
               type={buff.type}

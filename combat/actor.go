@@ -19,7 +19,7 @@ func NewActor(base CombatableBase, c ActorClient) *Actor {
 		Magic:          100,
 		client:         c,
 	}
-	a.Statuses = make(map[int]*Status)
+	a.Statuses = make([]*Status, 0)
 	a.MaxLife = a.Life
 	return a
 }
@@ -34,4 +34,10 @@ func (a *Actor) OnKill(defender Combatable) {
 
 func (a *Actor) OnCombatDone(result CombatResult) {
 	a.client.OnCombatDone(result)
+}
+
+func (a *Actor) OnWin(enemies []*Enemy) {
+}
+
+func (a *Actor) OnLose(enemies []*Enemy) {
 }

@@ -33,7 +33,7 @@ class PanelInfo {
     energy = 0,
     strength = 0,
     defense = 0,
-    buffs = {},
+    buffs = [],
   } = {}) {
     Object.assign(this, { name, HP, maxHP, energy, strength, defense, buffs });
   }

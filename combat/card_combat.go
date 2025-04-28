@@ -8,17 +8,19 @@ import (
 	"my_test/util"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/jinzhu/copier"
 )
 
 type CardCombat struct {
-	combatables []Combatable
-	actors      []*Actor
-	enemies     []*Enemy
-	ai          *EnemyAI
-	client      CombatClient
+	combatables     []Combatable
+	actors          []*Actor
+	originalEnemies []*Enemy
+	enemies         []*Enemy
+	ai              *EnemyAI
+	client          CombatClient
 	Record
 	cardMap   map[string]*Card
 	careerMap map[string]*CardCareer
@@ -31,6 +33,8 @@ type CardCombat struct {
 	turnNum   int
 	uiDirty   bool
 	uiTimer   time.Ticker
+	finish    bool
+	skills    []CardSkill
 }
 
 type EnemyTurnResult struct {
@@ -43,17 +47,19 @@ type EnemyTurnResult struct {
 
 func NewCardCombat(p *CombatParams) *CardCombat {
 	c := &CardCombat{
-		actors:      p.Actors,
-		enemies:     p.Enemies,
-		client:      p.Client,
-		ai:          NewEnemyAI(p.Enemies),
-		combatables: make([]Combatable, len(p.Actors)+len(p.Enemies)),
-		cardMap:     make(map[string]*Card),
-		careerMap:   make(map[string]*CardCareer),
-		deck:        make([]*Card, 0),
-		maxCard:     CARD_INIT,
-		uiDirty:     false,
-		uiTimer:     *time.NewTicker(time.Millisecond * 500),
+		actors:          p.Actors,
+		originalEnemies: p.Enemies,
+		enemies:         p.Enemies,
+		client:          p.Client,
+		ai:              NewEnemyAI(p.Enemies),
+		combatables:     make([]Combatable, len(p.Actors)+len(p.Enemies)),
+		cardMap:         make(map[string]*Card),
+		careerMap:       make(map[string]*CardCareer),
+		deck:            make([]*Card, 0),
+		maxCard:         CARD_INIT,
+		uiDirty:         false,
+		uiTimer:         *time.NewTicker(time.Millisecond * 500),
+		finish:          false,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -105,7 +111,22 @@ func (c *CardCombat) Combatables() []Combatable {
 	return c.combatables
 }
 
+func (c *CardCombat) handleCardSkills(timing int) {
+	for _, v := range c.skills {
+		if v.Timing != timing || v.TurnCount < v.TurnInterval {
+			v.TurnCount++
+			continue
+		}
+		v.TurnCount = 0
+		for _, e := range v.Effects {
+			c.handCardEffect(e)
+		}
+	}
+}
+
 func (c *CardCombat) StartTurn() {
+	c.handleCardSkills(TIMING_START)
+
 	c.actors[0].Energy = ENERGY_INIT
 	drawCount := c.maxCard - len(c.hand)
 	c.DrawCard(drawCount)
@@ -151,25 +172,33 @@ func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscard
 	reply := &event.CardDiscardCardsReply{
 		DiscardCount: len(c.discard),
 	}
+	push.PushAction("discard %d cards", len(ev.Cards))
 	return reply
 }
 
 func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
+	c.handleCardSkills(TIMING_END)
+
 	reply := &event.CardTurnEndEventReply{}
 	discardCount := len(c.hand) - c.maxCard
 	if discardCount > 0 {
 		c.discard = append(c.discard, c.hand[c.maxCard:]...)
 		c.hand = c.hand[:c.maxCard]
 	}
+
 	result := c.EnemyTurn()
 	reply.Damage = result.damage
-	c.actors[0].OnDamage(result.damage, c.enemies[0])
-
-	c.StartTurn()
-	action := c.ai.EnemyAction(c.enemies[0])
-	copier.Copy(reply, action)
-
-	c.requestUpdateUI()
+	if reply.Damage != 0 {
+		c.actors[0].OnDamage(result.damage, c.enemies[0])
+		c.checkDead(c.actors[0])
+	}
+	if !c.finish {
+		c.StartTurn()
+		action := c.ai.EnemyAction(c.enemies[0])
+		copier.Copy(reply, action)
+		c.requestUpdateUI()
+		push.PushAction("end turn")
+	}
 
 	return reply
 }
@@ -177,14 +206,19 @@ func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEvent
 func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 	result := &EnemyTurnResult{}
 
-	for _, actor := range c.actors {
-		actor.UpdateStatus()
+	for _, v := range c.enemies {
+		v.UpdateStatus()
+		c.checkDead(v)
+	}
+
+	if c.finish {
+		return result
 	}
 
 	action := c.ai.EnemyAction(c.enemies[0])
 	if action.Action == ENEMY_BEHAVIOR_ATTACK {
 		damage := c.cacDamage(c.enemies[0], c.actors[0])
-		armorStatus := c.actors[0].GetBase().Statuses[STATUS_ARMOR]
+		armorStatus := c.actors[0].GetArmorStatus()
 		if armorStatus != nil && armorStatus.Value <= 0 {
 			c.actors[0].RemoveStatus(STATUS_ARMOR)
 			c.requestUpdateUI()
@@ -206,6 +240,13 @@ func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 	c.ai.onEnemyTurnFinish()
 
 	return result
+}
+
+func (c *CardCombat) checkDead(cbt Combatable) {
+	if !cbt.IsAlive() {
+		cbt.OnDead(nil)
+		c.removeCombatable(cbt)
+	}
 }
 
 // TODO: 当uiDirty为true时，才触发timer
@@ -245,7 +286,7 @@ func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {
 	attack := attacker.GetAttack() + attacker.GetBase().Strength
 	defense := defender.GetDefense() + defender.GetBase().Defense
 	damage := attack - defense
-	armorStatus := defender.GetBase().Statuses[STATUS_ARMOR]
+	armorStatus := defender.GetBase().GetArmorStatus()
 	var armor int = 0
 	if armorStatus != nil {
 		armor = armorStatus.Value
@@ -260,35 +301,51 @@ func (c *CardCombat) removeCombatable(combatable Combatable) {
 	case ACTOR:
 		for i, actor := range c.actors {
 			if actor == combatable {
-				c.actors = append(c.actors[:i], c.actors[i+1:]...)
+				c.actors = slices.Delete(c.actors, i, i+1)
 				break
 			}
 		}
 	case ENEMY:
 		for i, enemy := range c.enemies {
 			if enemy == combatable {
-				c.enemies = append(c.enemies[:i], c.enemies[i+1:]...)
+				c.enemies = slices.Delete(c.enemies, i, i+1)
 				break
 			}
 		}
 	default:
 		log.Info("unknown combatable type %d", combatable.GetCombatType())
 	}
+
+	if len(c.actors) == 0 {
+		c.onCombatFinish(false)
+	} else if len(c.enemies) == 0 {
+		c.onCombatFinish(true)
+	}
+
 	for i, v := range c.combatables {
 		if v == combatable {
-			c.combatables = append(c.combatables[:i], c.combatables[i+1:]...)
+			c.combatables = slices.Delete(c.combatables, i, i+1)
 			return
 		}
 	}
 }
 
-func (c *CardCombat) onCombatFinish() {
-	log.Info("combat finish, turns %d, actor cast %d damaage, actor incur %d damage",
-		c.turns, c.actorCastDamage, c.actorIncurDamage)
+func (c *CardCombat) onCombatFinish(win bool) {
+	c.finish = true
+
 	for _, actor := range c.actors {
 		result := CombatResult{LifeCost: c.actorIncurDamage}
 		actor.OnCombatDone(result)
 	}
+	if win {
+		c.actors[0].OnWin(c.originalEnemies)
+		push.PushEvent(event.CardCombatWin{})
+	} else {
+		c.actors[0].OnLose(c.originalEnemies)
+		push.PushEvent(event.CardCombatLose{})
+	}
+
+	push.PushAction("combat finish")
 }
 
 func (c *CardCombat) GetCard(name string) *Card {
@@ -324,7 +381,7 @@ func (c *CardCombat) HandleChooseEvents(ev string) *event.CardChooseStartEventRe
 		Results: make(map[string]any),
 	}
 	for _, effect := range c.eventMap[ev].Effects {
-		c.handCardEffect(&effect, reply.Results)
+		c.handCardEffect(&effect)
 	}
 	c.requestUpdateUI()
 	return reply
@@ -387,25 +444,25 @@ func (c *CardCombat) ShuffleDeck() {
 func (c *CardCombat) EffectFromString(effect string) int {
 	switch effect {
 	case "damage":
-		return DAMAGE
+		return EFFECT_DAMAGE
 	case "add_card":
-		return ADD_CARD
+		return EFFECT_ADD_CARD
 	case "multi_damage":
-		return MULTI_DAMAGE
+		return EFFECT_MULTI_DAMAGE
 	case "damage_defense":
-		return DAMAGE_DEFENSE
+		return EFFECT_DAMAGE_DEFENSE
 	case "vulnerable":
-		return VULNERABLE
+		return EFFECT_VULNERABLE
 	case "defend":
-		return DEFEND
+		return EFFECT_DEFEND
 	case "weak":
-		return WEAK
+		return EFFECT_WEAK
 	case "strength":
-		return STRENGTH
+		return EFFECT_STRENGTH
 	case "heal":
-		return HEAL
+		return EFFECT_HEAL
 	case "max_health":
-		return MAX_HEALTH
+		return EFFECT_MAX_HEALTH
 	default:
 		return 0
 	}
@@ -413,50 +470,48 @@ func (c *CardCombat) EffectFromString(effect string) int {
 
 func (c *CardCombat) Use(card *Card, results map[string]any) {
 	for _, effect := range card.Effects {
-		c.handCardEffect(&effect, results)
+		c.handCardEffect(&effect)
 	}
 	c.removeHandCard(card)
 	c.discard = append(c.discard, card)
 }
 
-func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) {
+func (c *CardCombat) handCardEffect(effect *CardEffect) {
 	switch c.EffectFromString(effect.Effect) {
-	case DAMAGE:
+	case EFFECT_DAMAGE:
 		value := util.Anytoi(effect.Value)
 		c.actors[0].Attack = value
 		damage := c.cacDamage(c.actors[0], c.enemies[0])
-		armorStatus := c.enemies[0].GetBase().Statuses[STATUS_ARMOR]
+		armorStatus := c.enemies[0].GetBase().GetArmorStatus()
 		if armorStatus != nil && armorStatus.Value <= 0 {
 			c.enemies[0].RemoveStatus(STATUS_ARMOR)
 			c.requestUpdateUI()
 		}
 		c.enemies[0].OnDamage(damage, c.actors[0])
-		if damage > 0 {
-			results["enemyHP"] = c.enemies[0].GetLife()
-		}
-	case VULNERABLE:
+		c.checkDead(c.enemies[0])
+	case EFFECT_VULNERABLE:
 		for _, enemy := range c.enemies {
 			enemy.AddStatus(Status{
 				Type: STATUS_VULNERABLE,
 				Turn: util.Anytoi(effect.Value),
 			})
 		}
-	case DEFEND:
+	case EFFECT_DEFEND:
 		for _, actor := range c.actors {
 			actor.AddStatus(Status{
 				Type:  STATUS_ARMOR,
 				Value: util.Anytoi(effect.Value),
-				Turn:  1,
+				Turn:  2,
 			})
 		}
-	case MULTI_DAMAGE:
+	case EFFECT_MULTI_DAMAGE:
 		n := util.Anytoi(effect.Value)
 		for i := 0; i < n; i++ {
 			for _, enemy := range c.enemies {
 				enemy.OnDamage(util.Anytoi(effect.Value), nil)
 			}
 		}
-	case DAMAGE_DEFENSE:
+	case EFFECT_DAMAGE_DEFENSE:
 		for _, enemy := range c.enemies {
 			enemy.OnDamage(util.Anytoi(effect.Value), nil)
 		}
@@ -466,27 +521,23 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, results map[string]any) 
 				Turn: util.Anytoi(effect.Value),
 			})
 		}
-	case WEAK:
+	case EFFECT_WEAK:
 		for _, enemy := range c.enemies {
 			enemy.AddStatus(Status{
 				Type: STATUS_WEAK,
 				Turn: util.Anytoi(effect.Value),
 			})
 		}
-	case STRENGTH:
+	case EFFECT_STRENGTH:
 		value := util.Anytoi(effect.Value)
 		c.actors[0].Strength += value
-		results["strength"] = c.actors[0].Strength
-	case HEAL:
+	case EFFECT_HEAL:
 		life := c.actors[0].Life + util.Anytoi(effect.Value)
 		c.actors[0].Life = max(life, c.actors[0].MaxLife)
-		results["actorHP"] = c.actors[0].Life
-	case MAX_HEALTH:
+	case EFFECT_MAX_HEALTH:
 		c.actors[0].MaxLife += util.Anytoi(effect.Value)
-		results["actorMaxHP"] = c.actors[0].MaxLife
 		c.actors[0].Life = c.actors[0].Life + util.Anytoi(effect.Value)
-		results["actorHP"] = c.actors[0].Life
-	case ADD_CARD:
+	case EFFECT_ADD_CARD:
 		cards := effect.Value.([]any)
 		for _, card := range cards {
 			c.AddCard(c.GetCard(card.(string)))

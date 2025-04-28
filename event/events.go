@@ -7,7 +7,7 @@ type CardUI struct {
 	Energy   int    `json:"energy"`
 	Strength int    `json:"strength"`
 	Defense  int    `json:"defense"`
-	Statuses map[int]struct {
+	Statuses []struct {
 		Type  int `json:"type"`
 		Value int `json:"value"`
 		Turn  int `json:"turn"`
@@ -116,4 +116,11 @@ type CardUpdateUIEvent struct {
 
 type ActionUpdateEvent struct {
 	Action string `json:"action"`
+}
+
+type CardCombatWin struct {
+	Bonus []string `json:"bonus"`
+}
+type CardCombatLose struct {
+	Bonus []string `json:"bonus"`
 }

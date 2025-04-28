@@ -8,13 +8,15 @@ const Action = () => {
 
   useEffect(() => {
     socket.onMsg('event.ActionUpdateEvent', (ev) => {
-      setAction((prevActions) => [...prevActions, ev.action]);
+      setAction((prevActions) => {
+        [...prevActions, ev.action];
+      });
     });
   }, []);
 
   return (
     <List
-      style={{ height: '80vh' }}
+      style={{ height: '80vh', overflowY: 'scroll' }}
       size="small"
       bordered
       header={<div>Action</div>}

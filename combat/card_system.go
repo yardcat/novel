@@ -13,16 +13,16 @@ const (
 )
 
 const (
-	DAMAGE = iota
-	VULNERABLE
-	DEFEND
-	ADD_CARD
-	MULTI_DAMAGE
-	DAMAGE_DEFENSE
-	WEAK
-	STRENGTH
-	HEAL
-	MAX_HEALTH
+	EFFECT_DAMAGE = iota
+	EFFECT_VULNERABLE
+	EFFECT_DEFEND
+	EFFECT_ADD_CARD
+	EFFECT_MULTI_DAMAGE
+	EFFECT_DAMAGE_DEFENSE
+	EFFECT_WEAK
+	EFFECT_STRENGTH
+	EFFECT_HEAL
+	EFFECT_MAX_HEALTH
 )
 
 const (
@@ -37,6 +37,7 @@ const (
 	STATUS_WEAK
 	STATUS_STRENGTH
 	STATUS_ARMOR
+	STATUS_POISON
 )
 
 const (
@@ -46,9 +47,20 @@ const (
 	ENERGY_MAX  = 20
 )
 
-type CardBuff struct {
-	Buff  string
-	Value int
+const (
+	TIMING_START = iota
+	TIMING_END
+)
+
+const (
+	SKILL_ADD_STRENGTH = iota
+)
+
+type CardSkill struct {
+	Effects      []*CardEffect
+	Timing       int
+	TurnInterval int
+	TurnCount    int
 }
 
 type CardEffect struct {
