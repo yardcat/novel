@@ -19,6 +19,7 @@ type CombatSystem struct {
 	Dungeons   map[string]*combat.Dungeon
 	story      *Story
 	cardCombat *combat.CardCombat
+	tower      *combat.Tower
 }
 
 func NewCombatSystem() *CombatSystem {
@@ -61,6 +62,7 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 }
 
 func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventReply {
+	c.tower = combat.NewTower(c)
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)
@@ -104,6 +106,27 @@ func (c *CombatSystem) DiscardCards(ev *event.CardDiscardCards) *event.CardDisca
 
 func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
 	return c.cardCombat.EndTurn(ev)
+}
+
+func (c *CombatSystem) NextFloor(ev *event.CardNextFloorEvent) *event.CardNextFloorReply {
+	reply := &event.CardNextFloorReply{}
+	c.tower.EnterNextFloor()
+	return reply
+}
+
+func (c *CombatSystem) EnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterRoomReply {
+	reply := &event.CardEnterRoomReply{}
+	switch ev.RoomType {
+	case combat.ROOM_TYPE_FIGHT:
+		log.Info("enter fight room")
+	case combat.ROOM_TYPE_SHOP:
+		log.Info("enter shop room")
+	case combat.ROOM_TYPE_EVENT:
+		log.Info("enter event room")
+	case combat.ROOM_TYPE_REST:
+		log.Info("enter rest room")
+	}
+	return reply
 }
 
 func (c *CombatSystem) HandleChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {

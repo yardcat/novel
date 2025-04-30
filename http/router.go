@@ -34,6 +34,8 @@ func NewGinRouter() *gin.Engine {
 		worldRouterGroup.POST("/send_cards", w.CardSendCards)
 		worldRouterGroup.POST("/discard_cards", w.CardDiscardCards)
 		worldRouterGroup.POST("/end_turn", w.CardEndTurn)
+		worldRouterGroup.POST("/card_next_floor", w.CardEndTurn)
+		worldRouterGroup.POST("/card_enter_room", w.CardEndTurn)
 	}
 
 	return r

@@ -121,6 +121,21 @@ type ActionUpdateEvent struct {
 type CardCombatWin struct {
 	Bonus []string `json:"bonus"`
 }
+
 type CardCombatLose struct {
 	Bonus []string `json:"bonus"`
+}
+
+type CardNextFloorEvent struct {
+}
+
+type CardNextFloorReply struct {
+	ChooseRoom []string
+}
+
+type CardEnterRoomEvent struct {
+	RoomType int `json:"roomType"`
+}
+
+type CardEnterRoomReply struct {
 }

@@ -332,3 +332,11 @@ func (s *Story) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCards
 func (s *Story) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
 	return s.combatSystem.EndTurn(ev)
 }
+
+func (s *Story) CardNextFloor(ev *event.CardNextFloorEvent) *event.CardNextFloorReply {
+	return s.combatSystem.NextFloor(ev)
+}
+
+func (s *Story) CardEnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterRoomReply {
+	return s.combatSystem.EnterRoom(ev)
+}

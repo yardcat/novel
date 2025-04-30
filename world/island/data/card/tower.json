@@ -1,1 +1,7 @@
-{}
+{
+  "floor_num": 5,
+  "room_num": 3,
+  "shop_num": 1,
+  "rest_num": 1,
+  "event_num": 1
+}

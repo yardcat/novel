@@ -46,8 +46,8 @@ func (w *World) GetUiInfo(c *gin.Context) {
 func (w *World) CardStart(c *gin.Context) {
 	difficuty := c.PostForm("difficuty")
 	event := &event.CardStartEvent{Difficulty: difficuty}
-	replay := w.story.ChallengeTower(event)
-	jsonStr, err := json.Marshal(replay)
+	reply := w.story.ChallengeTower(event)
+	jsonStr, err := json.Marshal(reply)
 	if err != nil {
 		log.Info("CardStart json marshal err %v", err)
 	}
@@ -58,8 +58,8 @@ func (w *World) CardChooseEvent(c *gin.Context) {
 	event := &event.CardChooseStartEvent{
 		Event: c.PostForm("event"),
 	}
-	replay := w.story.CardChooseEvent(event)
-	jsonStr, err := json.Marshal(replay)
+	reply := w.story.CardChooseEvent(event)
+	jsonStr, err := json.Marshal(reply)
 	if err != nil {
 		log.Info("CardChooseEvent json marshal err %v", err)
 	}
@@ -110,11 +110,31 @@ func (w *World) CardDiscardCards(c *gin.Context) {
 
 func (w *World) CardEndTurn(c *gin.Context) {
 	start := &event.CardTurnEndEvent{}
-	replay := w.story.EndTurn(start)
-	jsonStr, err := json.Marshal(replay)
+	reply := w.story.EndTurn(start)
+	jsonStr, err := json.Marshal(reply)
 	if err != nil {
 		log.Info("CardTurnEnd json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
 
+}
+
+func (w *World) CardNextFloor(c *gin.Context) {
+	start := &event.CardNextFloorEvent{}
+	reply := w.story.CardNextFloor(start)
+	jsonStr, err := json.Marshal(reply)
+	if err != nil {
+		log.Info("CardNextFloor json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+}
+
+func (w *World) CardEnterRoom(c *gin.Context) {
+	start := &event.CardEnterRoomEvent{}
+	reply := w.story.CardEnterRoom(start)
+	jsonStr, err := json.Marshal(reply)
+	if err != nil {
+		log.Info("CardEnterRoom json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
 }
