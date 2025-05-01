@@ -3,5 +3,29 @@
   "room_num": 3,
   "shop_num": 1,
   "rest_num": 1,
-  "event_num": 1
+  "event_num": 1,
+  "enemies": {
+    "pig": {
+      "Name": "pig",
+      "Level": 1,
+      "Life": 50,
+      "Attack": 3,
+      "AttackSpeed": 5,
+      "Defense": 2,
+      "Dodge": 0
+    },
+    "cat": {
+      "Name": "cat",
+      "Level": 1,
+      "Life": 50,
+      "Attack": 3,
+      "AttackSpeed": 5,
+      "Defense": 2,
+      "Dodge": 0
+    }
+  },
+  "group": {
+    "1": ["pig", "cat"],
+    "2": ["cat", "cat", "cat"]
+  }
 }

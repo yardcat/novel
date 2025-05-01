@@ -22,12 +22,20 @@ const panelStyle = {
   borderRadius: '10px',
   padding: '0px 10px',
   margin: '5px 0px',
-  width: '40vw',
+  width: '15vw',
+};
+
+const enemyStyle = {
+  border: '1px solid blue',
+  borderRadius: '10px',
+  padding: '0px 10px',
+  margin: '5px 0px',
+  width: '10vw',
 };
 
 const Panel = ({ role, info, intent }) => {
   return (
-    <div style={panelStyle}>
+    <div style={role == 'actor' ? panelStyle : enemyStyle}>
       <p>name: {info.name}</p>
       <p>
         HP: {info.HP} / {info.maxHP}

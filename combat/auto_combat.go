@@ -15,7 +15,7 @@ type AutoCombat struct {
 	Record
 }
 
-func NewAutoCombat(p *CombatParams) *AutoCombat {
+func NewAutoCombat(p *AutoCombatParams) *AutoCombat {
 	c := &AutoCombat{
 		actors:      p.Actors,
 		enemies:     p.Enemies,
@@ -63,9 +63,6 @@ func (c *AutoCombat) Start() {
 	} else if len(c.enemies) != 0 {
 		fmt.Println("lose")
 		c.client.OnLose()
-	} else {
-		fmt.Println("draw")
-		c.client.OnDraw()
 	}
 	c.onCombatFinish()
 }

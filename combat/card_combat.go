@@ -16,9 +16,9 @@ import (
 
 type CardCombat struct {
 	combatables     []Combatable
-	actors          []*Actor
-	originalEnemies []*Enemy
-	enemies         []*Enemy
+	actors          []*CardActor
+	originalEnemies []*CardEnemy
+	enemies         []*CardEnemy
 	ai              *EnemyAI
 	client          CombatClient
 	Record
@@ -45,7 +45,7 @@ type EnemyTurnResult struct {
 	enemyDead   bool
 }
 
-func NewCardCombat(p *CombatParams) *CardCombat {
+func NewCardCombat(p *CardCombatParams) *CardCombat {
 	c := &CardCombat{
 		actors:          p.Actors,
 		originalEnemies: p.Enemies,
@@ -85,10 +85,6 @@ func (c *CardCombat) Start() EnemyAction {
 	push.PushAction("战斗开始")
 	go c.UpdateUI()
 	return c.ai.EnemyAction(c.enemies[0])
-}
-
-func (c *CardCombat) ChooseDefender(attacker Combatable) Combatable {
-	return c.enemies[0]
 }
 
 func (c *CardCombat) Enemies() []Combatable {
@@ -133,7 +129,7 @@ func (c *CardCombat) StartTurn() {
 	for _, actor := range c.actors {
 		actor.UpdateStatus()
 	}
-	c.ai.PrepareAction(c.enemies[0], c.actors)
+	c.ai.PrepareAction(c.enemies, c.actors)
 }
 
 func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
@@ -215,25 +211,27 @@ func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 		return result
 	}
 
-	action := c.ai.EnemyAction(c.enemies[0])
-	if action.Action == ENEMY_BEHAVIOR_ATTACK {
-		damage := c.cacDamage(c.enemies[0], c.actors[0])
-		armorStatus := c.actors[0].GetArmorStatus()
-		if armorStatus != nil && armorStatus.Value <= 0 {
-			c.actors[0].RemoveStatus(STATUS_ARMOR)
-			c.requestUpdateUI()
+	for _, enemy := range c.enemies {
+		action := c.ai.EnemyAction(enemy)
+		if action.Action == ENEMY_BEHAVIOR_ATTACK {
+			damage := c.cacDamage(enemy, c.actors[0])
+			armorStatus := c.actors[0].GetArmorStatus()
+			if armorStatus != nil && armorStatus.Value <= 0 {
+				c.actors[0].RemoveStatus(STATUS_ARMOR)
+				c.requestUpdateUI()
+			}
+			result.damage = damage
+			result.actorDead = c.actors[0].GetLife() <= 0
+			result.enemyDead = enemy.GetLife() <= 0
+			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), c.actors[0].GetName(), damage)
+		} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
+			enemy.AddStatus(Status{
+				Type:  STATUS_ARMOR,
+				Value: 5,
+				Turn:  2,
+			})
+			push.PushAction("%s 施加了护盾", enemy.GetName())
 		}
-		result.damage = damage
-		result.actorDead = c.actors[0].GetLife() <= 0
-		result.enemyDead = c.enemies[0].GetLife() <= 0
-		push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.enemies[0].GetName(), c.actors[0].GetName(), damage)
-	} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
-		c.enemies[0].AddStatus(Status{
-			Type:  STATUS_ARMOR,
-			Value: 5,
-			Turn:  2,
-		})
-		push.PushAction("%s 施加了护盾", c.enemies[0].GetName())
 	}
 
 	c.requestUpdateUI()
@@ -333,15 +331,9 @@ func (c *CardCombat) removeCombatable(combatable Combatable) {
 func (c *CardCombat) onCombatFinish(win bool) {
 	c.finish = true
 
-	for _, actor := range c.actors {
-		result := CombatResult{LifeCost: c.actorIncurDamage}
-		actor.OnCombatDone(result)
-	}
 	if win {
-		c.actors[0].OnWin(c.originalEnemies)
 		push.PushEvent(event.CardCombatWin{})
 	} else {
-		c.actors[0].OnLose(c.originalEnemies)
 		push.PushEvent(event.CardCombatLose{})
 	}
 

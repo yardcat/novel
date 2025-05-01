@@ -2,6 +2,7 @@ package combat
 
 import (
 	"encoding/json"
+	"my_test/util"
 	"os"
 	"path"
 )
@@ -11,104 +12,181 @@ const (
 	ROOM_TYPE_SHOP
 	ROOM_TYPE_EVENT
 	ROOM_TYPE_REST
+	ROOM_TYPE_COUNT
 )
 
 type Room interface {
 	Type() int
-	SubRooms() []Room
-	AddSubRoom(room Room)
-}
-
-type RoomBase struct {
-	subRooms []Room
-}
-
-func (r *RoomBase) SubRooms() []Room {
-	return r.subRooms
-}
-
-func (r *RoomBase) AddSubRoom(room Room) {
-	r.subRooms = append(r.subRooms, room)
 }
 
 type FightRoom struct {
-	RoomBase
-	Enemy []*Enemy
+	Enemy []*CardEnemy
 	Bouns []string
 }
 
-func (f *FightRoom) Type() int {
+func (r *FightRoom) Type() int {
 	return ROOM_TYPE_FIGHT
 }
 
 type ShopRoom struct {
-	RoomBase
 	Potions []Potion
 	Relics  []Relic
 }
 
-func (f *ShopRoom) Type() int {
+type RestRoom struct {
+}
+
+func (r *RestRoom) Type() int {
+	return ROOM_TYPE_REST
+
+}
+
+func (r *RestRoom) Heal(cbt Combatable) {
+
+}
+
+func (r *RestRoom) Update() {
+
+}
+
+func (r *ShopRoom) Type() int {
 	return ROOM_TYPE_SHOP
 }
 
 type EventRoom struct {
-	RoomBase
 	Event string
 }
 
-func (f *EventRoom) Type() int {
+func (r *EventRoom) Type() int {
 	return ROOM_TYPE_EVENT
 }
 
 type Floor struct {
-	Rooms []Room
-}
-
-func (f *Floor) GetRooms() []int {
-	ret := make([]int, 0)
-	for _, v := range f.Rooms {
-		ret = append(ret, v.Type())
-	}
-	return ret
+	room Room
 }
 
 type Tower struct {
-	Floors     []*Floor
-	FloorNum   int `json:"floor_num"`
-	RoomNum    int `json:"room_num"`
-	ShopNum    int `json:"shop_num"`
-	RestNum    int `json:"rest_num"`
-	EventNum   int `json:"event_num"`
+	FloorNum      int                    `json:"floor_num"`
+	RoomNum       int                    `json:"room_num"`
+	ShopNum       int                    `json:"shop_num"`
+	RestNum       int                    `json:"rest_num"`
+	EventNum      int                    `json:"event_num"`
+	EnemyMap      map[string]*CardEnemy  `json:"enemies"`
+	EnemyGroupMap map[int]CardEnemyGroup `json:"group"`
+
+	actor      *CardActor
+	floor      *Floor
+	path       PathProvider
+	floorCount int
 	shopCount  int
 	restCount  int
 	eventCount int
 }
 
-func NewTower(path PathProvider) *Tower {
-	t := &Tower{}
-	t.loadData(path.GetPath("card"))
-	t.Floors = make([]*Floor, 0, t.FloorNum)
+type TowerParams struct {
+	Actor *CardActor
+	Path  PathProvider
+}
 
+func NewTower(params *TowerParams) *Tower {
+	t := &Tower{
+		actor: params.Actor,
+		path:  params.Path,
+	}
+	t.loadData(params.Path.GetPath("card"))
 	t.generateFloor()
 	return t
 }
 
 func (t *Tower) EnterNextFloor() *Floor {
+	t.generateFloor()
+	t.floorCount++
+	return t.floor
+}
+
+func (t *Tower) GetRoomTypeChoices() []int {
+	choices := []int{ROOM_TYPE_FIGHT}
+	candidates := []int{}
+	if t.shopCount != 0 {
+		candidates = append(candidates, ROOM_TYPE_SHOP)
+	}
+	if t.restCount != 0 {
+		candidates = append(candidates, ROOM_TYPE_REST)
+	}
+	if t.eventCount != 0 {
+		candidates = append(candidates, ROOM_TYPE_EVENT)
+	}
+	dice := util.GetRandomInt(len(candidates))
+	choices = append(choices, candidates[dice])
+	return choices
 }
 
 func (t *Tower) generateFloor() {
 	fl := &Floor{}
-	t.Floors = append(t.Floors, fl)
-	topRoom := t.generateRoom()
-	fl.Rooms = append(fl.Rooms, topRoom)
+	t.floor = fl
 }
 
-func (t *Tower) generateRoom() Room {
-	return &FightRoom{
-		RoomBase: RoomBase{
-			subRooms: make([]Room, 0),
-		},
+func (t *Tower) EnterRoom(typ int) Room {
+	var room Room
+	switch typ {
+	case ROOM_TYPE_FIGHT:
+		room = t.generateFightRoom()
+	case ROOM_TYPE_SHOP:
+		room = t.generateShopRoom()
+		t.shopCount++
+	case ROOM_TYPE_REST:
+		room = t.generateRestRoom()
+		t.restCount++
+	case ROOM_TYPE_EVENT:
+		room = t.generateEventRoom()
+		t.eventCount++
 	}
+	t.floor.room = room
+	return room
+}
+
+func (t *Tower) StartCardCombat() {
+	params := CardCombatParams{
+		Actors:  []*CardActor{t.actor},
+		Enemies: t.fightRoom().Enemy,
+		Path:    t.path,
+		Client:  t,
+	}
+	cardCombat := NewCardCombat(&params)
+	cardCombat.Start()
+	cardCombat.GetCardTurnInfo()
+}
+
+func (t *Tower) fightRoom() *FightRoom {
+	return t.floor.room.(*FightRoom)
+}
+
+func (t *Tower) generateFightRoom() *FightRoom {
+	room := &FightRoom{
+		Enemy: []*CardEnemy{},
+	}
+	gr := t.EnemyGroupMap[t.floorCount]
+	for _, v := range gr.group {
+		enemy := t.EnemyMap[v]
+		room.Enemy = append(room.Enemy, NewCardEnemy(enemy))
+	}
+
+	return room
+}
+
+func (t *Tower) generateShopRoom() *ShopRoom {
+	room := &ShopRoom{}
+	return room
+}
+
+func (t *Tower) generateRestRoom() *RestRoom {
+	room := &RestRoom{}
+	return room
+}
+
+func (t *Tower) generateEventRoom() *EventRoom {
+	room := &EventRoom{}
+	return room
 }
 
 func (t *Tower) loadData(dir string) error {
@@ -121,4 +199,14 @@ func (t *Tower) loadData(dir string) error {
 		return err
 	}
 	return nil
+}
+
+func (t *Tower) OnLose() {
+
+}
+func (t *Tower) OnWin() {
+
+}
+func (t *Tower) OnKill(Combatable) {
+
 }

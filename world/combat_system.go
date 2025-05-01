@@ -10,8 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/jinzhu/copier"
 )
 
 type CombatSystem struct {
@@ -51,7 +49,7 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	for _, group := range dg.Groups {
 		log.Info("start combat group %s", group.Name)
 		enemies := combat.CreateEnemyGroup(group)
-		params := combat.CombatParams{
+		params := combat.AutoCombatParams{
 			Actors:  actors,
 			Enemies: enemies.Enemies,
 			Client:  c,
@@ -62,37 +60,18 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 }
 
 func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventReply {
-	c.tower = combat.NewTower(c)
+	reply := &event.CardStartEventReply{}
+
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewActor(player.GetCombatableBase(), player)
 	actor.Name = "winter"
-	// petName := "dog_pet"
-	// player.AddPet(petName)
-	// pet := player.GetPet(petName)
-	// npcName := "SunWuKong"
-	// player.AddNpc(npcName)
-	// npc := player.GetNpc(npcName)
-	// npcActor := combat.NewActor(npc.GetCombatableBase(), npc)
-	// petActor := combat.NewActor(pet.GetCombatableBase(), pet)
-	// actors := []*combat.Actor{actor, petActor, npcActor}
-	actors := []*combat.Actor{actor}
-	enimies := []*combat.Enemy{combat.CreateEnemy(c.Monsters["cat"])}
-	params := combat.CombatParams{
-		Actors:  actors,
-		Enemies: enimies,
-		Path:    c,
-		Client:  c,
+	params := &combat.TowerParams{
+		Actor: nil,
+		Path:  c,
 	}
-	c.cardCombat = combat.NewCardCombat(&params)
-	action := c.cardCombat.Start()
-	info := c.cardCombat.GetCardTurnInfo()
-	reply := &event.CardStartEventReply{
-		Cards:     info.Cards,
-		DeckCount: info.DrawCount,
-		Events:    c.cardCombat.GenerateChooseEvents(),
-	}
-	copier.Copy(reply, action)
+	c.tower = combat.NewTower(params)
+
 	return reply
 }
 
@@ -110,37 +89,23 @@ func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEve
 
 func (c *CombatSystem) NextFloor(ev *event.CardNextFloorEvent) *event.CardNextFloorReply {
 	reply := &event.CardNextFloorReply{}
-	c.tower.EnterNextFloor()
+	reply.ChooseRoom = c.tower.GetRoomTypeChoices()
 	return reply
 }
 
 func (c *CombatSystem) EnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterRoomReply {
 	reply := &event.CardEnterRoomReply{}
-	switch ev.RoomType {
-	case combat.ROOM_TYPE_FIGHT:
-		log.Info("enter fight room")
-	case combat.ROOM_TYPE_SHOP:
-		log.Info("enter shop room")
-	case combat.ROOM_TYPE_EVENT:
-		log.Info("enter event room")
-	case combat.ROOM_TYPE_REST:
-		log.Info("enter rest room")
+	c.tower.EnterRoom(ev.RoomType)
+	if ev.RoomType == combat.ROOM_TYPE_FIGHT {
+		c.tower.StartCardCombat()
 	}
 	return reply
 }
 
 func (c *CombatSystem) HandleChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {
+	c.tower.EnterRoom(combat.ROOM_TYPE_FIGHT)
+	c.tower.StartCardCombat()
 	return c.cardCombat.HandleChooseEvents(ev.Event)
-}
-
-// OnDead implements combat.CombatClient.
-func (c *CombatSystem) OnDead(combat.Combatable) {
-	log.Info("OnDead is unimplemented")
-}
-
-// OnDraw implements combat.CombatClient.
-func (c *CombatSystem) OnDraw() {
-	log.Info("OnDraw is unimplemented")
 }
 
 // OnKill implements combat.CombatClient.

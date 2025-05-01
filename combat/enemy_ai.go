@@ -12,7 +12,7 @@ const (
 	ENEMY_BEHAVIOR_SKILL  = "skill"
 )
 
-type EnemyBehavior struct {
+type CardEnemyBehavior struct {
 }
 
 type EnemyAction struct {
@@ -23,16 +23,16 @@ type EnemyAction struct {
 }
 
 type EnemyAI struct {
-	enemies           []*Enemy
-	history           map[*Enemy]*list.List
-	currentTurnAction map[*Enemy]EnemyAction
+	enemies           []*CardEnemy
+	history           map[*CardEnemy]*list.List
+	currentTurnAction map[*CardEnemy]EnemyAction
 }
 
-func NewEnemyAI(enemy []*Enemy) *EnemyAI {
+func NewEnemyAI(enemy []*CardEnemy) *EnemyAI {
 	ai := &EnemyAI{
 		enemies:           enemy,
-		history:           make(map[*Enemy]*list.List),
-		currentTurnAction: make(map[*Enemy]EnemyAction),
+		history:           make(map[*CardEnemy]*list.List),
+		currentTurnAction: make(map[*CardEnemy]EnemyAction),
 	}
 	for _, v := range enemy {
 		ai.history[v] = list.New()
@@ -41,23 +41,25 @@ func NewEnemyAI(enemy []*Enemy) *EnemyAI {
 	return ai
 }
 
-func (e *EnemyAI) PrepareAction(enemy *Enemy, actors []*Actor) {
+func (e *EnemyAI) PrepareAction(enemies []*CardEnemy, actors []*CardActor) {
 	var action EnemyAction
 
-	if enemy.Life > enemy.MaxLife/2 {
-		action.Action = ENEMY_BEHAVIOR_ATTACK
-		action.Target = actors[0]
-		action.ActionValue = enemy.Attack + enemy.Strength
-	} else if enemy.Life < enemy.MaxLife/2 {
-		action.Action = ENEMY_BEHAVIOR_DEFEND
-		action.Target = actors[0]
-		action.ActionValue = 5
+	for _, enemy := range enemies {
+		if enemy.Life > enemy.MaxLife/2 {
+			action.Action = ENEMY_BEHAVIOR_ATTACK
+			action.Target = actors[0]
+			action.ActionValue = enemy.Attack + enemy.Strength
+		} else if enemy.Life < enemy.MaxLife/2 {
+			action.Action = ENEMY_BEHAVIOR_DEFEND
+			action.Target = actors[0]
+			action.ActionValue = 5
+		}
+		e.currentTurnAction[enemy] = action
+		e.history[enemy].PushFront(action)
 	}
-	e.currentTurnAction[enemy] = action
-	e.history[enemy].PushFront(action)
 }
 
-func (e *EnemyAI) EnemyAction(enemy *Enemy) EnemyAction {
+func (e *EnemyAI) EnemyAction(enemy *CardEnemy) EnemyAction {
 	if e.history[enemy].Front() == nil {
 		log.Error("no history")
 	}
@@ -65,5 +67,5 @@ func (e *EnemyAI) EnemyAction(enemy *Enemy) EnemyAction {
 }
 
 func (e *EnemyAI) onEnemyTurnFinish() {
-	e.currentTurnAction = make(map[*Enemy]EnemyAction)
+	e.currentTurnAction = make(map[*CardEnemy]EnemyAction)
 }

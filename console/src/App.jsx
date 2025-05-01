@@ -42,11 +42,17 @@ const App = () => {
   return (
     <Layout>
       <Header>
-        <Navigator apiHandlers={apiHandlers} addApiHandler={addApiHandler}></Navigator>
+        <Navigator
+          apiHandlers={apiHandlers}
+          addApiHandler={addApiHandler}
+        ></Navigator>
       </Header>
       <Layout>
         <Sider width="20%">
-          <PlayerInfo addApiHandler={addApiHandler} autoUpdate={true}></PlayerInfo>
+          <PlayerInfo
+            addApiHandler={addApiHandler}
+            autoUpdate={true}
+          ></PlayerInfo>
           <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
         </Sider>
         <Content>

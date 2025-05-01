@@ -9,21 +9,7 @@ class StartInfo {
   difficuty = '';
 }
 
-class SendCards {
-  cards = [];
-}
-
-class SendCardsResult {}
-
 class EndTurn {}
-
-class TurnInfo {
-  handCards = [];
-  discardCard = 0;
-  deckCard = 0;
-  health = 0;
-  status = [];
-}
 
 class PanelInfo {
   constructor({
@@ -68,8 +54,14 @@ const MyCard = ({ name, isSelected, onClick }) => {
   );
 };
 
+const PanelContainerStyle = {
+  display: 'flex',
+  flexDirection: 'row',
+  gap: '20px',
+  border: '1px',
+};
+
 const Deck = () => {
-  const [turnInfo, setTurnInfo] = useState({});
   const [handCards, setHandCards] = useState([]);
   const [drawCount, setDrawCount] = useState(0);
   const [discardCount, setDiscardCount] = useState(0);
@@ -79,8 +71,8 @@ const Deck = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [actorPanelInfo, setActorPanelInfo] = useState(new PanelInfo());
-  const [enemyPanelInfo, setEnemyPanelInfo] = useState(new PanelInfo());
+  const [actorPanelInfo, setActorPanelInfo] = useState([]);
+  const [enemyPanelInfo, setEnemyPanelInfo] = useState([]);
   const [intent, setIntent] = useState({});
 
   const toggleCardSelection = (card) => {
@@ -93,14 +85,8 @@ const Deck = () => {
 
   useEffect(() => {
     const updateUI = (ev) => {
-      for (const actor of ev.actorUI) {
-        let as = new PanelInfo(actor);
-        setActorPanelInfo(as);
-      }
-      for (const enemy of ev.enemyUI) {
-        let es = new PanelInfo(enemy);
-        setEnemyPanelInfo(es);
-      }
+      setActorPanelInfo(ev.actorUI);
+      setEnemyPanelInfo(ev.enemyUI);
       setDrawCount(ev.deckUI.drawCount);
       setDiscardCount(ev.deckUI.discardCount);
       setHandCards(ev.deckUI.handCards);
@@ -161,25 +147,14 @@ const Deck = () => {
 
   return (
     <Card>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          gap: '20px',
-          border: '1px',
-        }}
-      >
-        <Panel
-          role="actor"
-          info={actorPanelInfo}
-          style={{ width: '45%' }}
-        ></Panel>
-        <Panel
-          role="enemy"
-          info={enemyPanelInfo}
-          intent={intent}
-          style={{ width: '45%' }}
-        ></Panel>
+      <div style={PanelContainerStyle}>
+        {actorPanelInfo.map((info) => {
+          <Panel role="actor" info={actorPanelInfo}></Panel>;
+        })}
+
+        {enemyPanelInfo.map((info) => {
+          <Panel role="enemy" info={enemyPanelInfo} intent={intent}></Panel>;
+        })}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>

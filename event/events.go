@@ -130,7 +130,7 @@ type CardNextFloorEvent struct {
 }
 
 type CardNextFloorReply struct {
-	ChooseRoom []string
+	ChooseRoom []int
 }
 
 type CardEnterRoomEvent struct {

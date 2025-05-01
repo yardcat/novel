@@ -7,9 +7,7 @@ const (
 type CombatClient interface {
 	OnLose()
 	OnWin()
-	OnDraw()
 	OnKill(Combatable)
-	OnDead(Combatable)
 }
 
 type Record struct {
@@ -31,9 +29,16 @@ type PathProvider interface {
 	GetPath(path string) string
 }
 
-type CombatParams struct {
+type AutoCombatParams struct {
 	Actors  []*Actor
 	Enemies []*Enemy
+	Path    PathProvider
+	Client  CombatClient
+}
+
+type CardCombatParams struct {
+	Actors  []*CardActor
+	Enemies []*CardEnemy
 	Path    PathProvider
 	Client  CombatClient
 }
