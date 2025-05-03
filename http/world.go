@@ -54,11 +54,11 @@ func (w *World) CardStart(c *gin.Context) {
 	c.JSON(200, string(jsonStr))
 }
 
-func (w *World) CardChooseEvent(c *gin.Context) {
-	event := &event.CardChooseStartEvent{
+func (w *World) CardWelcome(c *gin.Context) {
+	event := &event.CardWelcomeEvent{
 		Event: c.PostForm("event"),
 	}
-	reply := w.story.CardChooseEvent(event)
+	reply := w.story.CardWelcome(event)
 	jsonStr, err := json.Marshal(reply)
 	if err != nil {
 		log.Info("CardChooseEvent json marshal err %v", err)

@@ -9,17 +9,12 @@ function GetPlayerInfo(info, setInfo) {
   setInfo(info);
 }
 
-const PlayerInfo = ({ addApiHandler, autoUpdate }) => {
+const PlayerInfo = ({ addApiHandler }) => {
   const [info, setInfo] = useState({});
 
   useEffect(() => {
     addApiHandler(API_PATH, (response) => GetPlayerInfo(response, setInfo));
-    if (autoUpdate) {
-      setInterval(() => {
-        CallAPI(API_PATH, {}, (response) => GetPlayerInfo(response, setInfo));
-      }, Config.UPDATE_INTERVAL);
-    }
-  }, [autoUpdate]);
+  }, []);
 
   return (
     <Card title="Player Info">

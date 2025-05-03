@@ -11,17 +11,12 @@ function GetBag(info, setInfo) {
   setInfo(info);
 }
 
-const Bag = ({ addApiHandler, autoUpdate }) => {
+const Bag = ({ addApiHandler }) => {
   const [info, setInfo] = useState({});
 
   useEffect(() => {
     addApiHandler(API_PATH, (response) => GetBag(response, setInfo));
-    if (autoUpdate) {
-      setInterval(() => {
-        CallAPI(API_PATH, {}, (response) => GetBag(response, setInfo));
-      }, Config.UPDATE_INTERVAL);
-    }
-  }, [autoUpdate]);
+  }, []);
 
   return (
     <Card title="Bag">

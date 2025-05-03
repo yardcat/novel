@@ -108,7 +108,6 @@ const Deck = () => {
       setChooseEvents(reply.events);
       setIsModalVisible(true);
       setIsPlaying(true);
-      setIntent({ action: reply.action, actionValue: reply.actionValue });
     });
   };
 

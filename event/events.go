@@ -1,6 +1,6 @@
 package event
 
-type CardUI struct {
+type ActorCardUI struct {
 	Name     string `json:"name"`
 	Life     int    `json:"HP"`
 	MaxLife  int    `json:"maxHP"`
@@ -11,6 +11,24 @@ type CardUI struct {
 		Type  int `json:"type"`
 		Value int `json:"value"`
 		Turn  int `json:"turn"`
+	} `json:"buffs"`
+}
+
+type EnemyCardUI struct {
+	Name     string `json:"name"`
+	Life     int    `json:"HP"`
+	MaxLife  int    `json:"maxHP"`
+	Strength int    `json:"strength"`
+	Defense  int    `json:"defense"`
+	Intent   struct {
+		Type   string `json:"type"`
+		Value  int    `json:"value"`
+		Target int    `json:"target"`
+	} `json:"intent"`
+	Statuses []struct {
+		Type   int `json:"type"`
+		Value  int `json:"value"`
+		Target int `json:"target"`
 	} `json:"buffs"`
 }
 
@@ -59,23 +77,20 @@ type CardStartEvent struct {
 }
 
 type CardStartEventReply struct {
-	Events      []string `json:"events"`
-	Cards       []string `json:"handCards"`
-	DeckCount   int      `json:"deckCount"`
-	Action      string   `json:"action"`
-	ActionValue int      `json:"actionValue"`
+	Events []string `json:"events"`
 }
 
-type CardChooseStartEvent struct {
+type CardWelcomeEvent struct {
 	Event string
 }
 
-type CardChooseStartEventReply struct {
+type CardWelcomeReply struct {
 	Results map[string]any
 }
 
 type CardSendCards struct {
-	Cards []int
+	Cards  []int
+	Target int
 }
 
 type CardSendCardsReply struct {
@@ -99,8 +114,6 @@ type CardTurnEndEventReply struct {
 	DrawCount    int `json:"drawCount"`
 	DiscardCount int `json:"discardCount"`
 	Damage       int
-	Action       string   `json:"action"`
-	ActionValue  int      `json:"actionValue"`
 	HandCards    []string `json:"handCards"`
 }
 
@@ -109,9 +122,9 @@ type CardUpdateHandEvent struct {
 }
 
 type CardUpdateUIEvent struct {
-	Actor []CardUI `json:"actorUI"`
-	Enemy []CardUI `json:"enemyUI"`
-	Deck  DeckUI   `json:"deckUI"`
+	Actor []ActorCardUI `json:"actorUI"`
+	Enemy []EnemyCardUI `json:"enemyUI"`
+	Deck  DeckUI        `json:"deckUI"`
 }
 
 type ActionUpdateEvent struct {

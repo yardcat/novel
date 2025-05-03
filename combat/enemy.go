@@ -2,7 +2,6 @@ package combat
 
 type Enemy struct {
 	CombatableBase
-	behaviors int
 }
 
 func CreateEnemy(proto *Enemy) *Enemy {

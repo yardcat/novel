@@ -64,19 +64,20 @@ func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStart
 
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
-	actor := combat.NewActor(player.GetCombatableBase(), player)
+	actor := combat.NewCardActor(player.GetCombatableBase())
 	actor.Name = "winter"
 	params := &combat.TowerParams{
-		Actor: nil,
+		Actor: actor,
 		Path:  c,
 	}
 	c.tower = combat.NewTower(params)
+	reply.Events = c.tower.GetWelcomeEvents()
 
 	return reply
 }
 
 func (c *CombatSystem) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
-	return c.cardCombat.UseCards(ev.Cards)
+	return c.cardCombat.UseCards(ev)
 }
 
 func (c *CombatSystem) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
@@ -102,10 +103,11 @@ func (c *CombatSystem) EnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterR
 	return reply
 }
 
-func (c *CombatSystem) HandleChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {
+func (c *CombatSystem) HandleWelcome(ev *event.CardWelcomeEvent) *event.CardWelcomeReply {
+	reply := c.cardCombat.HandleWelcome(ev.Event)
 	c.tower.EnterRoom(combat.ROOM_TYPE_FIGHT)
 	c.tower.StartCardCombat()
-	return c.cardCombat.HandleChooseEvents(ev.Event)
+	return reply
 }
 
 // OnKill implements combat.CombatClient.

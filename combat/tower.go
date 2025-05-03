@@ -121,6 +121,10 @@ func (t *Tower) GetRoomTypeChoices() []int {
 	return choices
 }
 
+func (t *Tower) GetWelcomeEvents() []string {
+	return []string{"strength", "max_health", "draw_card"}
+}
+
 func (t *Tower) generateFloor() {
 	fl := &Floor{}
 	t.floor = fl

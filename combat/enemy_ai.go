@@ -66,6 +66,14 @@ func (e *EnemyAI) EnemyAction(enemy *CardEnemy) EnemyAction {
 	return e.history[enemy].Front().Value.(EnemyAction)
 }
 
+func (e *EnemyAI) EnemyActions() []EnemyAction {
+	actions := []EnemyAction{}
+	for _, enemy := range e.enemies {
+		actions = append(actions, e.EnemyAction(enemy))
+	}
+	return actions
+}
+
 func (e *EnemyAI) onEnemyTurnFinish() {
 	e.currentTurnAction = make(map[*CardEnemy]EnemyAction)
 }

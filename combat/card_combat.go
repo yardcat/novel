@@ -14,6 +14,102 @@ import (
 	"github.com/jinzhu/copier"
 )
 
+const (
+	CARD_TYPE_ATTACK = iota
+	CARD_TYPE_SKILL
+	CARD_TYPE_EFFECT
+)
+
+const (
+	CARD_RARITY_COMMON = iota
+	CARD_RARITY_UNCOMMON
+	CARD_RARITY_RARE
+)
+
+const (
+	EFFECT_DAMAGE = iota
+	EFFECT_VULNERABLE
+	EFFECT_DEFEND
+	EFFECT_ADD_CARD
+	EFFECT_MULTI_DAMAGE
+	EFFECT_DAMAGE_DEFENSE
+	EFFECT_WEAK
+	EFFECT_STRENGTH
+	EFFECT_HEAL
+	EFFECT_MAX_HEALTH
+)
+
+const (
+	UI_ACTOR_HP = iota
+	UI_ACTOR_MAX_HP
+	UI_ENEMY_HP
+	UI_ENEMY_MAX_HP
+)
+
+const (
+	STATUS_VULNERABLE = iota
+	STATUS_WEAK
+	STATUS_STRENGTH
+	STATUS_ARMOR
+	STATUS_POISON
+)
+
+const (
+	CARD_INIT   = 5
+	CARD_MAX    = 10
+	ENERGY_INIT = 3
+	ENERGY_MAX  = 20
+)
+
+const (
+	TIMING_START = iota
+	TIMING_END
+)
+
+const (
+	SKILL_ADD_STRENGTH = iota
+)
+
+type CardSkill struct {
+	Effects      []*CardEffect
+	Timing       int
+	TurnInterval int
+	TurnCount    int
+}
+
+type CardEffect struct {
+	Effect string `json:"effect"`
+	Value  any    `json:"value"`
+}
+
+type Card struct {
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Type        int          `json:"type"`
+	Rarity      int          `json:"rarity"`
+	Cost        int          `json:"cost"`
+	Upgrade     []*Card      `json:"upgrade,omitempty"`
+	Effects     []CardEffect `json:"effects"`
+}
+
+type CardCareer struct {
+	InitCards []*Card
+}
+
+type CardEvent struct {
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Effects     []CardEffect `json:"effects"`
+}
+
+type CardTurnInfo struct {
+	Cards        []string
+	DrawCount    int
+	DiscardCount int
+	RemoveCount  int
+	Energy       int
+}
+
 type CardCombat struct {
 	combatables     []Combatable
 	actors          []*CardActor
@@ -38,11 +134,9 @@ type CardCombat struct {
 }
 
 type EnemyTurnResult struct {
-	damage      int
-	action      string
-	actionValue int
-	actorDead   bool
-	enemyDead   bool
+	damage    int
+	actorDead bool
+	enemyDead bool
 }
 
 func NewCardCombat(p *CardCombatParams) *CardCombat {
@@ -78,13 +172,13 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 	return c
 }
 
-func (c *CardCombat) Start() EnemyAction {
+func (c *CardCombat) Start() []EnemyAction {
 	c.turnNum = 0
 	c.PrepareCard()
 	c.StartTurn()
 	push.PushAction("战斗开始")
 	go c.UpdateUI()
-	return c.ai.EnemyAction(c.enemies[0])
+	return c.ai.EnemyActions()
 }
 
 func (c *CardCombat) Enemies() []Combatable {
@@ -115,7 +209,7 @@ func (c *CardCombat) handleCardSkills(timing int) {
 		}
 		v.TurnCount = 0
 		for _, e := range v.Effects {
-			c.handCardEffect(e)
+			c.handCardEffect(e, nil)
 		}
 	}
 }
@@ -132,17 +226,17 @@ func (c *CardCombat) StartTurn() {
 	c.ai.PrepareAction(c.enemies, c.actors)
 }
 
-func (c *CardCombat) UseCards(cards []int) *event.CardSendCardsReply {
+func (c *CardCombat) UseCards(ev *event.CardSendCards) *event.CardSendCardsReply {
 	reply := &event.CardSendCardsReply{}
 	cardsToUse := []*Card{}
-	for _, idx := range cards {
+	for _, idx := range ev.Cards {
 		cardsToUse = append(cardsToUse, c.hand[idx])
 	}
 	results := make(map[string]any)
 	for _, card := range cardsToUse {
 		if c.actors[0].Energy >= card.Cost {
 			c.actors[0].Energy -= card.Cost
-			c.Use(card, results)
+			c.Use(card, results, c.actors[ev.Target])
 		}
 	}
 
@@ -258,8 +352,8 @@ func (c *CardCombat) UpdateUI() {
 		<-c.uiTimer.C
 		if c.uiDirty {
 			ev := &event.CardUpdateUIEvent{
-				Actor: make([]event.CardUI, len(c.actors)),
-				Enemy: make([]event.CardUI, len(c.enemies)),
+				Actor: make([]event.ActorCardUI, len(c.actors)),
+				Enemy: make([]event.EnemyCardUI, len(c.enemies)),
 				Deck: event.DeckUI{
 					DrawCount:    len(c.deck),
 					DiscardCount: len(c.discard),
@@ -273,6 +367,7 @@ func (c *CardCombat) UpdateUI() {
 			}
 			for i := range c.enemies {
 				copier.Copy(&ev.Enemy[i], &c.enemies[i])
+				copier.Copy(&ev.Enemy[i].Intent, c.ai.EnemyAction(c.enemies[i]))
 			}
 			push.PushEvent(*ev)
 			c.uiDirty = false
@@ -364,16 +459,12 @@ func (c *CardCombat) PrepareCard() {
 	c.ShuffleDeck()
 }
 
-func (c *CardCombat) GenerateChooseEvents() []string {
-	return []string{"strength", "max_health", "draw_card"}
-}
-
-func (c *CardCombat) HandleChooseEvents(ev string) *event.CardChooseStartEventReply {
-	reply := &event.CardChooseStartEventReply{
+func (c *CardCombat) HandleWelcome(ev string) *event.CardWelcomeReply {
+	reply := &event.CardWelcomeReply{
 		Results: make(map[string]any),
 	}
 	for _, effect := range c.eventMap[ev].Effects {
-		c.handCardEffect(&effect)
+		c.handCardEffect(&effect, nil)
 	}
 	c.requestUpdateUI()
 	return reply
@@ -460,27 +551,27 @@ func (c *CardCombat) EffectFromString(effect string) int {
 	}
 }
 
-func (c *CardCombat) Use(card *Card, results map[string]any) {
+func (c *CardCombat) Use(card *Card, results map[string]any, target Combatable) {
 	for _, effect := range card.Effects {
-		c.handCardEffect(&effect)
+		c.handCardEffect(&effect, target)
 	}
 	c.removeHandCard(card)
 	c.discard = append(c.discard, card)
 }
 
-func (c *CardCombat) handCardEffect(effect *CardEffect) {
+func (c *CardCombat) handCardEffect(effect *CardEffect, target Combatable) {
 	switch c.EffectFromString(effect.Effect) {
 	case EFFECT_DAMAGE:
 		value := util.Anytoi(effect.Value)
 		c.actors[0].Attack = value
-		damage := c.cacDamage(c.actors[0], c.enemies[0])
-		armorStatus := c.enemies[0].GetBase().GetArmorStatus()
+		damage := c.cacDamage(c.actors[0], target)
+		armorStatus := target.GetBase().GetArmorStatus()
 		if armorStatus != nil && armorStatus.Value <= 0 {
-			c.enemies[0].RemoveStatus(STATUS_ARMOR)
+			target.GetBase().RemoveStatus(STATUS_ARMOR)
 			c.requestUpdateUI()
 		}
-		c.enemies[0].OnDamage(damage, c.actors[0])
-		c.checkDead(c.enemies[0])
+		target.OnDamage(damage, c.actors[0])
+		c.checkDead(target)
 	case EFFECT_VULNERABLE:
 		for _, enemy := range c.enemies {
 			enemy.AddStatus(Status{

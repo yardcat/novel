@@ -317,8 +317,8 @@ func (s *Story) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventRe
 	return s.combatSystem.ChallengeTower(ev)
 }
 
-func (s *Story) CardChooseEvent(ev *event.CardChooseStartEvent) *event.CardChooseStartEventReply {
-	return s.combatSystem.HandleChooseEvent(ev)
+func (s *Story) CardWelcome(ev *event.CardWelcomeEvent) *event.CardWelcomeReply {
+	return s.combatSystem.HandleWelcome(ev)
 }
 
 func (s *Story) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {

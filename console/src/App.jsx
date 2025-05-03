@@ -49,11 +49,8 @@ const App = () => {
       </Header>
       <Layout>
         <Sider width="20%">
-          <PlayerInfo
-            addApiHandler={addApiHandler}
-            autoUpdate={true}
-          ></PlayerInfo>
-          <Bag addApiHandler={addApiHandler} autoUpdate={true}></Bag>
+          <PlayerInfo addApiHandler={addApiHandler}></PlayerInfo>
+          <Bag addApiHandler={addApiHandler}></Bag>
         </Sider>
         <Content>
           <Tabs defaultActiveKey="1" items={items} type="card"></Tabs>
