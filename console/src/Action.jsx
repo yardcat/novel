@@ -8,9 +8,7 @@ const Action = () => {
 
   useEffect(() => {
     socket.onMsg('event.ActionUpdateEvent', (ev) => {
-      setAction((prevActions) => {
-        [...prevActions, ev.action];
-      });
+      setAction((prevActions) => [...prevActions, ev.action]);
     });
   }, []);
 

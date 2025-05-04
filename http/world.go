@@ -74,8 +74,10 @@ func (w *World) CardSendCards(c *gin.Context) {
 	cardsParam := c.PostForm("cards")
 	if len(cardsParam) != 0 {
 		strIdx := strings.Split(cardsParam, ",")
+		targetIdx, _ := strconv.Atoi(c.PostForm("target"))
 		ev := &event.CardSendCards{
-			Cards: make([]int, len(strIdx)),
+			Cards:  make([]int, len(strIdx)),
+			Target: targetIdx,
 		}
 		for i, v := range strIdx {
 			ev.Cards[i], _ = strconv.Atoi(v)

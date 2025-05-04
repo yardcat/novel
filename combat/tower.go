@@ -2,9 +2,11 @@ package combat
 
 import (
 	"encoding/json"
+	"my_test/log"
 	"my_test/util"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 const (
@@ -66,21 +68,26 @@ type Floor struct {
 }
 
 type Tower struct {
-	FloorNum      int                    `json:"floor_num"`
-	RoomNum       int                    `json:"room_num"`
-	ShopNum       int                    `json:"shop_num"`
-	RestNum       int                    `json:"rest_num"`
-	EventNum      int                    `json:"event_num"`
-	EnemyMap      map[string]*CardEnemy  `json:"enemies"`
-	EnemyGroupMap map[int]CardEnemyGroup `json:"group"`
+	FloorNum      int                   `json:"floor_num"`
+	RoomNum       int                   `json:"room_num"`
+	ShopNum       int                   `json:"shop_num"`
+	RestNum       int                   `json:"rest_num"`
+	EventNum      int                   `json:"event_num"`
+	EnemyMap      map[string]*CardEnemy `json:"enemies"`
+	EnemyGroupMap map[int][]string      `json:"group"`
 
-	actor      *CardActor
-	floor      *Floor
-	path       PathProvider
-	floorCount int
-	shopCount  int
-	restCount  int
-	eventCount int
+	currentCombat *CardCombat
+	cardMap       map[string]*Card
+	careerMap     map[string]*CardCareer
+	eventMap      map[string]*CardEvent
+	cards         []*Card
+	actor         *CardActor
+	floor         *Floor
+	path          PathProvider
+	floorCount    int
+	shopCount     int
+	restCount     int
+	eventCount    int
 }
 
 type TowerParams struct {
@@ -90,11 +97,13 @@ type TowerParams struct {
 
 func NewTower(params *TowerParams) *Tower {
 	t := &Tower{
-		actor: params.Actor,
-		path:  params.Path,
+		actor:      params.Actor,
+		path:       params.Path,
+		floorCount: 1,
 	}
 	t.loadData(params.Path.GetPath("card"))
 	t.generateFloor()
+	t.PrepareCard()
 	return t
 }
 
@@ -149,16 +158,29 @@ func (t *Tower) EnterRoom(typ int) Room {
 	return room
 }
 
-func (t *Tower) StartCardCombat() {
-	params := CardCombatParams{
-		Actors:  []*CardActor{t.actor},
-		Enemies: t.fightRoom().Enemy,
-		Path:    t.path,
-		Client:  t,
+func (t *Tower) PrepareCard() {
+	career := t.careerMap["kongfu"]
+	t.cards = append(t.cards, career.InitCards...)
+}
+
+func (t *Tower) HandleEvent(ev string) {
+	for _, effect := range t.eventMap[ev].Effects {
+		t.currentCombat.handCardEffect(&effect, t.actor)
 	}
-	cardCombat := NewCardCombat(&params)
-	cardCombat.Start()
-	cardCombat.GetCardTurnInfo()
+	t.currentCombat.requestUpdateUI()
+}
+
+func (t *Tower) StartCardCombat() *CardCombat {
+	params := CardCombatParams{
+		Actors:             []*CardActor{t.actor},
+		Enemies:            t.fightRoom().Enemy,
+		Path:               t.path,
+		CardCombatDelegate: t,
+		Cards:              t.cards,
+	}
+	t.currentCombat = NewCardCombat(&params)
+	t.currentCombat.Start()
+	return t.currentCombat
 }
 
 func (t *Tower) fightRoom() *FightRoom {
@@ -170,7 +192,7 @@ func (t *Tower) generateFightRoom() *FightRoom {
 		Enemy: []*CardEnemy{},
 	}
 	gr := t.EnemyGroupMap[t.floorCount]
-	for _, v := range gr.group {
+	for _, v := range gr {
 		enemy := t.EnemyMap[v]
 		room.Enemy = append(room.Enemy, NewCardEnemy(enemy))
 	}
@@ -193,8 +215,28 @@ func (t *Tower) generateEventRoom() *EventRoom {
 	return room
 }
 
-func (t *Tower) loadData(dir string) error {
-	data, err := os.ReadFile(path.Join(dir, "tower.json"))
+func (c *Tower) loadData(dir string) error {
+	err := c.loadTower(path.Join(dir, "tower.json"))
+	if err != nil {
+		return nil
+	}
+	err = c.loadCard(filepath.Join(dir, "card.json"))
+	if err != nil {
+		return err
+	}
+	err = c.loadCareer(filepath.Join(dir, "career.json"))
+	if err != nil {
+		return err
+	}
+	err = c.loadEvent(filepath.Join(dir, "event.json"))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Tower) loadTower(path string) error {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -203,6 +245,64 @@ func (t *Tower) loadData(dir string) error {
 		return err
 	}
 	return nil
+}
+
+func (t *Tower) loadCard(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &t.cardMap)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Tower) loadCareer(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	adapter := map[string]struct {
+		Cards []string `json:"init_cards"`
+	}{}
+	err = json.Unmarshal(data, &adapter)
+	t.careerMap = make(map[string]*CardCareer, len(adapter))
+	for k, v := range adapter {
+		t.careerMap[k] = &CardCareer{
+			InitCards: make([]*Card, 0, len(v.Cards)),
+		}
+		for _, card := range v.Cards {
+			t.careerMap[k].InitCards = append(t.careerMap[k].InitCards, t.cardMap[card])
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Tower) loadEvent(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &t.eventMap)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CardCombatDelegate
+func (t *Tower) GetCard(name string) *Card {
+	_, exist := t.cardMap[name]
+	if !exist {
+		log.Error("get card %s not exist", name)
+		panic("card not exist")
+	}
+	return t.cardMap[name]
 }
 
 func (t *Tower) OnLose() {

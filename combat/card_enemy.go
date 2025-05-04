@@ -4,10 +4,6 @@ type CardEnemy struct {
 	CombatableBase
 }
 
-type CardEnemyGroup struct {
-	group []string
-}
-
 func NewCardEnemy(proto *CardEnemy) *CardEnemy {
 	ret := &CardEnemy{
 		CombatableBase: proto.CombatableBase,

@@ -19,7 +19,7 @@ type EnemyAction struct {
 	Action      string
 	ActionValue int
 	Description string
-	Target      Combatable
+	Target      int
 }
 
 type EnemyAI struct {
@@ -47,11 +47,11 @@ func (e *EnemyAI) PrepareAction(enemies []*CardEnemy, actors []*CardActor) {
 	for _, enemy := range enemies {
 		if enemy.Life > enemy.MaxLife/2 {
 			action.Action = ENEMY_BEHAVIOR_ATTACK
-			action.Target = actors[0]
+			action.Target = 0
 			action.ActionValue = enemy.Attack + enemy.Strength
 		} else if enemy.Life < enemy.MaxLife/2 {
 			action.Action = ENEMY_BEHAVIOR_DEFEND
-			action.Target = actors[0]
+			action.Target = 0
 			action.ActionValue = 5
 		}
 		e.currentTurnAction[enemy] = action
@@ -64,14 +64,6 @@ func (e *EnemyAI) EnemyAction(enemy *CardEnemy) EnemyAction {
 		log.Error("no history")
 	}
 	return e.history[enemy].Front().Value.(EnemyAction)
-}
-
-func (e *EnemyAI) EnemyActions() []EnemyAction {
-	actions := []EnemyAction{}
-	for _, enemy := range e.enemies {
-		actions = append(actions, e.EnemyAction(enemy))
-	}
-	return actions
 }
 
 func (e *EnemyAI) onEnemyTurnFinish() {

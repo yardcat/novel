@@ -36,13 +36,6 @@ type AutoCombatParams struct {
 	Client  CombatClient
 }
 
-type CardCombatParams struct {
-	Actors  []*CardActor
-	Enemies []*CardEnemy
-	Path    PathProvider
-	Client  CombatClient
-}
-
 type CombatOnceResult struct {
 	attackerDead bool
 	defenderDead bool

@@ -1,13 +1,10 @@
 package combat
 
 import (
-	"encoding/json"
 	"my_test/event"
 	"my_test/log"
 	"my_test/push"
 	"my_test/util"
-	"os"
-	"path/filepath"
 	"slices"
 	"time"
 
@@ -110,27 +107,36 @@ type CardTurnInfo struct {
 	Energy       int
 }
 
+type CardCombatDelegate interface {
+	GetCard(name string) *Card
+}
+
+type CardCombatParams struct {
+	Cards   []*Card
+	Actors  []*CardActor
+	Enemies []*CardEnemy
+	Path    PathProvider
+	CardCombatDelegate
+}
+
 type CardCombat struct {
+	delegate        CardCombatDelegate
 	combatables     []Combatable
 	actors          []*CardActor
 	originalEnemies []*CardEnemy
 	enemies         []*CardEnemy
 	ai              *EnemyAI
-	client          CombatClient
 	Record
-	cardMap   map[string]*Card
-	careerMap map[string]*CardCareer
-	eventMap  map[string]*CardEvent
-	deck      []*Card
-	hand      []*Card
-	discard   []*Card
-	remove    []*Card
-	maxCard   int
-	turnNum   int
-	uiDirty   bool
-	uiTimer   time.Ticker
-	finish    bool
-	skills    []CardSkill
+	deck    []*Card
+	hand    []*Card
+	discard []*Card
+	remove  []*Card
+	maxCard int
+	turnNum int
+	uiDirty bool
+	uiTimer time.Ticker
+	finish  bool
+	skills  []CardSkill
 }
 
 type EnemyTurnResult struct {
@@ -144,12 +150,9 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 		actors:          p.Actors,
 		originalEnemies: p.Enemies,
 		enemies:         p.Enemies,
-		client:          p.Client,
 		ai:              NewEnemyAI(p.Enemies),
 		combatables:     make([]Combatable, len(p.Actors)+len(p.Enemies)),
-		cardMap:         make(map[string]*Card),
-		careerMap:       make(map[string]*CardCareer),
-		deck:            make([]*Card, 0),
+		deck:            make([]*Card, len(p.Cards)),
 		maxCard:         CARD_INIT,
 		uiDirty:         false,
 		uiTimer:         *time.NewTicker(time.Millisecond * 500),
@@ -164,21 +167,18 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 		c.combatables[i] = enemy
 		i++
 	}
+	copy(c.deck, p.Cards)
 
-	err := c.loadData(p.Path.GetPath("card"))
-	if err != nil {
-		panic(err)
-	}
 	return c
 }
 
-func (c *CardCombat) Start() []EnemyAction {
+func (c *CardCombat) Start() {
 	c.turnNum = 0
-	c.PrepareCard()
 	c.StartTurn()
 	push.PushAction("战斗开始")
+	c.requestUpdateUI()
+
 	go c.UpdateUI()
-	return c.ai.EnemyActions()
 }
 
 func (c *CardCombat) Enemies() []Combatable {
@@ -216,7 +216,6 @@ func (c *CardCombat) handleCardSkills(timing int) {
 
 func (c *CardCombat) StartTurn() {
 	c.handleCardSkills(TIMING_START)
-
 	c.actors[0].Energy = ENERGY_INIT
 	drawCount := c.maxCard - len(c.hand)
 	c.DrawCard(drawCount)
@@ -236,7 +235,7 @@ func (c *CardCombat) UseCards(ev *event.CardSendCards) *event.CardSendCardsReply
 	for _, card := range cardsToUse {
 		if c.actors[0].Energy >= card.Cost {
 			c.actors[0].Energy -= card.Cost
-			c.Use(card, results, c.actors[ev.Target])
+			c.Use(card, results, c.enemies[ev.Target])
 		}
 	}
 
@@ -308,16 +307,18 @@ func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 	for _, enemy := range c.enemies {
 		action := c.ai.EnemyAction(enemy)
 		if action.Action == ENEMY_BEHAVIOR_ATTACK {
-			damage := c.cacDamage(enemy, c.actors[0])
-			armorStatus := c.actors[0].GetArmorStatus()
+			actorIdx := action.Target
+			defender := c.actors[actorIdx]
+			damage := c.cacDamage(enemy, defender)
+			armorStatus := defender.GetArmorStatus()
 			if armorStatus != nil && armorStatus.Value <= 0 {
-				c.actors[0].RemoveStatus(STATUS_ARMOR)
+				defender.RemoveStatus(STATUS_ARMOR)
 				c.requestUpdateUI()
 			}
 			result.damage = damage
-			result.actorDead = c.actors[0].GetLife() <= 0
+			result.actorDead = defender.GetLife() <= 0
 			result.enemyDead = enemy.GetLife() <= 0
-			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), c.actors[0].GetName(), damage)
+			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), defender.GetName(), damage)
 		} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
 			enemy.AddStatus(Status{
 				Type:  STATUS_ARMOR,
@@ -435,10 +436,6 @@ func (c *CardCombat) onCombatFinish(win bool) {
 	push.PushAction("combat finish")
 }
 
-func (c *CardCombat) GetCard(name string) *Card {
-	return c.cardMap[name]
-}
-
 func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
 	info := &CardTurnInfo{
 		Cards:        make([]string, len(c.hand)),
@@ -453,23 +450,6 @@ func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
 	return info
 }
 
-func (c *CardCombat) PrepareCard() {
-	career := c.careerMap["kongfu"]
-	c.deck = append(c.deck, career.InitCards...)
-	c.ShuffleDeck()
-}
-
-func (c *CardCombat) HandleWelcome(ev string) *event.CardWelcomeReply {
-	reply := &event.CardWelcomeReply{
-		Results: make(map[string]any),
-	}
-	for _, effect := range c.eventMap[ev].Effects {
-		c.handCardEffect(&effect, nil)
-	}
-	c.requestUpdateUI()
-	return reply
-}
-
 func (c *CardCombat) getHandString() []string {
 	strs := make([]string, 0, len(c.hand))
 	for _, card := range c.hand {
@@ -478,8 +458,8 @@ func (c *CardCombat) getHandString() []string {
 	return strs
 }
 
-func (c *CardCombat) AddCard(card *Card) {
-	c.hand = append(c.hand, card)
+func (c *CardCombat) AddCard(card string) {
+	c.hand = append(c.hand, c.delegate.GetCard(card))
 }
 
 func (c *CardCombat) DrawCard(n int) []*Card {
@@ -623,7 +603,7 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, target Combatable) {
 	case EFFECT_ADD_CARD:
 		cards := effect.Value.([]any)
 		for _, card := range cards {
-			c.AddCard(c.GetCard(card.(string)))
+			c.AddCard(card.(string))
 		}
 		push.PushEvent(event.CardUpdateHandEvent{Cards: c.getHandString()})
 	}
@@ -636,67 +616,4 @@ func (c *CardCombat) removeHandCard(card *Card) {
 			return
 		}
 	}
-}
-
-func (c *CardCombat) loadData(dir string) error {
-	err := c.loadCard(filepath.Join(dir, "card.json"))
-	if err != nil {
-		return err
-	}
-	err = c.loadCareer(filepath.Join(dir, "career.json"))
-	if err != nil {
-		return err
-	}
-	err = c.loadEvent(filepath.Join(dir, "event.json"))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *CardCombat) loadCard(path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(data, &c.cardMap)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *CardCombat) loadCareer(path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	adapter := map[string]struct {
-		Cards []string `json:"init_cards"`
-	}{}
-	err = json.Unmarshal(data, &adapter)
-	for k, v := range adapter {
-		c.careerMap[k] = &CardCareer{
-			InitCards: make([]*Card, 0, len(v.Cards)),
-		}
-		for _, card := range v.Cards {
-			c.careerMap[k].InitCards = append(c.careerMap[k].InitCards, c.cardMap[card])
-		}
-	}
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *CardCombat) loadEvent(path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(data, &c.eventMap)
-	if err != nil {
-		return err
-	}
-	return nil
 }

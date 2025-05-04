@@ -11,30 +11,6 @@ class StartInfo {
 
 class EndTurn {}
 
-class PanelInfo {
-  constructor({
-    name = '',
-    HP = 0,
-    maxHP = 0,
-    energy = 0,
-    strength = 0,
-    defense = 0,
-    buffs = [],
-  } = {}) {
-    Object.assign(this, { name, HP, maxHP, energy, strength, defense, buffs });
-  }
-
-  update(info) {
-    this.name = info['name'] != null ? info['name'] : this.name;
-    this.HP = info['HP'] != null ? info['HP'] : this.HP;
-    this.maxHP = info['maxHP'] != null ? info['maxHP'] : this.maxHP;
-    this.energy = info['energy'] != null ? info['energy'] : this.energy;
-    this.strength = info['strength'] != null ? info['strength'] : this.strength;
-    this.defense = info['defense'] != null ? info['defense'] : this.defense;
-    this.buffs = info['buffs'] != null ? info['buffs'] : this.buffs;
-  }
-}
-
 const MyCard = ({ name, isSelected, onClick }) => {
   return (
     <div
@@ -73,7 +49,7 @@ const Deck = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [actorPanelInfo, setActorPanelInfo] = useState([]);
   const [enemyPanelInfo, setEnemyPanelInfo] = useState([]);
-  const [intent, setIntent] = useState({});
+  const [selectedEnemy, setSelectedEnemy] = useState(null);
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -81,6 +57,10 @@ const Deck = () => {
     } else {
       setSelectedCards([...selectedCards, card]);
     }
+  };
+
+  const togglePanelSelection = (index) => {
+    setSelectedEnemy(selectedEnemy === index ? null : index);
   };
 
   useEffect(() => {
@@ -112,11 +92,21 @@ const Deck = () => {
   };
 
   const sendCards = (cards) => {
-    if (cards.length === 0 || actorPanelInfo.energy <= 0) {
+    if (
+      cards.length === 0 ||
+      selectedCards.length === 0 ||
+      selectedEnemy.length === 0 ||
+      actorPanelInfo.energy <= 0
+    ) {
       return;
     }
-    let cards_param = cards.join(',');
-    CallAPI('world/send_cards', { cards: cards_param }, (reply) => {});
+    let cards_sent = cards.join(',');
+    let target = selectedEnemy.split('-')[1];
+    CallAPI(
+      'world/send_cards',
+      { cards: cards_sent, target: target },
+      (reply) => {},
+    );
     setHandCards(handCards.filter((card, idx) => !selectedCards.includes(idx)));
     setSelectedCards([]);
   };
@@ -130,13 +120,11 @@ const Deck = () => {
 
   const endTurn = () => {
     const sendTurnInfo = new EndTurn();
-    CallAPI('world/end_turn', {}, (reply) => {
-      setIntent({ action: reply.action, actionValue: reply.actionValue });
-    });
+    CallAPI('world/end_turn', {}, (reply) => {});
   };
 
   const handleChooseEvent = () => {
-    CallAPI('world/card_choose_event', { event: selectedEvent }, (reply) => {});
+    CallAPI('world/card_welcome', { event: selectedEvent }, (reply) => {});
     setIsModalVisible(false);
   };
 
@@ -147,13 +135,18 @@ const Deck = () => {
   return (
     <Card>
       <div style={PanelContainerStyle}>
-        {actorPanelInfo.map((info) => {
-          <Panel role="actor" info={actorPanelInfo}></Panel>;
-        })}
-
-        {enemyPanelInfo.map((info) => {
-          <Panel role="enemy" info={enemyPanelInfo} intent={intent}></Panel>;
-        })}
+        {actorPanelInfo.map((info, index) => (
+          <Panel role="actor" info={info} key={index} />
+        ))}
+        {enemyPanelInfo.map((info, index) => (
+          <Panel
+            role="enemy"
+            info={info}
+            key={index}
+            isSelected={selectedEnemy === `enemy-${index}`}
+            onClick={() => togglePanelSelection(`enemy-${index}`)}
+          />
+        ))}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>

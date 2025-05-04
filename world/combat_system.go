@@ -104,9 +104,13 @@ func (c *CombatSystem) EnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterR
 }
 
 func (c *CombatSystem) HandleWelcome(ev *event.CardWelcomeEvent) *event.CardWelcomeReply {
-	reply := c.cardCombat.HandleWelcome(ev.Event)
+	reply := &event.CardWelcomeReply{
+		Results: make(map[string]any),
+	}
 	c.tower.EnterRoom(combat.ROOM_TYPE_FIGHT)
-	c.tower.StartCardCombat()
+	c.cardCombat = c.tower.StartCardCombat()
+	c.tower.HandleEvent(ev.Event)
+
 	return reply
 }
 
