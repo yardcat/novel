@@ -4,12 +4,30 @@
   "shop_num": 1,
   "rest_num": 1,
   "event_num": 1,
+  "actor": {
+    "Health": 100,
+    "Hunger": 100,
+    "Thirst": 100,
+    "Energy": 100,
+    "Level": 1,
+    "Life": 50,
+    "Attack": 8,
+    "AttackSpeed": 5,
+    "Defense": 3,
+    "Dodge": 10,
+    "LevelExp": 100,
+    "LevelExpInc": 100,
+    "LevelUp": {
+      "Attack": 1,
+      "Defense": 1
+    }
+  },
   "enemies": {
     "pig": {
       "Name": "pig",
       "Level": 1,
       "Life": 50,
-      "Attack": 3,
+      "Attack": 5,
       "AttackSpeed": 5,
       "Defense": 2,
       "Dodge": 0
@@ -18,7 +36,7 @@
       "Name": "cat",
       "Level": 1,
       "Life": 50,
-      "Attack": 3,
+      "Attack": 8,
       "AttackSpeed": 5,
       "Defense": 2,
       "Dodge": 0
@@ -27,5 +45,9 @@
   "group": {
     "1": ["pig", "cat"],
     "2": ["cat", "cat", "cat"]
+  },
+  "bonus": {
+    "1": ["zhou", "quan", "dang"],
+    "2": ["dang", "dang", "dang"]
   }
 }

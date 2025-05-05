@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "./event";
+package event;
+
+message startRequest {
+    string name = 1;
+}
+
+message startResponse {
+    string reply = 1;
+}
+
+service card {
+    rpc start(startRequest) returns(startResponse);
+}

@@ -4,55 +4,31 @@ import (
 	"encoding/json"
 	"my_test/event"
 	"my_test/log"
-	"my_test/world"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-type World struct {
-	uiConfig *UiConfig
+type Card struct {
 }
 
-type UiConfig struct {
-	Collectable []string
+func newCard() *Card {
+	return &Card{}
 }
 
-func newWorld() *World {
-	return &World{}
-}
-
-func (w *World) GetUiConfig() *UiConfig {
-	if w.uiConfig == nil {
-		w.uiConfig = &UiConfig{
-			Collectable: world.GetStory().GetCollectable(),
-		}
-	}
-	return w.uiConfig
-}
-
-func (w *World) GetUiInfo(c *gin.Context) {
-	jsonStr, err := json.Marshal(w.GetUiConfig())
-	if err != nil {
-		log.Info("GetUiInfo json marshal err %v", err)
-	}
-	c.JSON(200, string(jsonStr))
-}
-
-func (w *World) CardStart(c *gin.Context) {
+func (w *Card) CardStart(c *gin.Context) {
 	difficuty := c.PostForm("difficuty")
 	event := &event.CardStartEvent{Difficulty: difficuty}
-	reply := w.story.CardStart(event)
+	reply := w.story.ChallengeTower(event)
 	jsonStr, err := json.Marshal(reply)
-
 	if err != nil {
 		log.Info("CardStart json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
 }
 
-func (w *World) CardWelcome(c *gin.Context) {
+func (w *Card) CardWelcome(c *gin.Context) {
 	event := &event.CardWelcomeEvent{
 		Event: c.PostForm("event"),
 	}
@@ -65,7 +41,7 @@ func (w *World) CardWelcome(c *gin.Context) {
 
 }
 
-func (w *World) CardSendCards(c *gin.Context) {
+func (w *Card) CardSendCards(c *gin.Context) {
 	reply := &event.CardSendCardsReply{
 		Status: "no_card",
 	}
@@ -90,7 +66,7 @@ func (w *World) CardSendCards(c *gin.Context) {
 
 }
 
-func (w *World) CardDiscardCards(c *gin.Context) {
+func (w *Card) CardDiscardCards(c *gin.Context) {
 	cardsParam := c.PostForm("cards")
 	strIdx := strings.Split(cardsParam, ",")
 	ev := &event.CardDiscardCards{
@@ -108,7 +84,7 @@ func (w *World) CardDiscardCards(c *gin.Context) {
 
 }
 
-func (w *World) CardEndTurn(c *gin.Context) {
+func (w *Card) CardEndTurn(c *gin.Context) {
 	start := &event.CardTurnEndEvent{}
 	reply := w.story.EndTurn(start)
 	jsonStr, err := json.Marshal(reply)
@@ -119,7 +95,7 @@ func (w *World) CardEndTurn(c *gin.Context) {
 
 }
 
-func (w *World) CardNextFloor(c *gin.Context) {
+func (w *Card) CardNextFloor(c *gin.Context) {
 	start := &event.CardNextFloorEvent{}
 	reply := w.story.CardNextFloor(start)
 	jsonStr, err := json.Marshal(reply)
@@ -129,7 +105,7 @@ func (w *World) CardNextFloor(c *gin.Context) {
 	c.JSON(200, string(jsonStr))
 }
 
-func (w *World) CardEnterRoom(c *gin.Context) {
+func (w *Card) CardEnterRoom(c *gin.Context) {
 	start := &event.CardEnterRoomEvent{}
 	reply := w.story.CardEnterRoom(start)
 	jsonStr, err := json.Marshal(reply)

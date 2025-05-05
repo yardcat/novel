@@ -43,6 +43,7 @@ const Deck = () => {
   const [discardCount, setDiscardCount] = useState(0);
   const [difficuty, setDifficuty] = useState('Easy');
   const [selectedCards, setSelectedCards] = useState([]);
+  const [chooseType, setChooseType] = useState('');
   const [chooseEvents, setChooseEvents] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -75,6 +76,16 @@ const Deck = () => {
     socket.onMsg('event.CardUpdateUIEvent', (ev) => {
       updateUI(ev);
     });
+
+    socket.onMsg('event.CardCombatWin', (ev) => {
+      showChooseModal('bonus', ev.bonus);
+      setIsPlaying(false);
+    });
+
+    socket.onMsg('event.CardCombatLose', (ev) => {
+      setIsPlaying(false);
+      message.info('you lose');
+    });
   }, []);
 
   const startPlay = () => {
@@ -85,30 +96,29 @@ const Deck = () => {
     const sendTurnInfo = new StartInfo();
     sendTurnInfo.difficuty = difficuty;
     CallAPI('world/card_start', {}, (reply) => {
-      setChooseEvents(reply.events);
-      setIsModalVisible(true);
+      showChooseModal('welcome', reply.events);
       setIsPlaying(true);
     });
   };
 
   const sendCards = (cards) => {
     if (
-      cards.length === 0 ||
       selectedCards.length === 0 ||
-      selectedEnemy.length === 0 ||
+      selectedEnemy === 0 ||
       actorPanelInfo.energy <= 0
     ) {
       return;
     }
-    let cards_sent = cards.join(',');
-    let target = selectedEnemy.split('-')[1];
-    CallAPI(
-      'world/send_cards',
-      { cards: cards_sent, target: target },
-      (reply) => {},
-    );
-    setHandCards(handCards.filter((card, idx) => !selectedCards.includes(idx)));
-    setSelectedCards([]);
+    const params = {
+      cards: cards.join(','),
+      target: selectedEnemy.split('-')[1],
+    };
+    CallAPI('world/send_cards', params, (reply) => {
+      setHandCards(
+        handCards.filter((card, idx) => !selectedCards.includes(idx)),
+      );
+      setSelectedCards([]);
+    });
   };
 
   const discardCards = (cards) => {
@@ -123,9 +133,44 @@ const Deck = () => {
     CallAPI('world/end_turn', {}, (reply) => {});
   };
 
-  const handleChooseEvent = () => {
-    CallAPI('world/card_welcome', { event: selectedEvent }, (reply) => {});
+  const showChooseModal = (type, choices) => {
+    setChooseType(type);
+    setChooseEvents(choices);
+    setIsModalVisible(true);
+  };
+
+  const hideChooseModal = () => {
     setIsModalVisible(false);
+  };
+
+  const handleChooseEvent = (type) => {
+    switch (type) {
+      case 'welcome':
+        CallAPI('world/card_welcome', { event: selectedEvent }, (reply) => {});
+        break;
+
+      case 'bonus':
+        CallAPI(
+          'world/card_choose_bonus',
+          { event: selectedEvent },
+          (reply) => {
+            console.log('bonus accept');
+            showChooseModal('room', reply.rooms);
+          },
+        );
+        break;
+
+      case 'room':
+        CallAPI('world/card_enter_room', { event: selectedEvent }, (reply) => {
+          setIsPlaying(true);
+        });
+        break;
+
+      default:
+        console.log('no type specified');
+        break;
+    }
+    hideChooseModal();
   };
 
   const handleCancel = () => {
@@ -217,7 +262,7 @@ const Deck = () => {
       </Card>
 
       <Modal
-        title="Choose Event"
+        title={chooseType}
         open={isModalVisible}
         onOk={handleChooseEvent}
         onCancel={handleCancel}

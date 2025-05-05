@@ -1,15 +1,20 @@
 package world
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"my_test/combat"
 	"my_test/event"
 	"my_test/log"
 	"my_test/push"
 	"my_test/util"
+	"net"
 	"os"
 	"path/filepath"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 type CombatSystem struct {
@@ -18,6 +23,7 @@ type CombatSystem struct {
 	story      *Story
 	cardCombat *combat.CardCombat
 	tower      *combat.Tower
+	server     *grpc.Server
 }
 
 func NewCombatSystem() *CombatSystem {
@@ -25,7 +31,28 @@ func NewCombatSystem() *CombatSystem {
 		story: GetStory(),
 	}
 	c.loadData()
+	err := c.initGrpc()
+	if err != nil {
+		log.Info("init grpc err %v", err)
+		return nil
+	}
 	return c
+}
+
+func (c *CombatSystem) initGrpc() error {
+	lis, err := net.Listen("tcp", ":8972")
+	if err != nil {
+		fmt.Printf("failed to listen: %v", err)
+		return err
+	}
+	c.server = grpc.NewServer()
+	event.RegisterCardServer(c.server, c)
+	err = c.server.Serve(lis)
+	if err != nil {
+		fmt.Printf("failed to serve: %v", err)
+		return err
+	}
+	return nil
 }
 
 func (c *CombatSystem) GetEnemy(name string) *combat.Enemy {
@@ -98,7 +125,7 @@ func (c *CombatSystem) EnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterR
 	reply := &event.CardEnterRoomReply{}
 	c.tower.EnterRoom(ev.RoomType)
 	if ev.RoomType == combat.ROOM_TYPE_FIGHT {
-		c.tower.StartCardCombat()
+		c.cardCombat = c.tower.StartCardCombat()
 	}
 	return reply
 }
@@ -202,4 +229,20 @@ func (c *CombatSystem) loadDungeons() error {
 	}
 
 	return nil
+}
+
+// grpc
+func (c *CombatSystem) Start(context.Context, *event.StartRequest) (*event.StartResponse, error) {
+	reply := &event.StartResponse{Reply: "ok"}
+	player := c.story.GetPlayer("0")
+	player.AddCareer("doctor")
+	actor := combat.NewCardActor(player.GetCombatableBase())
+	actor.Name = "winter"
+	params := &combat.TowerParams{
+		Actor: actor,
+		Path:  c,
+	}
+	c.tower = combat.NewTower(params)
+	reply.Events = c.tower.GetWelcomeEvents()
+	return reply
 }

@@ -170,6 +170,10 @@ func (t *Tower) HandleEvent(ev string) {
 	t.currentCombat.requestUpdateUI()
 }
 
+func (t *Tower) GetCombatBonus() []string {
+	return []string{"dang", "dang", "dang"}
+}
+
 func (t *Tower) StartCardCombat() *CardCombat {
 	params := CardCombatParams{
 		Actors:             []*CardActor{t.actor},
@@ -308,9 +312,9 @@ func (t *Tower) GetCard(name string) *Card {
 func (t *Tower) OnLose() {
 
 }
-func (t *Tower) OnWin() {
 
-}
-func (t *Tower) OnKill(Combatable) {
-
+func (t *Tower) OnWin() []string {
+	bonus := t.GetCombatBonus()
+	t.EnterNextFloor()
+	return bonus
 }

@@ -3,7 +3,7 @@
     "Name": "pig",
     "Level": 1,
     "Life": 50,
-    "Attack": 3,
+    "Attack": 5,
     "AttackSpeed": 5,
     "Defense": 2,
     "Dodge": 0
@@ -30,7 +30,7 @@
     "Name": "sheep",
     "Level": 1,
     "Life": 40,
-    "Attack": 2,
+    "Attack": 6,
     "AttackSpeed": 5,
     "Defense": 2,
     "Dodge": 5

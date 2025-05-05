@@ -60,13 +60,18 @@ func webSocketHandler(c *gin.Context) {
 			_, message, err := conn.ReadMessage()
 			if err != nil {
 				log.Error("read:", err)
-				break
+				conn, err = upgrader.Upgrade(c.Writer, c.Request, nil)
+				if err != nil {
+					log.Error("reconnect failed:", err)
+					break
+				}
+				log.Info("WebSocket reconnected")
+				continue
 			}
 			log.Info("recv: %s", message)
 			if eventRouter[string(message)] != nil {
 				eventRouter[string(message)](string(message))
 			}
-
 		}
 	}()
 

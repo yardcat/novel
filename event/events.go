@@ -137,7 +137,7 @@ type CardCombatWin struct {
 }
 
 type CardCombatLose struct {
-	Bonus []string `json:"bonus"`
+	Result string `json:"result"`
 }
 
 type CardNextFloorEvent struct {

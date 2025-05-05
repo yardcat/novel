@@ -107,8 +107,14 @@ type CardTurnInfo struct {
 	Energy       int
 }
 
+type CardBonus struct {
+	Bonus []string
+}
+
 type CardCombatDelegate interface {
 	GetCard(name string) *Card
+	OnWin() []string
+	OnLose()
 }
 
 type CardCombatParams struct {
@@ -428,8 +434,10 @@ func (c *CardCombat) onCombatFinish(win bool) {
 	c.finish = true
 
 	if win {
-		push.PushEvent(event.CardCombatWin{})
+		bonus := c.delegate.OnWin()
+		push.PushEvent(event.CardCombatWin{Bonus: bonus})
 	} else {
+		c.delegate.OnLose()
 		push.PushEvent(event.CardCombatLose{})
 	}
 
@@ -551,6 +559,7 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, target Combatable) {
 			c.requestUpdateUI()
 		}
 		target.OnDamage(damage, c.actors[0])
+		push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.actors[0].GetName(), target.GetName(), damage)
 		c.checkDead(target)
 	case EFFECT_VULNERABLE:
 		for _, enemy := range c.enemies {

@@ -38,6 +38,19 @@ func NewGinRouter() *gin.Engine {
 		worldRouterGroup.POST("/card_enter_room", w.CardEndTurn)
 	}
 
+	c = newCard()
+	cardRouterGroup := r.Group("/card")
+	{
+		cardRouterGroup.POST("/get_ui_info", w.GetUiInfo)
+		cardRouterGroup.POST("/card_start", w.CardStart)
+		cardRouterGroup.POST("/card_welcome", w.CardWelcome)
+		cardRouterGroup.POST("/send_cards", w.CardSendCards)
+		cardRouterGroup.POST("/discard_cards", w.CardDiscardCards)
+		cardRouterGroup.POST("/end_turn", w.CardEndTurn)
+		cardRouterGroup.POST("/card_next_floor", w.CardEndTurn)
+		cardRouterGroup.POST("/card_enter_room", w.CardEndTurn)
+	}
+
 	return r
 }
 
