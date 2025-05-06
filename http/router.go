@@ -1,23 +1,22 @@
 package http
 
 import (
+	"my_test/event"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 )
 
-var (
-	p *Player
-	w *World
-)
+var ()
 
-func NewGinRouter() *gin.Engine {
+func NewGinRouter(conn *grpc.ClientConn) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	setCors(r)
 
-	p = newPlayer()
+	p := newPlayer()
 	playerRouterGroup := r.Group("/player")
 	{
 		playerRouterGroup.POST("/get_player_info", p.GetPlayerInfo)
@@ -25,30 +24,24 @@ func NewGinRouter() *gin.Engine {
 		playerRouterGroup.POST("/collect", p.Collect)
 	}
 
-	w = newWorld()
+	worldClient := event.NewWorldClient(conn)
+	w := newWorld(worldClient)
 	worldRouterGroup := r.Group("/world")
 	{
 		worldRouterGroup.POST("/get_ui_info", w.GetUiInfo)
 		worldRouterGroup.POST("/card_start", w.CardStart)
-		worldRouterGroup.POST("/card_welcome", w.CardWelcome)
-		worldRouterGroup.POST("/send_cards", w.CardSendCards)
-		worldRouterGroup.POST("/discard_cards", w.CardDiscardCards)
-		worldRouterGroup.POST("/end_turn", w.CardEndTurn)
-		worldRouterGroup.POST("/card_next_floor", w.CardEndTurn)
-		worldRouterGroup.POST("/card_enter_room", w.CardEndTurn)
 	}
 
-	c = newCard()
+	cardClient := event.NewCardClient(conn)
+	c := newCard(cardClient)
 	cardRouterGroup := r.Group("/card")
 	{
-		cardRouterGroup.POST("/get_ui_info", w.GetUiInfo)
-		cardRouterGroup.POST("/card_start", w.CardStart)
-		cardRouterGroup.POST("/card_welcome", w.CardWelcome)
-		cardRouterGroup.POST("/send_cards", w.CardSendCards)
-		cardRouterGroup.POST("/discard_cards", w.CardDiscardCards)
-		cardRouterGroup.POST("/end_turn", w.CardEndTurn)
-		cardRouterGroup.POST("/card_next_floor", w.CardEndTurn)
-		cardRouterGroup.POST("/card_enter_room", w.CardEndTurn)
+		cardRouterGroup.POST("/welcome", c.CardWelcome)
+		cardRouterGroup.POST("/send_cards", c.CardSendCards)
+		cardRouterGroup.POST("/discard_cards", c.CardDiscardCards)
+		cardRouterGroup.POST("/end_turn", c.CardEndTurn)
+		cardRouterGroup.POST("/next_floor", c.CardEndTurn)
+		cardRouterGroup.POST("/enter_room", c.CardEndTurn)
 	}
 
 	return r

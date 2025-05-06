@@ -1,0 +1,61 @@
+syntax = "proto3";
+option go_package = "./event";
+package event;
+
+message welcomeRequest {
+    string event = 1;
+}
+
+message welcomeResponse {
+    string result = 1;
+}
+
+message sendCardRequest {
+    repeated int32 cards = 1;
+    int32 target = 2;
+}
+
+message sendCardResponse {
+    string result = 1;
+}
+
+message discardCardRequest {
+    repeated int32 cards = 1;
+}
+
+ message discardCardResponse {
+    string result = 1;
+}
+
+message endTurnRequest {
+    string request = 1;
+}
+
+message endTurnResponse {
+    string result = 1;
+}
+
+message nextFloorRequest {
+    string request = 1;
+}
+
+message nextFloorResponse {
+    repeated int32 roomChoices = 1;
+}
+
+message enterRoomRequest {
+    int32 type = 1;
+}
+
+message enterRoomResponse {
+    string result = 1;
+}
+
+service card {
+    rpc welcome(welcomeRequest) returns(welcomeResponse);
+    rpc sendCard(sendCardRequest) returns(sendCardResponse);
+    rpc discardCard(discardCardRequest) returns(discardCardResponse);
+    rpc endTurn(endTurnRequest) returns(endTurnResponse);
+    rpc NextFloor(nextFloorRequest) returns(nextFloorResponse);
+    rpc enterRoom(enterRoomRequest) returns(enterRoomResponse);
+}

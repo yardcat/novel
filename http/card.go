@@ -1,39 +1,35 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"my_test/event"
 	"my_test/log"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 )
 
 type Card struct {
+	client event.CardClient
 }
 
-func newCard() *Card {
-	return &Card{}
-}
-
-func (w *Card) CardStart(c *gin.Context) {
-	difficuty := c.PostForm("difficuty")
-	event := &event.CardStartEvent{Difficulty: difficuty}
-	reply := w.story.ChallengeTower(event)
-	jsonStr, err := json.Marshal(reply)
-	if err != nil {
-		log.Info("CardStart json marshal err %v", err)
+func newCard(ca event.CardClient) *Card {
+	return &Card{
+		client: ca,
 	}
-	c.JSON(200, string(jsonStr))
 }
 
 func (w *Card) CardWelcome(c *gin.Context) {
-	event := &event.CardWelcomeEvent{
+	response, err := w.client.Welcome(c.Request.Context(), &event.WelcomeRequest{
 		Event: c.PostForm("event"),
+	})
+	if err != nil {
+		log.Info("card welcome err %v", err)
 	}
-	reply := w.story.CardWelcome(event)
-	jsonStr, err := json.Marshal(reply)
+
+	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("CardChooseEvent json marshal err %v", err)
 	}
@@ -42,23 +38,21 @@ func (w *Card) CardWelcome(c *gin.Context) {
 }
 
 func (w *Card) CardSendCards(c *gin.Context) {
-	reply := &event.CardSendCardsReply{
-		Status: "no_card",
+	strIdx := strings.Split(c.PostForm("cards"), ",")
+	target := cast.ToInt32(c.PostForm("target"))
+	cards := make([]int32, len(strIdx))
+	for i, v := range strIdx {
+		cards[i] = cast.ToInt32(v)
 	}
-	cardsParam := c.PostForm("cards")
-	if len(cardsParam) != 0 {
-		strIdx := strings.Split(cardsParam, ",")
-		targetIdx, _ := strconv.Atoi(c.PostForm("target"))
-		ev := &event.CardSendCards{
-			Cards:  make([]int, len(strIdx)),
-			Target: targetIdx,
-		}
-		for i, v := range strIdx {
-			ev.Cards[i], _ = strconv.Atoi(v)
-		}
-		reply = w.story.SendCards(ev)
+	response, err := w.client.SendCard(context.Background(), &event.SendCardRequest{
+		Cards:  cards,
+		Target: target,
+	})
+	if err != nil {
+		log.Info("card send err %v", err)
 	}
-	jsonStr, err := json.Marshal(reply)
+
+	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("CardTurnStart json marshal err %v", err)
 	}
@@ -67,16 +61,19 @@ func (w *Card) CardSendCards(c *gin.Context) {
 }
 
 func (w *Card) CardDiscardCards(c *gin.Context) {
-	cardsParam := c.PostForm("cards")
-	strIdx := strings.Split(cardsParam, ",")
-	ev := &event.CardDiscardCards{
-		Cards: make([]int, len(strIdx)),
-	}
+	strIdx := strings.Split(c.PostForm("cards"), ",")
+	cards := make([]int32, len(strIdx))
 	for i, v := range strIdx {
-		ev.Cards[i], _ = strconv.Atoi(v)
+		cards[i] = cast.ToInt32(v)
 	}
-	reply := w.story.DiscardCards(ev)
-	jsonStr, err := json.Marshal(reply)
+	response, err := w.client.DiscardCard(c.Request.Context(), &event.DiscardCardRequest{
+		Cards: cards,
+	})
+	if err != nil {
+		log.Info("card discard err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("CardTurnStart json marshal err %v", err)
 	}
@@ -85,9 +82,12 @@ func (w *Card) CardDiscardCards(c *gin.Context) {
 }
 
 func (w *Card) CardEndTurn(c *gin.Context) {
-	start := &event.CardTurnEndEvent{}
-	reply := w.story.EndTurn(start)
-	jsonStr, err := json.Marshal(reply)
+	response, err := w.client.EndTurn(c.Request.Context(), &event.EndTurnRequest{})
+	if err != nil {
+		log.Info("card end turn err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("CardTurnEnd json marshal err %v", err)
 	}
@@ -96,9 +96,12 @@ func (w *Card) CardEndTurn(c *gin.Context) {
 }
 
 func (w *Card) CardNextFloor(c *gin.Context) {
-	start := &event.CardNextFloorEvent{}
-	reply := w.story.CardNextFloor(start)
-	jsonStr, err := json.Marshal(reply)
+	response, err := w.client.NextFloor(c.Request.Context(), &event.NextFloorRequest{})
+	if err != nil {
+		log.Info("card next floor err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("CardNextFloor json marshal err %v", err)
 	}
@@ -106,9 +109,12 @@ func (w *Card) CardNextFloor(c *gin.Context) {
 }
 
 func (w *Card) CardEnterRoom(c *gin.Context) {
-	start := &event.CardEnterRoomEvent{}
-	reply := w.story.CardEnterRoom(start)
-	jsonStr, err := json.Marshal(reply)
+	response, err := w.client.EnterRoom(c.Request.Context(), &event.EnterRoomRequest{})
+	if err != nil {
+		log.Info("card next floor err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("CardEnterRoom json marshal err %v", err)
 	}

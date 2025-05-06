@@ -73,55 +73,6 @@ type CombatWinEvent struct {
 	Result string
 }
 
-type CardStartEvent struct {
-	Difficulty string
-}
-
-type CardStartEventReply struct {
-	Events []string `json:"events"`
-}
-
-type CardWelcomeEvent struct {
-	Event string
-}
-
-type CardWelcomeReply struct {
-	Results map[string]any
-}
-
-type CardSendCards struct {
-	Cards  []int
-	Target int
-}
-
-type CardSendCardsReply struct {
-	Status       string `json:"status"`
-	DrawCount    int    `json:"drawCount"`
-	DiscardCount int    `json:"discardCount"`
-}
-
-type CardDiscardCards struct {
-	Cards []int
-}
-
-type CardDiscardCardsReply struct {
-	DiscardCount int `json:"discardCount"`
-}
-
-type CardTurnEndEvent struct {
-}
-
-type CardTurnEndEventReply struct {
-	DrawCount    int `json:"drawCount"`
-	DiscardCount int `json:"discardCount"`
-	Damage       int
-	HandCards    []string `json:"handCards"`
-}
-
-type CardUpdateHandEvent struct {
-	Cards []string `json:"cards"`
-}
-
 type CardUpdateUIEvent struct {
 	Actor []ActorCardUI `json:"actorUI"`
 	Enemy []EnemyCardUI `json:"enemyUI"`
@@ -138,18 +89,4 @@ type CardCombatWin struct {
 
 type CardCombatLose struct {
 	Result string `json:"result"`
-}
-
-type CardNextFloorEvent struct {
-}
-
-type CardNextFloorReply struct {
-	ChooseRoom []int
-}
-
-type CardEnterRoomEvent struct {
-	RoomType int `json:"roomType"`
-}
-
-type CardEnterRoomReply struct {
 }

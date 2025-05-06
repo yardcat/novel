@@ -9,6 +9,7 @@ func NewCardActor(base CombatableBase) *CardActor {
 	a := &CardActor{
 		CombatableBase: base,
 	}
+	a.CombatType = ACTOR
 	a.Statuses = make([]*Status, 0)
 	a.MaxLife = a.Life
 	return a

@@ -11,13 +11,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
-	server *http.Server
-	ip     = "0.0.0.0"
-	port   = 8899
-	pushCh = make(chan string)
+	server   *http.Server
+	ip       = "0.0.0.0"
+	port     = 8899
+	pushCh   = make(chan string)
+	grpcConn *grpc.ClientConn
 )
 
 type WsEvent struct {
@@ -26,8 +29,14 @@ type WsEvent struct {
 }
 
 func StartServer(ctx context.Context, cancel context.CancelFunc) {
+	client, err := grpc.NewClient("127.0.0.1:8972", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Error("grpc client error: %v", err)
+		return
+	}
+
 	address := net.JoinHostPort(ip, strconv.Itoa(port))
-	router := NewGinRouter()
+	router := NewGinRouter(client)
 	router.GET("/ws", webSocketHandler)
 	server = &http.Server{Addr: address, Handler: router}
 
@@ -36,6 +45,7 @@ func StartServer(ctx context.Context, cancel context.CancelFunc) {
 		if err != nil && err != http.ErrServerClosed {
 			log.Error("net error")
 			cancel()
+			client.Close()
 		}
 	}()
 }

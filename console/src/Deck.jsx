@@ -96,7 +96,7 @@ const Deck = () => {
     const sendTurnInfo = new StartInfo();
     sendTurnInfo.difficuty = difficuty;
     CallAPI('world/card_start', {}, (reply) => {
-      showChooseModal('welcome', reply.events);
+      showChooseModal('welcome', reply.choices);
       setIsPlaying(true);
     });
   };
@@ -113,7 +113,7 @@ const Deck = () => {
       cards: cards.join(','),
       target: selectedEnemy.split('-')[1],
     };
-    CallAPI('world/send_cards', params, (reply) => {
+    CallAPI('card/send_cards', params, (reply) => {
       setHandCards(
         handCards.filter((card, idx) => !selectedCards.includes(idx)),
       );
@@ -123,14 +123,14 @@ const Deck = () => {
 
   const discardCards = (cards) => {
     let cards_param = cards.join(',');
-    CallAPI('world/discard_cards', { cards: cards_param }, (reply) => {
+    CallAPI('card/discard_cards', { cards: cards_param }, (reply) => {
       setDiscardCount(reply.discardCount);
     });
   };
 
   const endTurn = () => {
     const sendTurnInfo = new EndTurn();
-    CallAPI('world/end_turn', {}, (reply) => {});
+    CallAPI('card/end_turn', {}, (reply) => {});
   };
 
   const showChooseModal = (type, choices) => {
@@ -144,24 +144,20 @@ const Deck = () => {
   };
 
   const handleChooseEvent = (type) => {
-    switch (type) {
+    switch (chooseType) {
       case 'welcome':
-        CallAPI('world/card_welcome', { event: selectedEvent }, (reply) => {});
+        CallAPI('card/welcome', { event: selectedEvent }, (reply) => {});
         break;
 
       case 'bonus':
-        CallAPI(
-          'world/card_choose_bonus',
-          { event: selectedEvent },
-          (reply) => {
-            console.log('bonus accept');
-            showChooseModal('room', reply.rooms);
-          },
-        );
+        CallAPI('card/choose_bonus', { event: selectedEvent }, (reply) => {
+          console.log('bonus accept');
+          showChooseModal('room', reply.rooms);
+        });
         break;
 
       case 'room':
-        CallAPI('world/card_enter_room', { event: selectedEvent }, (reply) => {
+        CallAPI('card/enter_room', { event: selectedEvent }, (reply) => {
           setIsPlaying(true);
         });
         break;

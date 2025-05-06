@@ -18,12 +18,11 @@ import (
 )
 
 type CombatSystem struct {
-	Monsters   map[string]*combat.Enemy
-	Dungeons   map[string]*combat.Dungeon
-	story      *Story
-	cardCombat *combat.CardCombat
-	tower      *combat.Tower
-	server     *grpc.Server
+	Monsters map[string]*combat.Enemy
+	Dungeons map[string]*combat.Dungeon
+	story    *Story
+	tower    *combat.Tower
+	server   *grpc.Server
 }
 
 func NewCombatSystem() *CombatSystem {
@@ -46,12 +45,12 @@ func (c *CombatSystem) initGrpc() error {
 		return err
 	}
 	c.server = grpc.NewServer()
-	event.RegisterCardServer(c.server, c)
-	err = c.server.Serve(lis)
-	if err != nil {
-		fmt.Printf("failed to serve: %v", err)
-		return err
-	}
+	event.RegisterWorldServer(c.server, c)
+
+	c.tower = combat.NewTower()
+	event.RegisterCardServer(c.server, c.tower)
+
+	go c.server.Serve(lis)
 	return nil
 }
 
@@ -86,60 +85,16 @@ func (c *CombatSystem) ChallengeDungeon(name string) error {
 	return nil
 }
 
-func (c *CombatSystem) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventReply {
-	reply := &event.CardStartEventReply{}
+// func (c *CombatSystem) HandleWelcome(ev *event.CardWelcomeEvent) *event.CardWelcomeReply {
+// 	reply := &event.CardWelcomeReply{
+// 		Results: make(map[string]any),
+// 	}
+// 	c.tower.EnterRoom(combat.ROOM_TYPE_FIGHT)
+// 	c.cardCombat = c.tower.StartCardCombat()
+// 	c.tower.HandleEvent(ev.Event)
 
-	player := c.story.GetPlayer("0")
-	player.AddCareer("doctor")
-	actor := combat.NewCardActor(player.GetCombatableBase())
-	actor.Name = "winter"
-	params := &combat.TowerParams{
-		Actor: actor,
-		Path:  c,
-	}
-	c.tower = combat.NewTower(params)
-	reply.Events = c.tower.GetWelcomeEvents()
-
-	return reply
-}
-
-func (c *CombatSystem) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
-	return c.cardCombat.UseCards(ev)
-}
-
-func (c *CombatSystem) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
-	return c.cardCombat.DiscardCards(ev)
-}
-
-func (c *CombatSystem) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
-	return c.cardCombat.EndTurn(ev)
-}
-
-func (c *CombatSystem) NextFloor(ev *event.CardNextFloorEvent) *event.CardNextFloorReply {
-	reply := &event.CardNextFloorReply{}
-	reply.ChooseRoom = c.tower.GetRoomTypeChoices()
-	return reply
-}
-
-func (c *CombatSystem) EnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterRoomReply {
-	reply := &event.CardEnterRoomReply{}
-	c.tower.EnterRoom(ev.RoomType)
-	if ev.RoomType == combat.ROOM_TYPE_FIGHT {
-		c.cardCombat = c.tower.StartCardCombat()
-	}
-	return reply
-}
-
-func (c *CombatSystem) HandleWelcome(ev *event.CardWelcomeEvent) *event.CardWelcomeReply {
-	reply := &event.CardWelcomeReply{
-		Results: make(map[string]any),
-	}
-	c.tower.EnterRoom(combat.ROOM_TYPE_FIGHT)
-	c.cardCombat = c.tower.StartCardCombat()
-	c.tower.HandleEvent(ev.Event)
-
-	return reply
-}
+// 	return reply
+// }
 
 // OnKill implements combat.CombatClient.
 func (c *CombatSystem) OnKill(combat.Combatable) {
@@ -232,8 +187,7 @@ func (c *CombatSystem) loadDungeons() error {
 }
 
 // grpc
-func (c *CombatSystem) Start(context.Context, *event.StartRequest) (*event.StartResponse, error) {
-	reply := &event.StartResponse{Reply: "ok"}
+func (c *CombatSystem) StartCard(context.Context, *event.StartCardRequest) (*event.StartCardResponse, error) {
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewCardActor(player.GetCombatableBase())
@@ -242,7 +196,10 @@ func (c *CombatSystem) Start(context.Context, *event.StartRequest) (*event.Start
 		Actor: actor,
 		Path:  c,
 	}
-	c.tower = combat.NewTower(params)
-	reply.Events = c.tower.GetWelcomeEvents()
-	return reply
+	c.tower.Init(params)
+
+	response := &event.StartCardResponse{
+		Choices: c.tower.GetWelcomeEvents(),
+	}
+	return response, nil
 }

@@ -3,7 +3,6 @@ package world
 import (
 	"context"
 	"encoding/json"
-	"my_test/event"
 	"my_test/log"
 	"os"
 	"path/filepath"
@@ -310,33 +309,4 @@ func (s *Story) GetCollectable() []string {
 
 func (s *Story) ChallengeDungeon(name string) {
 	s.combatSystem.ChallengeDungeon(name)
-}
-
-func (s *Story) ChallengeTower(ev *event.CardStartEvent) *event.CardStartEventReply {
-	log.Info("challenge tower %s", ev.Difficulty)
-	return s.combatSystem.ChallengeTower(ev)
-}
-
-func (s *Story) CardWelcome(ev *event.CardWelcomeEvent) *event.CardWelcomeReply {
-	return s.combatSystem.HandleWelcome(ev)
-}
-
-func (s *Story) SendCards(ev *event.CardSendCards) *event.CardSendCardsReply {
-	return s.combatSystem.SendCards(ev)
-}
-
-func (s *Story) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
-	return s.combatSystem.DiscardCards(ev)
-}
-
-func (s *Story) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
-	return s.combatSystem.EndTurn(ev)
-}
-
-func (s *Story) CardNextFloor(ev *event.CardNextFloorEvent) *event.CardNextFloorReply {
-	return s.combatSystem.NextFloor(ev)
-}
-
-func (s *Story) CardEnterRoom(ev *event.CardEnterRoomEvent) *event.CardEnterRoomReply {
-	return s.combatSystem.EnterRoom(ev)
 }

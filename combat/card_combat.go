@@ -145,17 +145,12 @@ type CardCombat struct {
 	skills  []CardSkill
 }
 
-type EnemyTurnResult struct {
-	damage    int
-	actorDead bool
-	enemyDead bool
-}
-
 func NewCardCombat(p *CardCombatParams) *CardCombat {
 	c := &CardCombat{
 		actors:          p.Actors,
 		originalEnemies: p.Enemies,
 		enemies:         p.Enemies,
+		delegate:        p.CardCombatDelegate,
 		ai:              NewEnemyAI(p.Enemies),
 		combatables:     make([]Combatable, len(p.Actors)+len(p.Enemies)),
 		deck:            make([]*Card, len(p.Cards)),
@@ -231,27 +226,24 @@ func (c *CardCombat) StartTurn() {
 	c.ai.PrepareAction(c.enemies, c.actors)
 }
 
-func (c *CardCombat) UseCards(ev *event.CardSendCards) *event.CardSendCardsReply {
-	reply := &event.CardSendCardsReply{}
+func (c *CardCombat) UseCards(cards []int32, target int32) {
 	cardsToUse := []*Card{}
-	for _, idx := range ev.Cards {
+	for _, idx := range cards {
 		cardsToUse = append(cardsToUse, c.hand[idx])
 	}
 	results := make(map[string]any)
 	for _, card := range cardsToUse {
 		if c.actors[0].Energy >= card.Cost {
 			c.actors[0].Energy -= card.Cost
-			c.Use(card, results, c.enemies[ev.Target])
+			c.Use(card, results, c.enemies[target])
 		}
 	}
 
 	c.requestUpdateUI()
-
-	return reply
 }
 
-func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscardCardsReply {
-	for _, idx := range ev.Cards {
+func (c *CardCombat) DiscardCards(cards []int32) int {
+	for _, idx := range cards {
 		c.discard = append(c.discard, c.hand[idx])
 		c.hand[idx] = nil
 	}
@@ -264,67 +256,54 @@ func (c *CardCombat) DiscardCards(ev *event.CardDiscardCards) *event.CardDiscard
 	}
 	c.hand = newHand
 
-	reply := &event.CardDiscardCardsReply{
-		DiscardCount: len(c.discard),
-	}
-	push.PushAction("discard %d cards", len(ev.Cards))
-	return reply
+	push.PushAction("discard %d cards", len(cards))
+	return len(c.discard)
 }
 
-func (c *CardCombat) EndTurn(ev *event.CardTurnEndEvent) *event.CardTurnEndEventReply {
+func (c *CardCombat) EndTurn() {
 	c.handleCardSkills(TIMING_END)
 
-	reply := &event.CardTurnEndEventReply{}
 	discardCount := len(c.hand) - c.maxCard
 	if discardCount > 0 {
 		c.discard = append(c.discard, c.hand[c.maxCard:]...)
 		c.hand = c.hand[:c.maxCard]
 	}
 
-	result := c.EnemyTurn()
-	reply.Damage = result.damage
-	if reply.Damage != 0 {
-		c.actors[0].OnDamage(result.damage, c.enemies[0])
-		c.checkDead(c.actors[0])
-	}
+	c.EnemyTurn()
+
 	if !c.finish {
 		c.StartTurn()
-		action := c.ai.EnemyAction(c.enemies[0])
-		copier.Copy(reply, action)
 		c.requestUpdateUI()
 		push.PushAction("end turn")
 	}
-
-	return reply
 }
 
-func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
-	result := &EnemyTurnResult{}
-
+func (c *CardCombat) EnemyTurn() {
 	for _, v := range c.enemies {
 		v.UpdateStatus()
 		c.checkDead(v)
 	}
 
 	if c.finish {
-		return result
+		return
 	}
 
 	for _, enemy := range c.enemies {
 		action := c.ai.EnemyAction(enemy)
 		if action.Action == ENEMY_BEHAVIOR_ATTACK {
 			actorIdx := action.Target
-			defender := c.actors[actorIdx]
-			damage := c.cacDamage(enemy, defender)
-			armorStatus := defender.GetArmorStatus()
+			actor := c.actors[actorIdx]
+			damage := c.cacDamage(enemy, actor)
+			armorStatus := actor.GetArmorStatus()
 			if armorStatus != nil && armorStatus.Value <= 0 {
-				defender.RemoveStatus(STATUS_ARMOR)
+				actor.RemoveStatus(STATUS_ARMOR)
 				c.requestUpdateUI()
 			}
-			result.damage = damage
-			result.actorDead = defender.GetLife() <= 0
-			result.enemyDead = enemy.GetLife() <= 0
-			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), defender.GetName(), damage)
+			if damage != 0 {
+				actor.OnDamage(damage, enemy)
+				c.checkDead(actor)
+			}
+			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), actor.GetName(), damage)
 		} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
 			enemy.AddStatus(Status{
 				Type:  STATUS_ARMOR,
@@ -337,8 +316,6 @@ func (c *CardCombat) EnemyTurn() *EnemyTurnResult {
 
 	c.requestUpdateUI()
 	c.ai.onEnemyTurnFinish()
-
-	return result
 }
 
 func (c *CardCombat) checkDead(cbt Combatable) {
@@ -614,7 +591,7 @@ func (c *CardCombat) handCardEffect(effect *CardEffect, target Combatable) {
 		for _, card := range cards {
 			c.AddCard(card.(string))
 		}
-		push.PushEvent(event.CardUpdateHandEvent{Cards: c.getHandString()})
+		c.requestUpdateUI()
 	}
 }
 

@@ -1,7 +1,9 @@
 package combat
 
 import (
+	"context"
 	"encoding/json"
+	pb "my_test/event"
 	"my_test/log"
 	"my_test/util"
 	"os"
@@ -95,16 +97,20 @@ type TowerParams struct {
 	Path  PathProvider
 }
 
-func NewTower(params *TowerParams) *Tower {
+func NewTower() *Tower {
 	t := &Tower{
-		actor:      params.Actor,
-		path:       params.Path,
 		floorCount: 1,
 	}
-	t.loadData(params.Path.GetPath("card"))
+	return t
+}
+
+func (t *Tower) Init(params *TowerParams) {
+	t.actor = params.Actor
+	t.path = params.Path
+
+	t.loadData(t.path.GetPath("card"))
 	t.generateFloor()
 	t.PrepareCard()
-	return t
 }
 
 func (t *Tower) EnterNextFloor() *Floor {
@@ -113,9 +119,9 @@ func (t *Tower) EnterNextFloor() *Floor {
 	return t.floor
 }
 
-func (t *Tower) GetRoomTypeChoices() []int {
-	choices := []int{ROOM_TYPE_FIGHT}
-	candidates := []int{}
+func (t *Tower) GetRoomTypeChoices() []int32 {
+	choices := []int32{ROOM_TYPE_FIGHT}
+	candidates := []int32{}
 	if t.shopCount != 0 {
 		candidates = append(candidates, ROOM_TYPE_SHOP)
 	}
@@ -137,25 +143,6 @@ func (t *Tower) GetWelcomeEvents() []string {
 func (t *Tower) generateFloor() {
 	fl := &Floor{}
 	t.floor = fl
-}
-
-func (t *Tower) EnterRoom(typ int) Room {
-	var room Room
-	switch typ {
-	case ROOM_TYPE_FIGHT:
-		room = t.generateFightRoom()
-	case ROOM_TYPE_SHOP:
-		room = t.generateShopRoom()
-		t.shopCount++
-	case ROOM_TYPE_REST:
-		room = t.generateRestRoom()
-		t.restCount++
-	case ROOM_TYPE_EVENT:
-		room = t.generateEventRoom()
-		t.eventCount++
-	}
-	t.floor.room = room
-	return room
 }
 
 func (t *Tower) PrepareCard() {
@@ -189,6 +176,24 @@ func (t *Tower) StartCardCombat() *CardCombat {
 
 func (t *Tower) fightRoom() *FightRoom {
 	return t.floor.room.(*FightRoom)
+}
+
+func (t *Tower) generateRoom(typ int) Room {
+	var room Room
+	switch typ {
+	case ROOM_TYPE_FIGHT:
+		room = t.generateFightRoom()
+	case ROOM_TYPE_SHOP:
+		room = t.generateShopRoom()
+		t.shopCount++
+	case ROOM_TYPE_REST:
+		room = t.generateRestRoom()
+		t.restCount++
+	case ROOM_TYPE_EVENT:
+		room = t.generateEventRoom()
+		t.eventCount++
+	}
+	return room
 }
 
 func (t *Tower) generateFightRoom() *FightRoom {
@@ -317,4 +322,59 @@ func (t *Tower) OnWin() []string {
 	bonus := t.GetCombatBonus()
 	t.EnterNextFloor()
 	return bonus
+}
+
+// grpc
+func (t *Tower) Welcome(ctx context.Context,
+	request *pb.WelcomeRequest) (*pb.WelcomeResponse, error) {
+	room := t.generateRoom(ROOM_TYPE_FIGHT)
+	t.floor.room = room
+	t.StartCardCombat()
+	t.HandleEvent(request.Event)
+
+	return &pb.WelcomeResponse{
+		Result: "ok",
+	}, nil
+}
+
+func (t *Tower) SendCard(ctx context.Context,
+	request *pb.SendCardRequest) (*pb.SendCardResponse, error) {
+	t.currentCombat.UseCards(request.Cards, request.Target)
+
+	return &pb.SendCardResponse{
+		Result: "ok",
+	}, nil
+}
+
+func (t *Tower) DiscardCard(ctx context.Context,
+	request *pb.DiscardCardRequest) (*pb.DiscardCardResponse, error) {
+	t.currentCombat.DiscardCards(request.Cards)
+
+	return &pb.DiscardCardResponse{
+		Result: "ok",
+	}, nil
+}
+
+func (t *Tower) EndTurn(ctx context.Context,
+	request *pb.EndTurnRequest) (*pb.EndTurnResponse, error) {
+	t.currentCombat.EndTurn()
+
+	return &pb.EndTurnResponse{
+		Result: "ok",
+	}, nil
+}
+
+func (t *Tower) NextFloor(ctx context.Context,
+	request *pb.NextFloorRequest) (*pb.NextFloorResponse, error) {
+	return &pb.NextFloorResponse{
+		RoomChoices: t.GetRoomTypeChoices(),
+	}, nil
+}
+
+func (t *Tower) EnterRoom(ctx context.Context,
+	request *pb.EnterRoomRequest) (*pb.EnterRoomResponse, error) {
+
+	return &pb.EnterRoomResponse{
+		Result: "ok",
+	}, nil
 }

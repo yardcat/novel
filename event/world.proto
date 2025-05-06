@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "./event";
+package event;
+
+message startCardRequest {
+    string difficuty= 1;
+}
+
+message startCardResponse {
+    repeated string choices = 1;
+}
+
+service world {
+    rpc startCard(startCardRequest) returns(startCardResponse);
+}
