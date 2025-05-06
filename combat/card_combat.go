@@ -289,6 +289,9 @@ func (c *CardCombat) EnemyTurn() {
 	}
 
 	for _, enemy := range c.enemies {
+		if c.finish {
+			break
+		}
 		action := c.ai.EnemyAction(enemy)
 		if action.Action == ENEMY_BEHAVIOR_ATTACK {
 			actorIdx := action.Target

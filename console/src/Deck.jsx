@@ -97,18 +97,21 @@ const Deck = () => {
     sendTurnInfo.difficuty = difficuty;
     CallAPI('world/card_start', {}, (reply) => {
       showChooseModal('welcome', reply.choices);
-      setIsPlaying(true);
     });
   };
 
   const sendCards = (cards) => {
-    if (
-      selectedCards.length === 0 ||
-      selectedEnemy === 0 ||
-      actorPanelInfo.energy <= 0
-    ) {
+    if (selectedCards.length === 0) {
+      message.info('no card selected');
+      return;
+    } else if (selectedEnemy == null) {
+      message.info('no enemy selected');
+      return;
+    } else if (actorPanelInfo[0].energy <= 0) {
+      message.info('no energy');
       return;
     }
+
     const params = {
       cards: cards.join(','),
       target: selectedEnemy.split('-')[1],
@@ -146,7 +149,9 @@ const Deck = () => {
   const handleChooseEvent = (type) => {
     switch (chooseType) {
       case 'welcome':
-        CallAPI('card/welcome', { event: selectedEvent }, (reply) => {});
+        CallAPI('card/welcome', { event: selectedEvent }, (reply) => {
+          setIsPlaying(true);
+        });
         break;
 
       case 'bonus':
@@ -175,52 +180,54 @@ const Deck = () => {
 
   return (
     <Card>
-      <div style={PanelContainerStyle}>
-        {actorPanelInfo.map((info, index) => (
-          <Panel role="actor" info={info} key={index} />
-        ))}
-        {enemyPanelInfo.map((info, index) => (
-          <Panel
-            role="enemy"
-            info={info}
-            key={index}
-            isSelected={selectedEnemy === `enemy-${index}`}
-            onClick={() => togglePanelSelection(`enemy-${index}`)}
-          />
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
-        <Card style={{ width: '8%' }}>
-          draw
-          <h3>{drawCount}</h3>
-        </Card>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            width: '80%',
-            flexFlow: 'wrap',
-          }}
-        >
-          {handCards &&
-            handCards.map((name, idx) => (
-              <MyCard
-                key={idx}
-                name={name}
-                isSelected={selectedCards.includes(idx)}
-                onClick={() => toggleCardSelection(idx)}
-              />
-            ))}
+      {isPlaying && (
+        <div style={PanelContainerStyle}>
+          {actorPanelInfo.map((info, index) => (
+            <Panel role="actor" info={info} key={index} />
+          ))}
+          {enemyPanelInfo.map((info, index) => (
+            <Panel
+              role="enemy"
+              info={info}
+              key={index}
+              isSelected={selectedEnemy === `enemy-${index}`}
+              onClick={() => togglePanelSelection(`enemy-${index}`)}
+            />
+          ))}
         </div>
+      )}
+      {isPlaying && (
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+          <Card style={{ width: '6vw' }}>
+            draw
+            <h3>{drawCount}</h3>
+          </Card>
 
-        <Card tyle={{ width: '8%' }}>
-          discard
-          <h3>{discardCount}</h3>
-        </Card>
-      </div>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              width: '90vw',
+              flexFlow: 'wrap',
+            }}
+          >
+            {handCards &&
+              handCards.map((name, idx) => (
+                <MyCard
+                  key={idx}
+                  name={name}
+                  isSelected={selectedCards.includes(idx)}
+                  onClick={() => toggleCardSelection(idx)}
+                />
+              ))}
+          </div>
 
+          <Card tyle={{ width: '5vw' }}>
+            discard
+            <h3>{discardCount}</h3>
+          </Card>
+        </div>
+      )}
       <Card>
         {!isPlaying && (
           <>
@@ -256,7 +263,6 @@ const Deck = () => {
           </>
         )}
       </Card>
-
       <Modal
         title={chooseType}
         open={isModalVisible}

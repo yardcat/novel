@@ -5,49 +5,33 @@
   "rest_num": 1,
   "event_num": 1,
   "actor": {
-    "Health": 100,
-    "Hunger": 100,
-    "Thirst": 100,
-    "Energy": 100,
-    "Level": 1,
     "Life": 50,
-    "Attack": 8,
-    "AttackSpeed": 5,
-    "Defense": 3,
-    "Dodge": 10,
-    "LevelExp": 100,
-    "LevelExpInc": 100,
-    "LevelUp": {
-      "Attack": 1,
-      "Defense": 1
-    }
+    "Defense": 3
   },
   "enemies": {
     "pig": {
       "Name": "pig",
       "Level": 1,
       "Life": 50,
-      "Attack": 5,
-      "AttackSpeed": 5,
-      "Defense": 2,
-      "Dodge": 0
+      "Attack": 10,
+      "Defense": 2
     },
     "cat": {
       "Name": "cat",
       "Level": 1,
       "Life": 50,
-      "Attack": 8,
-      "AttackSpeed": 5,
-      "Defense": 2,
-      "Dodge": 0
+      "Attack": 15,
+      "Defense": 2
     }
   },
   "group": {
-    "1": ["pig", "cat"],
-    "2": ["cat", "cat", "cat"]
+    "1": ["pig"],
+    "2": ["cat", "cat"],
+    "3": ["pig", "cat", "cat"]
   },
   "bonus": {
     "1": ["zhou", "quan", "dang"],
-    "2": ["dang", "dang", "dang"]
+    "2": ["dang", "zhou", "jiao"],
+    "3": ["dang", "dang", "dang"]
   }
 }

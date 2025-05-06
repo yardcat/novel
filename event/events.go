@@ -27,9 +27,9 @@ type EnemyCardUI struct {
 		Target      int    `json:"target"`
 	} `json:"intent"`
 	Statuses []struct {
-		Type   int `json:"type"`
-		Value  int `json:"value"`
-		Target int `json:"target"`
+		Type  int `json:"type"`
+		Value int `json:"value"`
+		Turn  int `json:"turn"`
 	} `json:"buffs"`
 }
 

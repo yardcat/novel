@@ -158,7 +158,7 @@ func (t *Tower) HandleEvent(ev string) {
 }
 
 func (t *Tower) GetCombatBonus() []string {
-	return []string{"dang", "dang", "dang"}
+	return []string{"zhou", "dang", "jiao"}
 }
 
 func (t *Tower) StartCardCombat() *CardCombat {

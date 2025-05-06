@@ -1,16 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { List, Card } from 'antd';
 import { use } from 'react';
 import { socket } from './Socket.js';
 
 const Action = () => {
   const [actions, setAction] = useState([]);
+  const listRef = useRef(null);
 
   useEffect(() => {
     socket.onMsg('event.ActionUpdateEvent', (ev) => {
       setAction((prevActions) => [...prevActions, ev.action]);
     });
   }, []);
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [actions]);
 
   return (
     <List
@@ -21,6 +28,7 @@ const Action = () => {
       itemLayout="horizontal"
       dataSource={actions}
       renderItem={(item) => <List.Item>{item}</List.Item>}
+      ref={listRef}
     />
   );
 };

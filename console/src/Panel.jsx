@@ -51,7 +51,6 @@ const Panel = ({ role, info, isSelected, onClick }) => {
       {role == 'enemy' && (
         <strong>
           {info.intent.action} {info.intent.value}
-          {info.intent.target}
         </strong>
       )}
       <p>
