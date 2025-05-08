@@ -51,6 +51,19 @@ message enterRoomResponse {
     string result = 1;
 }
 
+message Bonus {
+    int32 type= 1;
+    string name = 2;
+}
+
+message chooseBonusRequest {
+    repeated Bonus bonus = 1;
+}
+
+message chooseBonusResponse {
+    string result = 1;
+}
+
 service card {
     rpc welcome(welcomeRequest) returns(welcomeResponse);
     rpc sendCard(sendCardRequest) returns(sendCardResponse);
@@ -58,4 +71,5 @@ service card {
     rpc endTurn(endTurnRequest) returns(endTurnResponse);
     rpc NextFloor(nextFloorRequest) returns(nextFloorResponse);
     rpc enterRoom(enterRoomRequest) returns(enterRoomResponse);
+    rpc chooseBonus(chooseBonusRequest) returns(chooseBonusResponse);
 }

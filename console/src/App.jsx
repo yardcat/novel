@@ -4,10 +4,10 @@ import { PlayerInfo } from './PlayerInfo';
 import { Bag } from './Bag';
 import { Action } from './Action';
 import { Chat } from './Chat';
-import { Deck } from './Deck';
 import { socket } from './Socket';
 import { initConfig } from './Config';
 import { Layout, Tabs } from 'antd';
+import { Tower } from './Tower';
 
 const { Header, Footer, Sider, Content } = Layout;
 
@@ -29,8 +29,8 @@ const App = () => {
   const items = [
     {
       key: '1',
-      label: 'Deck',
-      children: <Deck></Deck>,
+      label: 'Tower',
+      children: <Tower></Tower>,
     },
     {
       key: '2',

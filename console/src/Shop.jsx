@@ -12,7 +12,7 @@ const Shop = () => {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    socket.onMsg('world.CombatWinEvent', (data) => {
+    socket.onMsg('', (data) => {
       addChat(data.Result);
     });
   }, []);

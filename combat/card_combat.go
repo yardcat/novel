@@ -52,27 +52,9 @@ const (
 )
 
 const (
-	CARD_INIT   = 5
-	CARD_MAX    = 10
-	ENERGY_INIT = 3
-	ENERGY_MAX  = 20
-)
-
-const (
 	TIMING_START = iota
 	TIMING_END
 )
-
-const (
-	SKILL_ADD_STRENGTH = iota
-)
-
-type CardSkill struct {
-	Effects      []*CardEffect
-	Timing       int
-	TurnInterval int
-	TurnCount    int
-}
 
 type CardEffect struct {
 	Effect string `json:"effect"`
@@ -111,17 +93,11 @@ type CardBonus struct {
 	Bonus []string
 }
 
-type CardCombatDelegate interface {
-	GetCard(name string) *Card
-	OnWin() []string
-	OnLose()
-}
-
 type CardCombatParams struct {
-	Cards   []*Card
-	Actors  []*CardActor
-	Enemies []*CardEnemy
-	Path    PathProvider
+	Cards       []*Card
+	Actors      []*CardActor
+	Enemies     []*CardEnemy
+	ResourceDir string
 	CardCombatDelegate
 }
 
@@ -133,16 +109,16 @@ type CardCombat struct {
 	enemies         []*CardEnemy
 	ai              *EnemyAI
 	Record
-	deck    []*Card
-	hand    []*Card
-	discard []*Card
-	remove  []*Card
-	maxCard int
-	turnNum int
-	uiDirty bool
-	uiTimer time.Ticker
-	finish  bool
-	skills  []CardSkill
+	deck          []*Card
+	hand          []*Card
+	discard       []*Card
+	remove        []*Card
+	initCardCount int
+	initEnergy    int
+	turnNum       int
+	uiDirty       bool
+	uiTimer       time.Ticker
+	finish        bool
 }
 
 func NewCardCombat(p *CardCombatParams) *CardCombat {
@@ -154,7 +130,8 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 		ai:              NewEnemyAI(p.Enemies),
 		combatables:     make([]Combatable, len(p.Actors)+len(p.Enemies)),
 		deck:            make([]*Card, len(p.Cards)),
-		maxCard:         CARD_INIT,
+		initCardCount:   p.Actors[0].InitCardCount,
+		initEnergy:      p.Actors[0].InitEnergy,
 		uiDirty:         false,
 		uiTimer:         *time.NewTicker(time.Millisecond * 500),
 		finish:          false,
@@ -202,23 +179,10 @@ func (c *CardCombat) Combatables() []Combatable {
 	return c.combatables
 }
 
-func (c *CardCombat) handleCardSkills(timing int) {
-	for _, v := range c.skills {
-		if v.Timing != timing || v.TurnCount < v.TurnInterval {
-			v.TurnCount++
-			continue
-		}
-		v.TurnCount = 0
-		for _, e := range v.Effects {
-			c.handCardEffect(e, nil)
-		}
-	}
-}
-
 func (c *CardCombat) StartTurn() {
-	c.handleCardSkills(TIMING_START)
-	c.actors[0].Energy = ENERGY_INIT
-	drawCount := c.maxCard - len(c.hand)
+	c.delegate.OnActorTurnStart()
+	c.actors[0].Energy = c.initEnergy
+	drawCount := c.initCardCount - len(c.hand)
 	c.DrawCard(drawCount)
 	for _, actor := range c.actors {
 		actor.UpdateStatus()
@@ -236,6 +200,7 @@ func (c *CardCombat) UseCards(cards []int32, target int32) {
 		if c.actors[0].Energy >= card.Cost {
 			c.actors[0].Energy -= card.Cost
 			c.Use(card, results, c.enemies[target])
+			c.delegate.OnPlayCard(card)
 		}
 	}
 
@@ -261,12 +226,11 @@ func (c *CardCombat) DiscardCards(cards []int32) int {
 }
 
 func (c *CardCombat) EndTurn() {
-	c.handleCardSkills(TIMING_END)
-
-	discardCount := len(c.hand) - c.maxCard
+	c.delegate.OnActorTurnEnd()
+	discardCount := len(c.hand) - c.initCardCount
 	if discardCount > 0 {
-		c.discard = append(c.discard, c.hand[c.maxCard:]...)
-		c.hand = c.hand[:c.maxCard]
+		c.discard = append(c.discard, c.hand[c.initCardCount:]...)
+		c.hand = c.hand[:c.initCardCount]
 	}
 
 	c.EnemyTurn()
@@ -279,6 +243,7 @@ func (c *CardCombat) EndTurn() {
 }
 
 func (c *CardCombat) EnemyTurn() {
+	c.delegate.OnEnemyTurnStart()
 	for _, v := range c.enemies {
 		v.UpdateStatus()
 		c.checkDead(v)
@@ -305,6 +270,7 @@ func (c *CardCombat) EnemyTurn() {
 			if damage != 0 {
 				actor.OnDamage(damage, enemy)
 				c.checkDead(actor)
+				c.delegate.OnEnenyDamage(enemy, damage)
 			}
 			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), actor.GetName(), damage)
 		} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
@@ -317,6 +283,7 @@ func (c *CardCombat) EnemyTurn() {
 		}
 	}
 
+	c.delegate.OnEnemyTurnEnd()
 	c.requestUpdateUI()
 	c.ai.onEnemyTurnFinish()
 }
@@ -388,6 +355,7 @@ func (c *CardCombat) removeCombatable(combatable Combatable) {
 	case ENEMY:
 		for i, enemy := range c.enemies {
 			if enemy == combatable {
+				c.delegate.OnEnemyDead(enemy)
 				c.enemies = slices.Delete(c.enemies, i, i+1)
 				break
 			}
@@ -414,11 +382,9 @@ func (c *CardCombat) onCombatFinish(win bool) {
 	c.finish = true
 
 	if win {
-		bonus := c.delegate.OnWin()
-		push.PushEvent(event.CardCombatWin{Bonus: bonus})
+		c.delegate.OnWin()
 	} else {
 		c.delegate.OnLose()
-		push.PushEvent(event.CardCombatLose{})
 	}
 
 	push.PushAction("combat finish")
@@ -446,8 +412,10 @@ func (c *CardCombat) getHandString() []string {
 	return strs
 }
 
-func (c *CardCombat) AddCard(card string) {
-	c.hand = append(c.hand, c.delegate.GetCard(card))
+func (c *CardCombat) AddCard(name string) {
+	card := c.delegate.GetCard(name)
+	c.delegate.OnAddCard(card)
+	c.hand = append(c.hand, card)
 }
 
 func (c *CardCombat) DrawCard(n int) []*Card {
@@ -463,6 +431,7 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 			c.ShuffleDeck()
 		}
 		card := c.deck[0]
+		c.delegate.OnDrawCard(card)
 		c.deck = c.deck[1:]
 		c.hand = append(c.hand, card)
 		cards = append(cards, card)
@@ -472,6 +441,7 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 }
 
 func (c *CardCombat) DiscardCard(card *Card) {
+	c.delegate.OnDiscardCard(card)
 	for i, v := range c.hand {
 		if v == card {
 			c.hand = append(c.hand[:i], c.hand[i+1:]...)
@@ -482,10 +452,12 @@ func (c *CardCombat) DiscardCard(card *Card) {
 }
 
 func (c *CardCombat) RemoveCard(card *Card) {
+	c.delegate.OnRemoveCard(card)
 	c.remove = append(c.remove, card)
 }
 
 func (c *CardCombat) ShuffleDeck() {
+	c.delegate.OnShuffle()
 	for i := len(c.deck) - 1; i > 0; i-- {
 		j := util.GetRandomInt(i + 1)
 		c.deck[i], c.deck[j] = c.deck[j], c.deck[i]

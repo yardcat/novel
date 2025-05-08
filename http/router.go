@@ -36,12 +36,12 @@ func NewGinRouter(conn *grpc.ClientConn) *gin.Engine {
 	c := newCard(cardClient)
 	cardRouterGroup := r.Group("/card")
 	{
-		cardRouterGroup.POST("/welcome", c.CardWelcome)
-		cardRouterGroup.POST("/send_cards", c.CardSendCards)
-		cardRouterGroup.POST("/discard_cards", c.CardDiscardCards)
-		cardRouterGroup.POST("/end_turn", c.CardEndTurn)
-		cardRouterGroup.POST("/next_floor", c.CardEndTurn)
-		cardRouterGroup.POST("/enter_room", c.CardEndTurn)
+		cardRouterGroup.POST("/welcome", c.Welcome)
+		cardRouterGroup.POST("/send_cards", c.SendCards)
+		cardRouterGroup.POST("/discard_cards", c.DiscardCards)
+		cardRouterGroup.POST("/end_turn", c.EndTurn)
+		cardRouterGroup.POST("/next_floor", c.EndTurn)
+		cardRouterGroup.POST("/enter_room", c.EndTurn)
 	}
 
 	return r

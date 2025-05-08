@@ -21,7 +21,7 @@ func newCard(ca event.CardClient) *Card {
 	}
 }
 
-func (w *Card) CardWelcome(c *gin.Context) {
+func (w *Card) Welcome(c *gin.Context) {
 	response, err := w.client.Welcome(c.Request.Context(), &event.WelcomeRequest{
 		Event: c.PostForm("event"),
 	})
@@ -37,7 +37,7 @@ func (w *Card) CardWelcome(c *gin.Context) {
 
 }
 
-func (w *Card) CardSendCards(c *gin.Context) {
+func (w *Card) SendCards(c *gin.Context) {
 	strIdx := strings.Split(c.PostForm("cards"), ",")
 	target := cast.ToInt32(c.PostForm("target"))
 	cards := make([]int32, len(strIdx))
@@ -60,7 +60,7 @@ func (w *Card) CardSendCards(c *gin.Context) {
 
 }
 
-func (w *Card) CardDiscardCards(c *gin.Context) {
+func (w *Card) DiscardCards(c *gin.Context) {
 	strIdx := strings.Split(c.PostForm("cards"), ",")
 	cards := make([]int32, len(strIdx))
 	for i, v := range strIdx {
@@ -81,7 +81,7 @@ func (w *Card) CardDiscardCards(c *gin.Context) {
 
 }
 
-func (w *Card) CardEndTurn(c *gin.Context) {
+func (w *Card) EndTurn(c *gin.Context) {
 	response, err := w.client.EndTurn(c.Request.Context(), &event.EndTurnRequest{})
 	if err != nil {
 		log.Info("card end turn err %v", err)
@@ -95,7 +95,7 @@ func (w *Card) CardEndTurn(c *gin.Context) {
 
 }
 
-func (w *Card) CardNextFloor(c *gin.Context) {
+func (w *Card) NextFloor(c *gin.Context) {
 	response, err := w.client.NextFloor(c.Request.Context(), &event.NextFloorRequest{})
 	if err != nil {
 		log.Info("card next floor err %v", err)
@@ -108,7 +108,7 @@ func (w *Card) CardNextFloor(c *gin.Context) {
 	c.JSON(200, string(jsonStr))
 }
 
-func (w *Card) CardEnterRoom(c *gin.Context) {
+func (w *Card) EnterRoom(c *gin.Context) {
 	response, err := w.client.EnterRoom(c.Request.Context(), &event.EnterRoomRequest{})
 	if err != nil {
 		log.Info("card next floor err %v", err)
@@ -119,4 +119,22 @@ func (w *Card) CardEnterRoom(c *gin.Context) {
 		log.Info("CardEnterRoom json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
+}
+
+func (w *Card) ChooseBonus(c *gin.Context) {
+	ev := event.ChooseBonusRequest{}
+	err := json.Unmarshal([]byte(c.PostForm("bonus")), &ev.Bonus)
+	if err != nil {
+		log.Info("card choose bonus err %v", err)
+	}
+	response, err := w.client.ChooseBonus(c.Request.Context(), &ev)
+	if err != nil {
+		log.Info("card choose bonus err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("card choose bonus err %v", err)
+	}
+	c.JSON(200, jsonStr)
 }

@@ -84,9 +84,20 @@ type ActionUpdateEvent struct {
 }
 
 type CardCombatWin struct {
-	Bonus []string `json:"bonus"`
+	Bonus struct {
+		Cards             []string `json:"cards"`
+		CardChooseCount   int      `json:"cardChooseCount"`
+		Potions           []string `json:"potions"`
+		PotionChooseCount int      `json:"potionChooseCount"`
+		Relics            []string `json:"relics"`
+		RelicChooseCount  int      `json:"relicChooseCount"`
+	} `json:"bonus"`
 }
 
 type CardCombatLose struct {
 	Result string `json:"result"`
+}
+
+type CardEnterRoomDone struct {
+	Type int `json:"type"`
 }

@@ -9,7 +9,7 @@ const Rest = () => {
   };
 
   useEffect(() => {
-    socket.onMsg('world.CombatWinEvent', (data) => {
+    socket.onMsg('', (data) => {
       addChat(data.Result);
     });
   }, []);

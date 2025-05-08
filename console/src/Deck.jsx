@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { message, Select, Badge, Card, Button, Tag, Modal, Radio } from 'antd';
+import { message, Select, Badge, Card, Button, Tag, Radio } from 'antd';
 import { Panel } from './Panel';
 import { Config } from './Config';
 import { CallAPI } from './Net';
@@ -37,17 +37,11 @@ const PanelContainerStyle = {
   border: '1px',
 };
 
-const Deck = () => {
+const Deck = ({ modal }) => {
   const [handCards, setHandCards] = useState([]);
   const [drawCount, setDrawCount] = useState(0);
   const [discardCount, setDiscardCount] = useState(0);
-  const [difficuty, setDifficuty] = useState('Easy');
   const [selectedCards, setSelectedCards] = useState([]);
-  const [chooseType, setChooseType] = useState('');
-  const [chooseEvents, setChooseEvents] = useState([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [actorPanelInfo, setActorPanelInfo] = useState([]);
   const [enemyPanelInfo, setEnemyPanelInfo] = useState([]);
   const [selectedEnemy, setSelectedEnemy] = useState(null);
@@ -76,29 +70,7 @@ const Deck = () => {
     socket.onMsg('event.CardUpdateUIEvent', (ev) => {
       updateUI(ev);
     });
-
-    socket.onMsg('event.CardCombatWin', (ev) => {
-      showChooseModal('bonus', ev.bonus);
-      setIsPlaying(false);
-    });
-
-    socket.onMsg('event.CardCombatLose', (ev) => {
-      setIsPlaying(false);
-      message.info('you lose');
-    });
   }, []);
-
-  const startPlay = () => {
-    if (difficuty === 'Difficuty') {
-      message.error('Please select difficuty');
-      return;
-    }
-    const sendTurnInfo = new StartInfo();
-    sendTurnInfo.difficuty = difficuty;
-    CallAPI('world/card_start', {}, (reply) => {
-      showChooseModal('welcome', reply.choices);
-    });
-  };
 
   const sendCards = (cards) => {
     if (selectedCards.length === 0) {
@@ -136,150 +108,73 @@ const Deck = () => {
     CallAPI('card/end_turn', {}, (reply) => {});
   };
 
-  const showChooseModal = (type, choices) => {
-    setChooseType(type);
-    setChooseEvents(choices);
-    setIsModalVisible(true);
-  };
-
-  const hideChooseModal = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleChooseEvent = (type) => {
-    switch (chooseType) {
-      case 'welcome':
-        CallAPI('card/welcome', { event: selectedEvent }, (reply) => {
-          setIsPlaying(true);
-        });
-        break;
-
-      case 'bonus':
-        CallAPI('card/choose_bonus', { event: selectedEvent }, (reply) => {
-          console.log('bonus accept');
-          showChooseModal('room', reply.rooms);
-        });
-        break;
-
-      case 'room':
-        CallAPI('card/enter_room', { event: selectedEvent }, (reply) => {
-          setIsPlaying(true);
-        });
-        break;
-
-      default:
-        console.log('no type specified');
-        break;
-    }
-    hideChooseModal();
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-
   return (
     <Card>
-      {isPlaying && (
-        <div style={PanelContainerStyle}>
-          {actorPanelInfo.map((info, index) => (
-            <Panel role="actor" info={info} key={index} />
-          ))}
-          {enemyPanelInfo.map((info, index) => (
-            <Panel
-              role="enemy"
-              info={info}
-              key={index}
-              isSelected={selectedEnemy === `enemy-${index}`}
-              onClick={() => togglePanelSelection(`enemy-${index}`)}
-            />
-          ))}
-        </div>
-      )}
-      {isPlaying && (
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
-          <Card style={{ width: '6vw' }}>
-            draw
-            <h3>{drawCount}</h3>
-          </Card>
+      <div style={PanelContainerStyle}>
+        {actorPanelInfo.map((info, index) => (
+          <Panel role="actor" info={info} key={index} />
+        ))}
+        {enemyPanelInfo.map((info, index) => (
+          <Panel
+            role="enemy"
+            info={info}
+            key={index}
+            isSelected={selectedEnemy === `enemy-${index}`}
+            onClick={() => togglePanelSelection(`enemy-${index}`)}
+          />
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+        <Card style={{ width: '6vw' }}>
+          draw
+          <h3>{drawCount}</h3>
+        </Card>
 
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              width: '90vw',
-              flexFlow: 'wrap',
-            }}
-          >
-            {handCards &&
-              handCards.map((name, idx) => (
-                <MyCard
-                  key={idx}
-                  name={name}
-                  isSelected={selectedCards.includes(idx)}
-                  onClick={() => toggleCardSelection(idx)}
-                />
-              ))}
-          </div>
-
-          <Card tyle={{ width: '5vw' }}>
-            discard
-            <h3>{discardCount}</h3>
-          </Card>
-        </div>
-      )}
-      <Card>
-        {!isPlaying && (
-          <>
-            <Select defaultValue="Easy" onChange={setDifficuty}>
-              <Select.Option value="Easy">Easy</Select.Option>
-              <Select.Option value="Normal">Normal</Select.Option>
-              <Select.Option value="Hard">Hard</Select.Option>
-            </Select>
-            <Button onClick={startPlay}>Start</Button>
-          </>
-        )}
-        {isPlaying && (
-          <>
-            <Button
-              onClick={() => {
-                sendCards(selectedCards);
-              }}
-            >
-              Send
-            </Button>
-            <Button
-              onClick={() => {
-                discardCards(selectedCards);
-                setHandCards(
-                  handCards.filter((card, idx) => !selectedCards.includes(idx)),
-                );
-                setSelectedCards([]);
-              }}
-            >
-              Discard
-            </Button>
-            <Button onClick={endTurn}>End</Button>
-          </>
-        )}
-      </Card>
-      <Modal
-        title={chooseType}
-        open={isModalVisible}
-        onOk={handleChooseEvent}
-        onCancel={handleCancel}
-      >
-        <Radio.Group
-          onChange={(e) => setSelectedEvent(e.target.value)}
-          value={selectedEvent}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            width: '90vw',
+            flexFlow: 'wrap',
+          }}
         >
-          {chooseEvents.map((event, index) => (
-            <Radio key={index} value={event}>
-              {event}
-            </Radio>
-          ))}
-        </Radio.Group>
-      </Modal>
+          {handCards &&
+            handCards.map((name, idx) => (
+              <MyCard
+                key={idx}
+                name={name}
+                isSelected={selectedCards.includes(idx)}
+                onClick={() => toggleCardSelection(idx)}
+              />
+            ))}
+        </div>
+
+        <Card tyle={{ width: '5vw' }}>
+          discard
+          <h3>{discardCount}</h3>
+        </Card>
+      </div>
+      <Card>
+        <Button
+          onClick={() => {
+            sendCards(selectedCards);
+          }}
+        >
+          Send
+        </Button>
+        <Button
+          onClick={() => {
+            discardCards(selectedCards);
+            setHandCards(
+              handCards.filter((card, idx) => !selectedCards.includes(idx)),
+            );
+            setSelectedCards([]);
+          }}
+        >
+          Discard
+        </Button>
+        <Button onClick={endTurn}>End</Button>
+      </Card>
     </Card>
   );
 };

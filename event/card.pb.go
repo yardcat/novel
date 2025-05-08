@@ -561,6 +561,146 @@ func (x *EnterRoomResponse) GetResult() string {
 	return ""
 }
 
+type Bonus struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          int32                  `protobuf:"varint,1,opt,name=type,proto3" json:"type,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Bonus) Reset() {
+	*x = Bonus{}
+	mi := &file_event_card_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Bonus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bonus) ProtoMessage() {}
+
+func (x *Bonus) ProtoReflect() protoreflect.Message {
+	mi := &file_event_card_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bonus.ProtoReflect.Descriptor instead.
+func (*Bonus) Descriptor() ([]byte, []int) {
+	return file_event_card_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Bonus) GetType() int32 {
+	if x != nil {
+		return x.Type
+	}
+	return 0
+}
+
+func (x *Bonus) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type ChooseBonusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Bonus         []*Bonus               `protobuf:"bytes,1,rep,name=bonus,proto3" json:"bonus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChooseBonusRequest) Reset() {
+	*x = ChooseBonusRequest{}
+	mi := &file_event_card_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChooseBonusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChooseBonusRequest) ProtoMessage() {}
+
+func (x *ChooseBonusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_event_card_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChooseBonusRequest.ProtoReflect.Descriptor instead.
+func (*ChooseBonusRequest) Descriptor() ([]byte, []int) {
+	return file_event_card_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ChooseBonusRequest) GetBonus() []*Bonus {
+	if x != nil {
+		return x.Bonus
+	}
+	return nil
+}
+
+type ChooseBonusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Result        string                 `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChooseBonusResponse) Reset() {
+	*x = ChooseBonusResponse{}
+	mi := &file_event_card_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChooseBonusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChooseBonusResponse) ProtoMessage() {}
+
+func (x *ChooseBonusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_event_card_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChooseBonusResponse.ProtoReflect.Descriptor instead.
+func (*ChooseBonusResponse) Descriptor() ([]byte, []int) {
+	return file_event_card_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ChooseBonusResponse) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
 var File_event_card_proto protoreflect.FileDescriptor
 
 const file_event_card_proto_rawDesc = "" +
@@ -590,14 +730,22 @@ const file_event_card_proto_rawDesc = "" +
 	"\x10enterRoomRequest\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\x05R\x04type\"+\n" +
 	"\x11enterRoomResponse\x12\x16\n" +
-	"\x06result\x18\x01 \x01(\tR\x06result2\xfd\x02\n" +
+	"\x06result\x18\x01 \x01(\tR\x06result\"/\n" +
+	"\x05Bonus\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\x05R\x04type\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"8\n" +
+	"\x12chooseBonusRequest\x12\"\n" +
+	"\x05bonus\x18\x01 \x03(\v2\f.event.BonusR\x05bonus\"-\n" +
+	"\x13chooseBonusResponse\x12\x16\n" +
+	"\x06result\x18\x01 \x01(\tR\x06result2\xc3\x03\n" +
 	"\x04card\x128\n" +
 	"\awelcome\x12\x15.event.welcomeRequest\x1a\x16.event.welcomeResponse\x12;\n" +
 	"\bsendCard\x12\x16.event.sendCardRequest\x1a\x17.event.sendCardResponse\x12D\n" +
 	"\vdiscardCard\x12\x19.event.discardCardRequest\x1a\x1a.event.discardCardResponse\x128\n" +
 	"\aendTurn\x12\x15.event.endTurnRequest\x1a\x16.event.endTurnResponse\x12>\n" +
 	"\tNextFloor\x12\x17.event.nextFloorRequest\x1a\x18.event.nextFloorResponse\x12>\n" +
-	"\tenterRoom\x12\x17.event.enterRoomRequest\x1a\x18.event.enterRoomResponseB\tZ\a./eventb\x06proto3"
+	"\tenterRoom\x12\x17.event.enterRoomRequest\x1a\x18.event.enterRoomResponse\x12D\n" +
+	"\vchooseBonus\x12\x19.event.chooseBonusRequest\x1a\x1a.event.chooseBonusResponseB\tZ\a./eventb\x06proto3"
 
 var (
 	file_event_card_proto_rawDescOnce sync.Once
@@ -611,7 +759,7 @@ func file_event_card_proto_rawDescGZIP() []byte {
 	return file_event_card_proto_rawDescData
 }
 
-var file_event_card_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_event_card_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_event_card_proto_goTypes = []any{
 	(*WelcomeRequest)(nil),      // 0: event.welcomeRequest
 	(*WelcomeResponse)(nil),     // 1: event.welcomeResponse
@@ -625,25 +773,31 @@ var file_event_card_proto_goTypes = []any{
 	(*NextFloorResponse)(nil),   // 9: event.nextFloorResponse
 	(*EnterRoomRequest)(nil),    // 10: event.enterRoomRequest
 	(*EnterRoomResponse)(nil),   // 11: event.enterRoomResponse
+	(*Bonus)(nil),               // 12: event.Bonus
+	(*ChooseBonusRequest)(nil),  // 13: event.chooseBonusRequest
+	(*ChooseBonusResponse)(nil), // 14: event.chooseBonusResponse
 }
 var file_event_card_proto_depIdxs = []int32{
-	0,  // 0: event.card.welcome:input_type -> event.welcomeRequest
-	2,  // 1: event.card.sendCard:input_type -> event.sendCardRequest
-	4,  // 2: event.card.discardCard:input_type -> event.discardCardRequest
-	6,  // 3: event.card.endTurn:input_type -> event.endTurnRequest
-	8,  // 4: event.card.NextFloor:input_type -> event.nextFloorRequest
-	10, // 5: event.card.enterRoom:input_type -> event.enterRoomRequest
-	1,  // 6: event.card.welcome:output_type -> event.welcomeResponse
-	3,  // 7: event.card.sendCard:output_type -> event.sendCardResponse
-	5,  // 8: event.card.discardCard:output_type -> event.discardCardResponse
-	7,  // 9: event.card.endTurn:output_type -> event.endTurnResponse
-	9,  // 10: event.card.NextFloor:output_type -> event.nextFloorResponse
-	11, // 11: event.card.enterRoom:output_type -> event.enterRoomResponse
-	6,  // [6:12] is the sub-list for method output_type
-	0,  // [0:6] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	12, // 0: event.chooseBonusRequest.bonus:type_name -> event.Bonus
+	0,  // 1: event.card.welcome:input_type -> event.welcomeRequest
+	2,  // 2: event.card.sendCard:input_type -> event.sendCardRequest
+	4,  // 3: event.card.discardCard:input_type -> event.discardCardRequest
+	6,  // 4: event.card.endTurn:input_type -> event.endTurnRequest
+	8,  // 5: event.card.NextFloor:input_type -> event.nextFloorRequest
+	10, // 6: event.card.enterRoom:input_type -> event.enterRoomRequest
+	13, // 7: event.card.chooseBonus:input_type -> event.chooseBonusRequest
+	1,  // 8: event.card.welcome:output_type -> event.welcomeResponse
+	3,  // 9: event.card.sendCard:output_type -> event.sendCardResponse
+	5,  // 10: event.card.discardCard:output_type -> event.discardCardResponse
+	7,  // 11: event.card.endTurn:output_type -> event.endTurnResponse
+	9,  // 12: event.card.NextFloor:output_type -> event.nextFloorResponse
+	11, // 13: event.card.enterRoom:output_type -> event.enterRoomResponse
+	14, // 14: event.card.chooseBonus:output_type -> event.chooseBonusResponse
+	8,  // [8:15] is the sub-list for method output_type
+	1,  // [1:8] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_event_card_proto_init() }
@@ -657,7 +811,7 @@ func file_event_card_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_event_card_proto_rawDesc), len(file_event_card_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -688,6 +842,7 @@ type CardClient interface {
 	EndTurn(ctx context.Context, in *EndTurnRequest, opts ...grpc.CallOption) (*EndTurnResponse, error)
 	NextFloor(ctx context.Context, in *NextFloorRequest, opts ...grpc.CallOption) (*NextFloorResponse, error)
 	EnterRoom(ctx context.Context, in *EnterRoomRequest, opts ...grpc.CallOption) (*EnterRoomResponse, error)
+	ChooseBonus(ctx context.Context, in *ChooseBonusRequest, opts ...grpc.CallOption) (*ChooseBonusResponse, error)
 }
 
 type cardClient struct {
@@ -752,6 +907,15 @@ func (c *cardClient) EnterRoom(ctx context.Context, in *EnterRoomRequest, opts .
 	return out, nil
 }
 
+func (c *cardClient) ChooseBonus(ctx context.Context, in *ChooseBonusRequest, opts ...grpc.CallOption) (*ChooseBonusResponse, error) {
+	out := new(ChooseBonusResponse)
+	err := c.cc.Invoke(ctx, "/event.card/chooseBonus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CardServer is the server API for Card service.
 type CardServer interface {
 	Welcome(context.Context, *WelcomeRequest) (*WelcomeResponse, error)
@@ -760,6 +924,7 @@ type CardServer interface {
 	EndTurn(context.Context, *EndTurnRequest) (*EndTurnResponse, error)
 	NextFloor(context.Context, *NextFloorRequest) (*NextFloorResponse, error)
 	EnterRoom(context.Context, *EnterRoomRequest) (*EnterRoomResponse, error)
+	ChooseBonus(context.Context, *ChooseBonusRequest) (*ChooseBonusResponse, error)
 }
 
 // UnimplementedCardServer can be embedded to have forward compatible implementations.
@@ -783,6 +948,9 @@ func (*UnimplementedCardServer) NextFloor(context.Context, *NextFloorRequest) (*
 }
 func (*UnimplementedCardServer) EnterRoom(context.Context, *EnterRoomRequest) (*EnterRoomResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnterRoom not implemented")
+}
+func (*UnimplementedCardServer) ChooseBonus(context.Context, *ChooseBonusRequest) (*ChooseBonusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChooseBonus not implemented")
 }
 
 func RegisterCardServer(s *grpc.Server, srv CardServer) {
@@ -897,6 +1065,24 @@ func _Card_EnterRoom_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Card_ChooseBonus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChooseBonusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CardServer).ChooseBonus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/event.card/ChooseBonus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CardServer).ChooseBonus(ctx, req.(*ChooseBonusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Card_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "event.card",
 	HandlerType: (*CardServer)(nil),
@@ -924,6 +1110,10 @@ var _Card_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "enterRoom",
 			Handler:    _Card_EnterRoom_Handler,
+		},
+		{
+			MethodName: "chooseBonus",
+			Handler:    _Card_ChooseBonus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
