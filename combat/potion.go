@@ -17,6 +17,3 @@ type Potion struct {
 func (p *Potion) CanUse() bool {
 	return false
 }
-
-func (ps *Potion) Use() {
-}

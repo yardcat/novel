@@ -13,22 +13,21 @@ const Relic = () => {
 
   useEffect(() => {
     socket.onMsg('event.CardUpdateRelic', (data) => {
-      setItems(data);
+      setItems(data.relics);
     });
   }, []);
 
   return (
-    <Flex
-      gap="small"
-      wrap
-      style={{ paddingLeft: '10px', paddingRight: '10px' }}
-    >
+    <Flex gap="small" wrap style={{ padding: '10px' }}>
       Relics:
-      {items.map((item, index) => (
-        <Tooltip title={item.description} key={index}>
-          <Button value={item.name}>{item.name}</Button>
-        </Tooltip>
-      ))}
+      {items.length > 0 &&
+        items.map((item, index) => (
+          <Tooltip title={item.description} key={index}>
+            <Button value={item.name} color="pink" variant="solid" size="small">
+              {item.name}
+            </Button>
+          </Tooltip>
+        ))}
     </Flex>
   );
 };

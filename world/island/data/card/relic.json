@@ -2,21 +2,21 @@
   "ransaozhixue": {
     "name": "燃烧之血",
     "description": "燃烧之血",
-    "rarity": "1",
+    "rarity": 1,
     "price": 10,
     "effects": [{ "timing": "COMBAT_END", "modifier": "c.Heal(6)" }]
   },
   "snake_ring": {
     "name": "蛇环",
     "description": "蛇环",
-    "rarity": "1",
+    "rarity": 1,
     "price": 10,
     "effects": [{ "timing": "COMBAT_START", "modifier": "c.Draw(2)" }]
   },
   "test": {
     "name": "test",
     "description": "test",
-    "rarity": "2",
+    "rarity": 2,
     "price": 0,
     "effects": [
       {

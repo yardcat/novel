@@ -3,6 +3,7 @@ package combat
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"my_test/event"
 	pb "my_test/event"
 	"my_test/log"
@@ -83,8 +84,8 @@ type Tower struct {
 	EventNum      int                   `json:"event_num"`
 	EnemyMap      map[string]*CardEnemy `json:"enemies"`
 	EnemyGroupMap map[int][]string      `json:"group"`
-	PotionMap     map[string]*Potion    `json:"potion"`
-	RelicMap      map[string]*Relic     `json:"relic"`
+	PotionMap     map[string]*Potion
+	RelicMap      map[string]*Relic
 	cardMap       map[string]*Card
 	careerMap     map[string]*CardCareer
 	eventMap      map[string]*CardEvent
@@ -255,10 +256,13 @@ func (t *Tower) AddPotion(name string) {
 		return
 	}
 	t.potions = append(t.potions, potion)
+
 	for _, v := range potion.Effects {
-		v.CasterID = potion.Name
-		v.CasterType = CASTER_TYPE_POTION
-		t.effects[v.Timing] = append(t.effects[v.Timing], v)
+		if v.Timing != TIMING_IMMEDIATE {
+			v.CasterID = potion.Name
+			v.CasterType = CASTER_TYPE_POTION
+			t.effects[v.Timing] = append(t.effects[v.Timing], v)
+		}
 	}
 
 	t.UpdatePotionUI()
@@ -272,22 +276,35 @@ func (t *Tower) RemovePotion(name string) {
 	}
 	for i, v := range t.potions {
 		if v == potion {
-			slices.Delete(t.potions, i, i+1)
+			t.potions = slices.Delete(t.potions, i, i+1)
 		}
-	}
-
-	for _, v := range potion.Effects {
-		arr := t.effects[v.Timing]
-		t.effects[v.Timing] = lo.Filter(arr, func(v *Effect, i int) bool {
-			return v.CasterType == CASTER_TYPE_POTION && v.CasterID == name
-		})
 	}
 
 	t.UpdatePotionUI()
 }
 
-func (t *Tower) usePotion(name string) {
+func (t *Tower) usePotion(name string) bool {
+	if t.currentCombat != nil && t.currentCombat.finish {
+		return false
+	}
 
+	potion, exsit := t.PotionMap[name]
+	if !exsit {
+		log.Error("potion %s not exist", name)
+		panic("potion not exist")
+	}
+	for _, v := range potion.Effects {
+		t.UseEffect(v)
+		push.PushAction("use potion: %s", name)
+	}
+
+	t.RemovePotion(name)
+
+	return true
+}
+
+func (t *Tower) discardPotion(name string) {
+	t.RemovePotion(name)
 }
 
 func (t *Tower) UpdateRelicUI() {
@@ -304,9 +321,13 @@ func (t *Tower) AddRelic(name string) {
 	}
 	t.relics = append(t.relics, relic)
 	for _, v := range relic.Effects {
-		v.CasterID = relic.Name
-		v.CasterType = CASTER_TYPE_RELIC
-		t.effects[v.Timing] = append(t.effects[v.Timing], v)
+		if v.Timing != TIMING_IMMEDIATE {
+			v.CasterID = relic.Name
+			v.CasterType = CASTER_TYPE_RELIC
+			t.effects[v.Timing] = append(t.effects[v.Timing], v)
+		} else {
+			t.UseEffect(v)
+		}
 	}
 
 	t.UpdateRelicUI()
@@ -320,7 +341,7 @@ func (t *Tower) RemoveRelic(name string) {
 	}
 	for i, v := range t.relics {
 		if relic == v {
-			slices.Delete(t.relics, i, i+1)
+			t.relics = slices.Delete(t.relics, i, i+1)
 			break
 		}
 	}
@@ -407,41 +428,35 @@ func (t *Tower) enterRoom(typ int) {
 }
 
 func (c *Tower) loadData() error {
-	err := c.loadTower()
-	if err != nil {
-		return nil
+	if err := c.loadTower(); err != nil {
+		panic(fmt.Errorf("failed to load tower: %w", err))
 	}
-	err = c.loadCard()
-	if err != nil {
-		return err
+	if err := c.loadCard(); err != nil {
+		panic(fmt.Errorf("failed to load cards: %w", err))
 	}
-	err = c.loadCareer()
-	if err != nil {
-		return err
+	if err := c.loadCareer(); err != nil {
+		panic(fmt.Errorf("failed to load careers: %w", err))
 	}
-	err = c.loadEvent()
-	if err != nil {
-		return err
+	if err := c.loadEvent(); err != nil {
+		panic(fmt.Errorf("failed to load events: %w", err))
 	}
-	err = c.loadPotion()
-	if err != nil {
-		return err
+	if err := c.loadPotion(); err != nil {
+		panic(fmt.Errorf("failed to load potions: %w", err))
 	}
-	err = c.loadRelic()
-	if err != nil {
-		return err
+	if err := c.loadRelic(); err != nil {
+		panic(fmt.Errorf("failed to load relics: %w", err))
 	}
+
 	return nil
 }
 
 func (t *Tower) loadTower() error {
 	data, err := os.ReadFile(path.Join(t.resourceDir, "tower.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading tower.json: %w", err)
 	}
-	err = json.Unmarshal(data, t)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(data, t); err != nil {
+		return fmt.Errorf("error unmarshaling tower.json: %w", err)
 	}
 	return nil
 }
@@ -449,11 +464,10 @@ func (t *Tower) loadTower() error {
 func (t *Tower) loadCard() error {
 	data, err := os.ReadFile(path.Join(t.resourceDir, "card.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading card.json: %w", err)
 	}
-	err = json.Unmarshal(data, &t.cardMap)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(data, &t.cardMap); err != nil {
+		return fmt.Errorf("error unmarshaling card.json: %w", err)
 	}
 	return nil
 }
@@ -461,12 +475,14 @@ func (t *Tower) loadCard() error {
 func (t *Tower) loadCareer() error {
 	data, err := os.ReadFile(path.Join(t.resourceDir, "career.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading career.json: %w", err)
 	}
 	adapter := map[string]struct {
 		Cards []string `json:"init_cards"`
 	}{}
-	err = json.Unmarshal(data, &adapter)
+	if err := json.Unmarshal(data, &adapter); err != nil {
+		return fmt.Errorf("error unmarshaling career.json: %w", err)
+	}
 	t.careerMap = make(map[string]*CardCareer, len(adapter))
 	for k, v := range adapter {
 		t.careerMap[k] = &CardCareer{
@@ -476,20 +492,16 @@ func (t *Tower) loadCareer() error {
 			t.careerMap[k].InitCards = append(t.careerMap[k].InitCards, t.cardMap[card])
 		}
 	}
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
 func (t *Tower) loadEvent() error {
 	data, err := os.ReadFile(path.Join(t.resourceDir, "event.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading event.json: %w", err)
 	}
-	err = json.Unmarshal(data, &t.eventMap)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(data, &t.eventMap); err != nil {
+		return fmt.Errorf("error unmarshaling event.json: %w", err)
 	}
 	return nil
 }
@@ -497,11 +509,10 @@ func (t *Tower) loadEvent() error {
 func (t *Tower) loadPotion() error {
 	data, err := os.ReadFile(path.Join(t.resourceDir, "potion.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading potion.json: %w", err)
 	}
-	err = json.Unmarshal(data, &t.PotionMap)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(data, &t.PotionMap); err != nil {
+		return fmt.Errorf("error unmarshaling potion.json: %w", err)
 	}
 	return nil
 }
@@ -509,11 +520,10 @@ func (t *Tower) loadPotion() error {
 func (t *Tower) loadRelic() error {
 	data, err := os.ReadFile(path.Join(t.resourceDir, "relic.json"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading relic.json: %w", err)
 	}
-	err = json.Unmarshal(data, &t.RelicMap)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(data, &t.RelicMap); err != nil {
+		return fmt.Errorf("error unmarshaling relic.json: %w", err)
 	}
 	return nil
 }
@@ -600,7 +610,8 @@ func (t *Tower) SendCard(ctx context.Context, request *pb.SendCardRequest) (*pb.
 	}, nil
 }
 
-func (t *Tower) DiscardCard(ctx context.Context, request *pb.DiscardCardRequest) (*pb.DiscardCardResponse, error) {
+func (t *Tower) DiscardCard(ctx context.Context,
+	request *pb.DiscardCardRequest) (*pb.DiscardCardResponse, error) {
 	t.currentCombat.DiscardCards(request.Cards)
 
 	return &pb.DiscardCardResponse{
@@ -647,6 +658,14 @@ func (t *Tower) UsePotion(ctx context.Context, request *pb.UsePotionRequest) (*p
 	t.usePotion(request.Name)
 
 	return &pb.UsePotionResponse{
+		Result: "ok",
+	}, nil
+}
+
+func (t *Tower) DiscardPotion(ctx context.Context, request *pb.DiscardPotionRequest) (*pb.DiscardPotionResponse, error) {
+	t.discardPotion(request.Name)
+
+	return &pb.DiscardPotionResponse{
 		Result: "ok",
 	}, nil
 }

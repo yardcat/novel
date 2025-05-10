@@ -154,3 +154,19 @@ func (w *Card) UsePotion(c *gin.Context) {
 	}
 	c.JSON(200, jsonStr)
 }
+
+func (w *Card) DiscardPotion(c *gin.Context) {
+	ev := event.UsePotionRequest{
+		Name: c.PostForm("name"),
+	}
+	response, err := w.client.UsePotion(c.Request.Context(), &ev)
+	if err != nil {
+		log.Info("card use potion err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("card use potion err %v", err)
+	}
+	c.JSON(200, jsonStr)
+}

@@ -73,11 +73,8 @@ const Deck = ({ modal }) => {
   }, []);
 
   const sendCards = (cards) => {
-    if (selectedCards.length === 0) {
+    if (selectedCards.length == 0) {
       message.info('no card selected');
-      return;
-    } else if (selectedEnemy == null) {
-      message.info('no enemy selected');
       return;
     } else if (actorPanelInfo[0].energy <= 0) {
       message.info('no energy');
@@ -86,8 +83,14 @@ const Deck = ({ modal }) => {
 
     const params = {
       cards: cards.join(','),
-      target: selectedEnemy.split('-')[1],
     };
+    if (selectedEnemy == null && enemyPanelInfo.length == 1) {
+      setSelectedEnemy('enemy-0');
+      params.target = 0;
+    } else {
+      params.target = selectedEnemy.split('-')[1];
+    }
+
     CallAPI('card/send_cards', params, (reply) => {
       setHandCards(
         handCards.filter((card, idx) => !selectedCards.includes(idx)),

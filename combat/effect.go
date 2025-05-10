@@ -79,36 +79,43 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 
 func (t *Tower) EffectOn(timing int) {
 	for _, v := range t.effects[timing] {
-		ok := true
-		if v.Condition != "" {
-			expr, err := govaluate.NewEvaluableExpression(v.Condition)
-			if err != nil {
-				log.Error("evaluate condition err %v", err)
-				continue
-			}
-			ret, err := expr.Eval(t.export)
-			if err != nil {
-				log.Error("evaluate condition err %v", err)
-				continue
-			}
-			ok = ret.(bool)
+		t.UseEffect(v)
+	}
+}
+
+func (t *Tower) UseEffect(effect *Effect) {
+	ok := true
+	if effect.Condition != "" {
+		expr, err := govaluate.NewEvaluableExpression(effect.Condition)
+		if err != nil {
+			log.Error("evaluate condition err %v", err)
+			return
 		}
-		if ok {
-			expr, err := govaluate.NewEvaluableExpression(v.Modifier)
-			parameters := make(map[string]interface{})
-			parameters["c"] = &t.export
-			if err != nil {
-				log.Error("evaluate modifier err %v", err)
-				continue
-			}
-			ret, err := expr.Evaluate(parameters)
-			if err != nil {
-				log.Error("evaluate modifier err %v", err)
-				continue
-			}
-			if ret.(bool) {
-				log.Error("modifier run fail")
-			}
+		ret, err := expr.Eval(t.export)
+		if err != nil {
+			log.Error("evaluate condition err %v", err)
+			return
 		}
+		ok = ret.(bool)
+	}
+	if ok {
+		expr, err := govaluate.NewEvaluableExpression(effect.Modifier)
+		parameters := make(map[string]interface{})
+		parameters["c"] = &t.export
+		if err != nil {
+			log.Error("evaluate modifier err %v", err)
+			return
+		}
+		ret, err := expr.Evaluate(parameters)
+		if err != nil {
+			log.Error("evaluate modifier err %v", err)
+			return
+		}
+		if ret.(bool) {
+			log.Error("modifier run fail")
+		}
+	}
+	if t.currentCombat != nil {
+		t.currentCombat.requestUpdateUI()
 	}
 }
