@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { message, Card, List, Select, Button } from 'antd';
+import { message, Select, Button } from 'antd';
 import { socket } from './Socket';
 import { CallAPI } from './Net';
 import { Deck } from './Deck';
@@ -7,6 +7,8 @@ import { Shop } from './Shop';
 import { Rest } from './Rest';
 import { Destiny } from './Destiny';
 import { CardModal } from './Modal';
+import { Potion } from './Potion';
+import { Relic } from './Relic';
 
 const Scene = {
   NONE: 0,
@@ -27,9 +29,9 @@ const Tower = () => {
     });
 
     socket.onMsg('event.CardCombatWin', (ev) => {
-      modal.showCardModal('bonus', ev.bonus, () => {
-        CallAPI('card/choose_bonus', { event: selectedEvent }, (reply) => {
-          console.log('bonus accept');
+      cardModal.showCardModal('bonus', ev.bonus, (submit) => {
+        CallAPI('card/choose_bonus', { event: submit }, (reply) => {
+          console.log('bonus accept %s', reply);
           modal.hideCardModal();
         });
       });
@@ -68,6 +70,7 @@ const Tower = () => {
         { events: reply.choices },
         (submit) => {
           CallAPI('card/welcome', { event: submit['events'] }, (reply) => {
+            console.log('welcome %s', reply);
             cardModal.hideCardModal();
             ChangeScene(Scene.COMBAT);
           });
@@ -94,6 +97,8 @@ const Tower = () => {
   };
   return (
     <>
+      <Potion />
+      <Relic />
       {scene}
       <Select defaultValue="Easy" onChange={setDifficuty}>
         <Select.Option value="Easy">Easy</Select.Option>

@@ -10,8 +10,10 @@ import (
 	"my_test/util"
 	"os"
 	"path"
+	"slices"
 
 	"github.com/jinzhu/copier"
+	"github.com/samber/lo"
 )
 
 const (
@@ -94,6 +96,7 @@ type Tower struct {
 	relics        []*Relic
 	actor         *CardActor
 	floor         *Floor
+	export        Export
 	effects       map[int][]*Effect
 	resourceDir   string
 	floorCount    int
@@ -118,10 +121,12 @@ func NewTower() *Tower {
 func (t *Tower) Init(params *TowerParams) {
 	t.actor = params.Actor
 	t.resourceDir = params.Path.GetPath("card")
+	t.effects = make(map[int][]*Effect)
 
 	t.loadData()
 	t.generateFloor()
 	t.PrepareCard()
+	t.initExport()
 }
 
 func (t *Tower) Reset() {
@@ -135,6 +140,15 @@ func (t *Tower) Reset() {
 	t.effects = make(map[int][]*Effect)
 	t.currentCombat = nil
 	t.actor = nil
+}
+
+func (t *Tower) initExport() {
+	t.export = Export{}
+	t.export.Life = &t.actor.Life
+	t.export.Strength = &t.actor.Strength
+	t.export.Defense = &t.actor.Defense
+	t.export.Energy = &t.actor.Energy
+	t.export.InitEnergy = &t.actor.InitEnergy
 }
 
 func (t *Tower) EnterNextFloor() *Floor {
@@ -198,7 +212,15 @@ func (t *Tower) StartCardCombat() *CardCombat {
 	}
 	t.currentCombat = NewCardCombat(&params)
 	t.currentCombat.Start()
+	t.onStartCombat()
+
 	return t.currentCombat
+}
+
+func (t *Tower) onStartCombat() {
+	t.AddRelic("test")
+	t.AddPotion("test")
+	t.EffectOn(TIMING_COMBAT_START)
 }
 
 func (t *Tower) addBonus(bonus string, typ int32) {
@@ -216,6 +238,12 @@ func (t *Tower) AddCard(name string) {
 	t.cards = append(t.cards, card)
 }
 
+func (t *Tower) UpdatePotionUI() {
+	ev := event.CardUpdatePotion{}
+	copier.Copy(&ev.Potions, t.potions)
+	push.PushEvent(ev)
+}
+
 func (t *Tower) AddPotion(name string) {
 	potion, exist := t.PotionMap[name]
 	if !exist {
@@ -227,6 +255,45 @@ func (t *Tower) AddPotion(name string) {
 		return
 	}
 	t.potions = append(t.potions, potion)
+	for _, v := range potion.Effects {
+		v.CasterID = potion.Name
+		v.CasterType = CASTER_TYPE_POTION
+		t.effects[v.Timing] = append(t.effects[v.Timing], v)
+	}
+
+	t.UpdatePotionUI()
+}
+
+func (t *Tower) RemovePotion(name string) {
+	potion, exist := t.PotionMap[name]
+	if !exist {
+		log.Error("potion %s not exist", name)
+		panic("potion not exist")
+	}
+	for i, v := range t.potions {
+		if v == potion {
+			slices.Delete(t.potions, i, i+1)
+		}
+	}
+
+	for _, v := range potion.Effects {
+		arr := t.effects[v.Timing]
+		t.effects[v.Timing] = lo.Filter(arr, func(v *Effect, i int) bool {
+			return v.CasterType == CASTER_TYPE_POTION && v.CasterID == name
+		})
+	}
+
+	t.UpdatePotionUI()
+}
+
+func (t *Tower) usePotion(name string) {
+
+}
+
+func (t *Tower) UpdateRelicUI() {
+	ev := event.CardUpdateRelic{}
+	copier.Copy(&ev.Relics, t.relics)
+	push.PushEvent(ev)
 }
 
 func (t *Tower) AddRelic(name string) {
@@ -236,6 +303,35 @@ func (t *Tower) AddRelic(name string) {
 		panic("relic not exist")
 	}
 	t.relics = append(t.relics, relic)
+	for _, v := range relic.Effects {
+		v.CasterID = relic.Name
+		v.CasterType = CASTER_TYPE_RELIC
+		t.effects[v.Timing] = append(t.effects[v.Timing], v)
+	}
+
+	t.UpdateRelicUI()
+}
+
+func (t *Tower) RemoveRelic(name string) {
+	relic, exist := t.RelicMap[name]
+	if !exist {
+		log.Error("relic %s not exist", name)
+		panic("relic not exist")
+	}
+	for i, v := range t.relics {
+		if relic == v {
+			slices.Delete(t.relics, i, i+1)
+			break
+		}
+	}
+	for _, v := range relic.Effects {
+		arr := t.effects[v.Timing]
+		t.effects[v.Timing] = lo.Filter(arr, func(v *Effect, i int) bool {
+			return v.CasterType == CASTER_TYPE_RELIC && v.CasterID == name
+		})
+	}
+
+	t.UpdateRelicUI()
 }
 
 func (t *Tower) generateFloor() {
@@ -543,6 +639,14 @@ func (t *Tower) ChooseBonus(ctx context.Context, request *pb.ChooseBonusRequest)
 	}
 
 	return &pb.ChooseBonusResponse{
+		Result: "ok",
+	}, nil
+}
+
+func (t *Tower) UsePotion(ctx context.Context, request *pb.UsePotionRequest) (*pb.UsePotionResponse, error) {
+	t.usePotion(request.Name)
+
+	return &pb.UsePotionResponse{
 		Result: "ok",
 	}, nil
 }

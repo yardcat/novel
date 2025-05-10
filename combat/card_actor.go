@@ -12,6 +12,7 @@ func NewCardActor(base CombatableBase) *CardActor {
 		CombatableBase: base,
 		Energy:         3,
 		InitEnergy:     3,
+		InitCardCount:  5,
 	}
 	a.CombatType = ACTOR
 	a.Statuses = make([]*Status, 0)

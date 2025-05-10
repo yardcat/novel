@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.24.1
 
 require (
-	github.com/Knetic/govaluate v3.0.0+incompatible
+	github.com/Knetic/govaluate v3.0.1-0.20250325060307-7625b7f8c03d+incompatible
 	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
+	github.com/samber/lo v1.50.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 )
 

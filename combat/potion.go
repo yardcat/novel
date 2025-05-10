@@ -6,16 +6,12 @@ const (
 	POTION_RARE
 )
 
-type PotionEffect struct {
-	Type  int
-	Value int
-}
-
 type Potion struct {
-	Name        string
-	Description string
-	Rarity      int
-	Effects     []PotionEffect
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Rarity      int       `json:"rarity"`
+	Price       int       `json:"price"`
+	Effects     []*Effect `json:"effects"`
 }
 
 func (p *Potion) CanUse() bool {

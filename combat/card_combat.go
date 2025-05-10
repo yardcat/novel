@@ -51,11 +51,6 @@ const (
 	STATUS_POISON
 )
 
-const (
-	TIMING_START = iota
-	TIMING_END
-)
-
 type CardEffect struct {
 	Effect string `json:"effect"`
 	Value  any    `json:"value"`

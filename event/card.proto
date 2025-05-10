@@ -64,6 +64,14 @@ message chooseBonusResponse {
     string result = 1;
 }
 
+message usePotionRequest {
+    string name = 1;
+}
+
+message usePotionResponse {
+    string result = 1;
+}
+
 service card {
     rpc welcome(welcomeRequest) returns(welcomeResponse);
     rpc sendCard(sendCardRequest) returns(sendCardResponse);
@@ -72,4 +80,5 @@ service card {
     rpc NextFloor(nextFloorRequest) returns(nextFloorResponse);
     rpc enterRoom(enterRoomRequest) returns(enterRoomResponse);
     rpc chooseBonus(chooseBonusRequest) returns(chooseBonusResponse);
+    rpc UsePotion(usePotionRequest) returns(usePotionResponse);
 }

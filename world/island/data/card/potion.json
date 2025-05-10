@@ -1,5 +1,17 @@
 {
   "damage": {},
   "strength": {},
-  "draw_card": {}
+  "draw_card": {},
+  "test": {
+    "name": "test",
+    "description": "test",
+    "rarity": "2",
+    "price": 0,
+    "effects": [
+      {
+        "timing": "COMBAT_START",
+        "modifier": "c.Modify('Strength', 2)"
+      }
+    ]
+  }
 }

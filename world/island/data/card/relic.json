@@ -2,14 +2,28 @@
   "ransaozhixue": {
     "name": "燃烧之血",
     "description": "燃烧之血",
+    "rarity": "1",
+    "price": 10,
     "effects": [{ "timing": "COMBAT_END", "modifier": "c.Heal(6)" }]
   },
   "snake_ring": {
     "name": "蛇环",
     "description": "蛇环",
+    "rarity": "1",
+    "price": 10,
     "effects": [{ "timing": "COMBAT_START", "modifier": "c.Draw(2)" }]
   },
-  "shuffle": {},
-  "kill": {},
-  "hurt": {}
+  "test": {
+    "name": "test",
+    "description": "test",
+    "rarity": "2",
+    "price": 0,
+    "effects": [
+      {
+        "timing": "COMBAT_START",
+        "condition": "Life > Life /2",
+        "modifier": "c.Modify('Strength', 2)"
+      }
+    ]
+  }
 }

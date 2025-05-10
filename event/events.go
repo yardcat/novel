@@ -79,6 +79,20 @@ type CardUpdateUIEvent struct {
 	Deck  DeckUI        `json:"deckUI"`
 }
 
+type CardUpdatePotion struct {
+	Potions []struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	} `json:"potions"`
+}
+
+type CardUpdateRelic struct {
+	Relics []struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	} `json:"relics"`
+}
+
 type ActionUpdateEvent struct {
 	Action string `json:"action"`
 }

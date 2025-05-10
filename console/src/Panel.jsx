@@ -1,9 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Card, Button, Tag } from 'antd';
-import { Config } from './Config';
-import { CallAPI } from './Net';
-import { socket } from './Socket';
-import { use } from 'react';
+import { Tag } from 'antd';
 
 const Types = ['vulnerable', 'weak', 'strength', 'armor'];
 
