@@ -6,7 +6,8 @@
   "event_num": 1,
   "actor": {
     "Life": 50,
-    "Defense": 3
+    "Defense": 40,
+    "Strength": 40
   },
   "enemies": {
     "pig": {

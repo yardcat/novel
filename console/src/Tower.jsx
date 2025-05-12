@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { message, Select, Button } from 'antd';
+import _ from 'lodash';
 import { socket } from './Socket';
 import { CallAPI } from './Net';
 import { Deck } from './Deck';
@@ -18,6 +19,43 @@ const Scene = {
   DESTINY: 4,
 };
 
+const toRoomString = (room) => {
+  switch (room) {
+    case 1:
+      return 'fight';
+    case 2:
+      return 'shop';
+    case 3:
+      return 'rest';
+    case 4:
+      return 'destiny';
+  }
+};
+
+const toRoomInt = (room) => {
+  switch (room) {
+    case 'fight':
+      return 1;
+    case 'shop':
+      return 2;
+    case 'rest':
+      return 3;
+    case 'destiny':
+      return 4;
+  }
+};
+
+const toBonusInt = (type) => {
+  switch (type) {
+    case 'cards':
+      return 0;
+    case 'potions':
+      return 1;
+    case 'relics':
+      return 2;
+  }
+};
+
 const Tower = () => {
   const [scene, setScene] = useState(null);
   const [difficuty, setDifficuty] = useState('Easy');
@@ -29,11 +67,39 @@ const Tower = () => {
     });
 
     socket.onMsg('event.CardCombatWin', (ev) => {
+      let rooms = _.map(ev.next_floor, (v) => {
+        return toRoomString(v);
+      });
+      ev.bonus.rooms = rooms;
       cardModal.showCardModal('bonus', ev.bonus, (submit) => {
-        CallAPI('card/choose_bonus', { event: submit }, (reply) => {
-          console.log('bonus accept %s', reply);
-          modal.hideCardModal();
-        });
+        const keys = _.keys(submit).map((v) => toBonusInt(v));
+        const values = _.values(submit);
+        const bonusArray = [];
+        for (let i = 0; i < keys.length; i++) {
+          if (!_.isNil(keys[i])) {
+            bonusArray.push({
+              type: keys[i],
+              name: values[i],
+            });
+          }
+        }
+        CallAPI(
+          'card/choose_bonus',
+          { bonus: JSON.stringify(bonusArray) },
+          (reply) => {
+            console.log('bonus accept %s', reply);
+            cardModal.hideCardModal();
+          },
+        );
+
+        CallAPI(
+          'card/next_floor',
+          { room: toRoomInt(submit.rooms) },
+          (reply) => {
+            console.log('bonus accept %s', reply);
+            cardModal.hideCardModal();
+          },
+        );
       });
     });
 

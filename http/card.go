@@ -96,7 +96,9 @@ func (w *Card) EndTurn(c *gin.Context) {
 }
 
 func (w *Card) NextFloor(c *gin.Context) {
-	response, err := w.client.NextFloor(c.Request.Context(), &event.NextFloorRequest{})
+	response, err := w.client.NextFloor(c.Request.Context(), &event.NextFloorRequest{
+		Room: cast.ToInt32(c.PostForm("room")),
+	})
 	if err != nil {
 		log.Info("card next floor err %v", err)
 	}
@@ -108,22 +110,10 @@ func (w *Card) NextFloor(c *gin.Context) {
 	c.JSON(200, string(jsonStr))
 }
 
-func (w *Card) EnterRoom(c *gin.Context) {
-	response, err := w.client.EnterRoom(c.Request.Context(), &event.EnterRoomRequest{})
-	if err != nil {
-		log.Info("card next floor err %v", err)
-	}
-
-	jsonStr, err := json.Marshal(response)
-	if err != nil {
-		log.Info("CardEnterRoom json marshal err %v", err)
-	}
-	c.JSON(200, string(jsonStr))
-}
-
 func (w *Card) ChooseBonus(c *gin.Context) {
 	ev := event.ChooseBonusRequest{}
-	err := json.Unmarshal([]byte(c.PostForm("bonus")), &ev.Bonus)
+	bonus := c.PostForm("bonus")
+	err := json.Unmarshal([]byte(bonus), &ev.Bonus)
 	if err != nil {
 		log.Info("card choose bonus err %v", err)
 	}
@@ -167,6 +157,23 @@ func (w *Card) DiscardPotion(c *gin.Context) {
 	jsonStr, err := json.Marshal(response)
 	if err != nil {
 		log.Info("card use potion err %v", err)
+	}
+	c.JSON(200, jsonStr)
+}
+
+func (w *Card) Buy(c *gin.Context) {
+	ev := event.BuyRequest{
+		Type: cast.ToInt32(c.PostForm("type")),
+		Name: c.PostForm("name"),
+	}
+	response, err := w.client.Buy(c.Request.Context(), &ev)
+	if err != nil {
+		log.Info("card buy err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("card buy err %v", err)
 	}
 	c.JSON(200, jsonStr)
 }

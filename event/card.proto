@@ -36,18 +36,10 @@ message endTurnResponse {
 }
 
 message nextFloorRequest {
-    string request = 1;
+    int32 room = 1;
 }
 
 message nextFloorResponse {
-    repeated int32 roomChoices = 1;
-}
-
-message enterRoomRequest {
-    int32 type = 1;
-}
-
-message enterRoomResponse {
     string result = 1;
 }
 
@@ -80,14 +72,24 @@ message discardPotionResponse {
     string result = 1;
 }
 
+message buyRequest {
+    int32 type = 1;
+    string name = 2;
+}
+
+message buyResponse {
+    int32 type = 1;
+    string name = 2;
+}
+
 service card {
     rpc welcome(welcomeRequest) returns(welcomeResponse);
     rpc sendCard(sendCardRequest) returns(sendCardResponse);
     rpc discardCard(discardCardRequest) returns(discardCardResponse);
     rpc endTurn(endTurnRequest) returns(endTurnResponse);
-    rpc NextFloor(nextFloorRequest) returns(nextFloorResponse);
-    rpc enterRoom(enterRoomRequest) returns(enterRoomResponse);
+    rpc nextFloor(nextFloorRequest) returns(nextFloorResponse);
     rpc chooseBonus(chooseBonusRequest) returns(chooseBonusResponse);
-    rpc UsePotion(usePotionRequest) returns(usePotionResponse);
-    rpc DiscardPotion(discardPotionRequest) returns(discardPotionResponse);
+    rpc usePotion(usePotionRequest) returns(usePotionResponse);
+    rpc discardPotion(discardPotionRequest) returns(discardPotionResponse);
+    rpc buy(buyRequest) returns(buyResponse);
 }

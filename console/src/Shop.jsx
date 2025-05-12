@@ -2,17 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, List } from 'antd';
 import { socket } from './Socket';
 
-class Item {
-  constructor({ name, price = 0 } = {}) {
-    Object.assign(this, { name, price });
-  }
-}
-
 const Shop = () => {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    socket.onMsg('', (data) => {
+    socket.onMsg('event.', (data) => {
       addChat(data.Result);
     });
   }, []);

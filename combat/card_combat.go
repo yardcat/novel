@@ -103,17 +103,16 @@ type CardCombat struct {
 	originalEnemies []*CardEnemy
 	enemies         []*CardEnemy
 	ai              *EnemyAI
-	Record
-	deck          []*Card
-	hand          []*Card
-	discard       []*Card
-	remove        []*Card
-	initCardCount int
-	initEnergy    int
-	turnNum       int
-	uiDirty       bool
-	uiTimer       time.Ticker
-	finish        bool
+	deck            []*Card
+	hand            []*Card
+	discard         []*Card
+	remove          []*Card
+	initCardCount   int
+	initEnergy      int
+	turnNum         int
+	uiDirty         bool
+	uiTimer         time.Ticker
+	finish          bool
 }
 
 func NewCardCombat(p *CardCombatParams) *CardCombat {

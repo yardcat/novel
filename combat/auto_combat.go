@@ -6,6 +6,12 @@ import (
 	"my_test/util"
 )
 
+type Record struct {
+	actorCastDamage  int
+	actorIncurDamage int
+	turns            int
+}
+
 type AutoCombat struct {
 	combatables []Combatable
 	actors      []*Actor

@@ -39,11 +39,6 @@ func (r *FightRoom) Type() int {
 	return ROOM_TYPE_FIGHT
 }
 
-type ShopRoom struct {
-	Potions []Potion
-	Relics  []Relic
-}
-
 type RestRoom struct {
 }
 
@@ -60,15 +55,11 @@ func (r *RestRoom) Update() {
 
 }
 
-func (r *ShopRoom) Type() int {
-	return ROOM_TYPE_SHOP
-}
-
-type EventRoom struct {
+type DestinyRoom struct {
 	Event string
 }
 
-func (r *EventRoom) Type() int {
+func (r *DestinyRoom) Type() int {
 	return ROOM_TYPE_EVENT
 }
 
@@ -158,16 +149,16 @@ func (t *Tower) EnterNextFloor() *Floor {
 	return t.floor
 }
 
-func (t *Tower) GetRoomTypeChoices() []int32 {
-	choices := []int32{ROOM_TYPE_FIGHT}
-	candidates := []int32{}
-	if t.shopCount != 0 {
+func (t *Tower) GetRoomTypeChoices() []int {
+	choices := []int{ROOM_TYPE_FIGHT}
+	candidates := []int{}
+	if t.shopCount < t.ShopNum {
 		candidates = append(candidates, ROOM_TYPE_SHOP)
 	}
-	if t.restCount != 0 {
+	if t.restCount < t.RestNum {
 		candidates = append(candidates, ROOM_TYPE_REST)
 	}
-	if t.eventCount != 0 {
+	if t.eventCount < t.EventNum {
 		candidates = append(candidates, ROOM_TYPE_EVENT)
 	}
 	dice := util.GetRandomInt(len(candidates))
@@ -224,13 +215,14 @@ func (t *Tower) onStartCombat() {
 	t.EffectOn(TIMING_COMBAT_START)
 }
 
-func (t *Tower) addBonus(bonus string, typ int32) {
+func (t *Tower) addBonus(name string, typ int32) {
 	switch typ {
 	case BONUS_TYPE_CARD:
-		t.addBonus(bonus, typ)
+		t.AddCard(name)
 	case BONUS_TYPE_POTION:
-		t.addBonus(bonus, typ)
+		t.AddPotion(name)
 	case BONUS_TYPE_RELIC:
+		t.AddRelic(name)
 	}
 }
 
@@ -395,8 +387,8 @@ func (t *Tower) generateFightRoom() *FightRoom {
 	return room
 }
 
-func (t *Tower) generateShopRoom() *ShopRoom {
-	room := &ShopRoom{}
+func (t *Tower) generateShopRoom() *Shop {
+	room := &Shop{}
 	return room
 }
 
@@ -405,8 +397,8 @@ func (t *Tower) generateRestRoom() *RestRoom {
 	return room
 }
 
-func (t *Tower) generateEventRoom() *EventRoom {
-	room := &EventRoom{}
+func (t *Tower) generateEventRoom() *DestinyRoom {
+	room := &DestinyRoom{}
 	return room
 }
 
@@ -547,6 +539,7 @@ func (t *Tower) OnWin() {
 	bonus := t.GetCombatBonus()
 	ev := event.CardCombatWin{}
 	copier.Copy(&ev.Bonus, bonus)
+	ev.NextFloor = t.GetRoomTypeChoices()
 	push.PushEvent(ev)
 
 	t.EnterNextFloor()
@@ -628,15 +621,9 @@ func (t *Tower) EndTurn(ctx context.Context, request *pb.EndTurnRequest) (*pb.En
 }
 
 func (t *Tower) NextFloor(ctx context.Context, request *pb.NextFloorRequest) (*pb.NextFloorResponse, error) {
+	t.enterRoom(int(request.Room))
+
 	return &pb.NextFloorResponse{
-		RoomChoices: t.GetRoomTypeChoices(),
-	}, nil
-}
-
-func (t *Tower) EnterRoom(ctx context.Context, request *pb.EnterRoomRequest) (*pb.EnterRoomResponse, error) {
-	t.enterRoom(int(request.Type))
-
-	return &pb.EnterRoomResponse{
 		Result: "ok",
 	}, nil
 }
@@ -668,4 +655,8 @@ func (t *Tower) DiscardPotion(ctx context.Context, request *pb.DiscardPotionRequ
 	return &pb.DiscardPotionResponse{
 		Result: "ok",
 	}, nil
+}
+
+func (t *Tower) Buy(ctx context.Context, request *pb.BuyRequest) (*pb.BuyResponse, error) {
+	return nil, nil
 }

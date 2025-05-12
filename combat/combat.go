@@ -10,12 +10,6 @@ type CombatClient interface {
 	OnKill(Combatable)
 }
 
-type Record struct {
-	actorCastDamage  int
-	actorIncurDamage int
-	turns            int
-}
-
 type CombatResult struct {
 	LifeCost  int
 	MagicCost int

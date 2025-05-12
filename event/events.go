@@ -79,6 +79,12 @@ type CardUpdateUIEvent struct {
 	Deck  DeckUI        `json:"deckUI"`
 }
 
+type CardUpdateShopUI struct {
+	Cards   []string `json:"cards"`
+	Potions []string `json:"potions"`
+	Relics  []string `json:"relics"`
+}
+
 type CardUpdatePotion struct {
 	Potions []struct {
 		Name        string `json:"name"`
@@ -106,6 +112,7 @@ type CardCombatWin struct {
 		Relics            []string `json:"relics"`
 		RelicChooseCount  int      `json:"relicChooseCount"`
 	} `json:"bonus"`
+	NextFloor []int `json:"next_floor"`
 }
 
 type CardCombatLose struct {

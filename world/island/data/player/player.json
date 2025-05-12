@@ -8,6 +8,7 @@
   "Attack": 8,
   "AttackSpeed": 5,
   "Defense": 3,
+  "Strength": 30,
   "Dodge": 10,
   "LevelExp": 100,
   "LevelExpInc": 100,
