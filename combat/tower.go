@@ -183,7 +183,7 @@ func (t *Tower) HandleEvent(ev string) {
 	t.currentCombat.requestUpdateUI()
 }
 
-func (t *Tower) GetCombatBonus() CombatBonus {
+func (t *Tower) getCombatBonus() CombatBonus {
 	return CombatBonus{
 		Cards:             []string{"dang", "quan", "jiao"},
 		CardChooseCount:   1,
@@ -194,7 +194,7 @@ func (t *Tower) GetCombatBonus() CombatBonus {
 	}
 }
 
-func (t *Tower) StartCardCombat() *CardCombat {
+func (t *Tower) startCardCombat() *CardCombat {
 	params := CardCombatParams{
 		Actors:             []*CardActor{t.actor},
 		Enemies:            t.fightRoom().Enemy,
@@ -388,7 +388,7 @@ func (t *Tower) generateFightRoom() *FightRoom {
 }
 
 func (t *Tower) generateShopRoom() *Shop {
-	room := &Shop{}
+	room := NewShop(t)
 	return room
 }
 
@@ -408,14 +408,23 @@ func (t *Tower) enterRoom(typ int) {
 
 	switch room.Type() {
 	case ROOM_TYPE_FIGHT:
-		t.StartCardCombat()
+		t.startCardCombat()
 	case ROOM_TYPE_SHOP:
+		t.showShopItems()
 	case ROOM_TYPE_REST:
 	case ROOM_TYPE_EVENT:
 	}
 
 	push.PushEvent(event.CardEnterRoomDone{
 		Type: room.Type(),
+	})
+}
+
+func (t *Tower) showShopItems() {
+	push.PushEvent(event.CardUpdateShopUI{
+		Cards:   []string{"dang", "quan", "jiao"},
+		Potions: []string{"test"},
+		Relics:  []string{"test"},
 	})
 }
 
@@ -536,7 +545,7 @@ func (t *Tower) OnLose() {
 }
 
 func (t *Tower) OnWin() {
-	bonus := t.GetCombatBonus()
+	bonus := t.getCombatBonus()
 	ev := event.CardCombatWin{}
 	copier.Copy(&ev.Bonus, bonus)
 	ev.NextFloor = t.GetRoomTypeChoices()

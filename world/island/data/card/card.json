@@ -27,11 +27,17 @@
     "cost": 1,
     "effects": [{ "effect": "damage", "value": 20 }]
   },
-  "dang": {
-    "name": "dang",
-    "description": "dang",
+  "defense": {
+    "name": "defense",
+    "description": "防御",
     "type": 2,
     "cost": 1,
     "effects": [{ "effect": "defend", "value": 5 }]
+  },
+  "fuhua": {
+    "name": "fuhua",
+    "description": "description",
+    "type": 0,
+    "cost": 1
   }
 }

@@ -64,6 +64,7 @@ type Card struct {
 	Cost        int          `json:"cost"`
 	Upgrade     []*Card      `json:"upgrade,omitempty"`
 	Effects     []CardEffect `json:"effects"`
+	Binding     any
 }
 
 type CardCareer struct {
@@ -109,10 +110,11 @@ type CardCombat struct {
 	remove          []*Card
 	initCardCount   int
 	initEnergy      int
-	turnNum         int
+	turnCount       int
 	uiDirty         bool
 	uiTimer         time.Ticker
 	finish          bool
+	hurtCount       int
 }
 
 func NewCardCombat(p *CardCombatParams) *CardCombat {
@@ -129,6 +131,7 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 		uiDirty:         false,
 		uiTimer:         *time.NewTicker(time.Millisecond * 500),
 		finish:          false,
+		hurtCount:       0,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -145,7 +148,7 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 }
 
 func (c *CardCombat) Start() {
-	c.turnNum = 0
+	c.turnCount = 0
 	c.StartTurn()
 	push.PushAction("战斗开始")
 	c.requestUpdateUI()
@@ -174,6 +177,7 @@ func (c *CardCombat) Combatables() []Combatable {
 }
 
 func (c *CardCombat) StartTurn() {
+	c.turnCount++
 	c.delegate.OnActorTurnStart()
 	c.actors[0].Energy = c.initEnergy
 	drawCount := c.initCardCount - len(c.hand)
@@ -264,6 +268,7 @@ func (c *CardCombat) EnemyTurn() {
 			if damage != 0 {
 				actor.OnDamage(damage, enemy)
 				c.checkDead(actor)
+				c.hurtCount++
 				c.delegate.OnEnenyDamage(enemy, damage)
 			}
 			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), actor.GetName(), damage)

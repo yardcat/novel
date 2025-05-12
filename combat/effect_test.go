@@ -10,8 +10,14 @@ import (
 	"github.com/Knetic/govaluate"
 )
 
+type Ea struct {
+	v1 int
+	v2 string
+}
+
 type EffectTest struct {
-	A *int
+	A  *int
+	ea *Ea
 }
 
 func (e *EffectTest) Foo() int {
@@ -45,6 +51,29 @@ func TestTower_EffectOn(t *testing.T) {
 		log.Error("evaluate condition err %v", err)
 	}
 	ret, err := exp.Eval(e)
+	if err != nil {
+		log.Error("evaluate condition err %v", err)
+	}
+	ok := ret.(bool)
+	print(ok)
+}
+
+func TestTower_EffectNest(t *testing.T) {
+	c := 10
+	e := EffectTest{
+		A: &c,
+		ea: &Ea{
+			v1: 1,
+			v2: "test",
+		},
+	}
+	exp, err := govaluate.NewEvaluableExpression("c.A")
+	parameters := make(map[string]interface{})
+	parameters["c"] = &e
+	if err != nil {
+		log.Error("evaluate condition err %v", err)
+	}
+	ret, err := exp.Evaluate(e)
 	if err != nil {
 		log.Error("evaluate condition err %v", err)
 	}

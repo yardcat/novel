@@ -11,6 +11,8 @@ import { CardModal } from './Modal';
 import { Potion } from './Potion';
 import { Relic } from './Relic';
 
+import cardJson from '../../world/island/data/card/card.json';
+
 const Scene = {
   NONE: 0,
   COMBAT: 1,
