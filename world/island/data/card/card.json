@@ -38,6 +38,6 @@
     "name": "fuhua",
     "description": "description",
     "type": 0,
-    "cost": 1
+    "bind": true
   }
 }

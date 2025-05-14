@@ -4,14 +4,14 @@
     "description": "燃烧之血",
     "rarity": 1,
     "price": 10,
-    "effects": [{ "timing": "COMBAT_END", "modifier": "c.Heal(6)" }]
+    "effects": [{ "timing": "COMBAT_END", "rule": "c.Heal(6)" }]
   },
   "snake_ring": {
     "name": "蛇环",
     "description": "蛇环",
     "rarity": 1,
     "price": 10,
-    "effects": [{ "timing": "COMBAT_START", "modifier": "c.Draw(2)" }]
+    "effects": [{ "timing": "COMBAT_START", "rule": "c.Draw(2)" }]
   },
   "test": {
     "name": "test",
@@ -21,8 +21,7 @@
     "effects": [
       {
         "timing": "COMBAT_START",
-        "condition": "Life > Life /2",
-        "modifier": "c.Modify('Strength', 2)"
+        "rule": "if actor.Life > actor.Life /2 { actor.Strength += 2 }"
       }
     ]
   }

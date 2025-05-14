@@ -1,24 +1,43 @@
 package combat
 
+import (
+	"my_test/log"
+	"reflect"
+)
+
+func (t *Tower) registerCardBindings() {
+	t.cardBindingMap = make(map[string]reflect.Type)
+	t.cardBindingMap["fuhua"] = reflect.TypeOf(fuhua{})
+}
+
+type CardBinding interface {
+	Use(*Tower, *Card)
+	GetCost() int
+	GetDamage() int
+	CanPlay() bool
+}
+
 type fuhua struct {
 }
 
-func (f *fuhua) Init() {
+func (f *fuhua) Use(t *Tower, card *Card) {
+	t.regiserTimingCallback(TIMING_PLAY_CARD, func(c *Card) {
+		log.Info("fuhua take effect on %s", c.Name)
+	})
+}
+
+func (f *fuhua) GetCost() int {
+	return 10
+}
+
+func (f *fuhua) GetDamage() int {
+	return 0
+}
+
+func (f *fuhua) Modify() {
 
 }
 
-func (f *fuhua) GetCost(t *Tower) int {
-	return max(3-t.currentCombat.hurtCount, 1)
-}
-
-func (f *fuhua) GetDamage(t *Tower) int {
-	return t.currentCombat.turnCount
-}
-
-func (f *fuhua) Modify(t *Tower) {
-
-}
-
-func (f *fuhua) CanPlay() string {
-	return "fuhua"
+func (f *fuhua) CanPlay() bool {
+	return false
 }

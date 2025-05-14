@@ -1,5 +1,17 @@
 {
   "kongfu": {
-    "init_cards": ["quan", "quan", "zhou", "zhou", "jiao", "quan", "dang", "dang", "dang", "jiao"]
+    "init_cards": [
+      "fuhua",
+      "quan",
+      "quan",
+      "zhou",
+      "zhou",
+      "jiao",
+      "quan",
+      "dang",
+      "dang",
+      "dang",
+      "jiao"
+    ]
   }
 }

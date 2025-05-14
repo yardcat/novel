@@ -2,9 +2,6 @@ package combat
 
 import (
 	"encoding/json"
-	"my_test/log"
-
-	"github.com/Knetic/govaluate"
 )
 
 const (
@@ -33,21 +30,20 @@ type Effect struct {
 	CasterType int
 	CasterID   string
 	Timing     int
-	Condition  string
-	Modifier   string
+	RuleName   string
+	Rule       string
 }
 
 func (e *Effect) UnmarshalJSON(data []byte) error {
 	tmp := struct {
-		Condition string
-		Modifier  string
-		Timing    string
+		Timing string `json:"timing"`
+		Rule   string `json:"rule"`
 	}{}
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	e.Condition = tmp.Condition
-	e.Modifier = tmp.Modifier
+
+	e.Rule = tmp.Rule
 
 	// TODO: 通过editor生成json, 使用init而非string
 	switch tmp.Timing {
@@ -84,37 +80,8 @@ func (t *Tower) EffectOn(timing int) {
 }
 
 func (t *Tower) UseEffect(effect *Effect) {
-	ok := true
-	if effect.Condition != "" {
-		expr, err := govaluate.NewEvaluableExpression(effect.Condition)
-		if err != nil {
-			log.Error("evaluate condition err %v", err)
-			return
-		}
-		ret, err := expr.Eval(t.export)
-		if err != nil {
-			log.Error("evaluate condition err %v", err)
-			return
-		}
-		ok = ret.(bool)
-	}
-	if ok {
-		expr, err := govaluate.NewEvaluableExpression(effect.Modifier)
-		parameters := make(map[string]interface{})
-		parameters["c"] = &t.export
-		if err != nil {
-			log.Error("evaluate modifier err %v", err)
-			return
-		}
-		ret, err := expr.Evaluate(parameters)
-		if err != nil {
-			log.Error("evaluate modifier err %v", err)
-			return
-		}
-		if ret.(bool) {
-			log.Error("modifier run fail")
-		}
-	}
+	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{effect.RuleName})
+
 	if t.currentCombat != nil {
 		t.currentCombat.requestUpdateUI()
 	}

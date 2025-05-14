@@ -1,82 +1,83 @@
 package combat
 
 import (
-	"errors"
 	"fmt"
 	"my_test/log"
-	"reflect"
 	"testing"
+	"time"
 
-	"github.com/Knetic/govaluate"
+	"github.com/bilibili/gengine/builder"
+	"github.com/bilibili/gengine/context"
+	"github.com/bilibili/gengine/engine"
 )
 
-type Ea struct {
-	v1 int
-	v2 string
+// 定义想要注入的结构体
+type User struct {
+	Name string
+	Age  int64
+	Male bool
 }
 
-type EffectTest struct {
-	A  *int
-	ea *Ea
+func (u *User) GetNum(i int64) int64 {
+	return i
 }
 
-func (e *EffectTest) Foo() int {
-	return *e.A
+func (u *User) Print(s string) {
+	fmt.Println(s)
 }
 
-func (e EffectTest) Get(name string) (interface{}, error) {
-	val := reflect.ValueOf(e)
-	field := val.FieldByName(name)
+func (u *User) Say() {
+	fmt.Println("hello world")
+}
 
-	if !field.IsValid() {
-		return nil, errors.New(fmt.Sprintf("can't find field '%s' in Export", name))
+// 定义规则
+const rule1 = `
+rule "name test" "i can"  salience 0
+begin
+		if 7 == User.GetNum(7){
+			User.Age = User.GetNum(89767) + 10000000
+			User.Print("6666")
+		}else{
+			User.Name = "yyyy"
+		}
+end
+`
+
+func Test_Multi(t *testing.T) {
+	user := &User{
+		Name: "Calo",
+		Age:  0,
+		Male: true,
 	}
 
-	if field.Kind() == reflect.Ptr {
-		return field.Elem().Interface(), nil
-	}
+	dataContext := context.NewDataContext()
+	//注入初始化的结构体
+	dataContext.Add("User", user)
 
-	return field.Interface(), nil
-}
+	//init rule engine
+	ruleBuilder := builder.NewRuleBuilder(dataContext)
 
-func TestTower_EffectOn(t *testing.T) {
-	c := 10
-	e := EffectTest{
-		A: &c,
-	}
-	exp, err := govaluate.NewEvaluableExpression("A + 1")
-	parameters := make(map[string]interface{})
-	parameters["c"] = &e
+	start1 := time.Now().UnixNano()
+	//构建规则
+	err := ruleBuilder.BuildRuleFromString(rule1) //string(bs)
+	end1 := time.Now().UnixNano()
+
+	log.Info("rules num:%d, load rules cost time:%d", len(ruleBuilder.Kc.RuleEntities), end1-start1)
+
 	if err != nil {
-		log.Error("evaluate condition err %v", err)
-	}
-	ret, err := exp.Eval(e)
-	if err != nil {
-		log.Error("evaluate condition err %v", err)
-	}
-	ok := ret.(bool)
-	print(ok)
-}
+		log.Error("err:%s ", err)
+	} else {
+		eng := engine.NewGengine()
 
-func TestTower_EffectNest(t *testing.T) {
-	c := 10
-	e := EffectTest{
-		A: &c,
-		ea: &Ea{
-			v1: 1,
-			v2: "test",
-		},
+		start := time.Now().UnixNano()
+		//执行规则
+		err := eng.Execute(ruleBuilder, true)
+		println(user.Age)
+		end := time.Now().UnixNano()
+		if err != nil {
+			log.Error("execute rule error: %v", err)
+		}
+		log.Info("execute rule cost %d ns", end-start)
+		log.Info("user.Age=%d,Name=%s,Male=%t", user.Age, user.Name, user.Male)
 	}
-	exp, err := govaluate.NewEvaluableExpression("c.A")
-	parameters := make(map[string]interface{})
-	parameters["c"] = &e
-	if err != nil {
-		log.Error("evaluate condition err %v", err)
-	}
-	ret, err := exp.Evaluate(e)
-	if err != nil {
-		log.Error("evaluate condition err %v", err)
-	}
-	ok := ret.(bool)
-	print(ok)
 }

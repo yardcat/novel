@@ -11,8 +11,13 @@ import (
 	"my_test/util"
 	"os"
 	"path"
+	"reflect"
 	"slices"
+	"strings"
 
+	"github.com/bilibili/gengine/builder"
+	gctx "github.com/bilibili/gengine/context"
+	"github.com/bilibili/gengine/engine"
 	"github.com/jinzhu/copier"
 	"github.com/samber/lo"
 )
@@ -68,33 +73,39 @@ type Floor struct {
 }
 
 type Tower struct {
-	FloorNum      int                   `json:"floor_num"`
-	RoomNum       int                   `json:"room_num"`
-	ShopNum       int                   `json:"shop_num"`
-	RestNum       int                   `json:"rest_num"`
-	EventNum      int                   `json:"event_num"`
-	EnemyMap      map[string]*CardEnemy `json:"enemies"`
-	EnemyGroupMap map[int][]string      `json:"group"`
-	PotionMap     map[string]*Potion
-	RelicMap      map[string]*Relic
-	cardMap       map[string]*Card
-	careerMap     map[string]*CardCareer
-	eventMap      map[string]*CardEvent
+	FloorNum       int                   `json:"floor_num"`
+	RoomNum        int                   `json:"room_num"`
+	ShopNum        int                   `json:"shop_num"`
+	RestNum        int                   `json:"rest_num"`
+	EventNum       int                   `json:"event_num"`
+	EnemyMap       map[string]*CardEnemy `json:"enemies"`
+	EnemyGroupMap  map[int][]string      `json:"group"`
+	PotionMap      map[string]*Potion
+	RelicMap       map[string]*Relic
+	cardMap        map[string]*Card
+	careerMap      map[string]*CardCareer
+	eventMap       map[string]*CardEvent
+	cardBindingMap map[string]reflect.Type
 
-	currentCombat *CardCombat
-	cards         []*Card
-	potions       []*Potion
-	potionLimit   int
-	relics        []*Relic
-	actor         *CardActor
-	floor         *Floor
-	export        Export
-	effects       map[int][]*Effect
-	resourceDir   string
-	floorCount    int
-	shopCount     int
-	restCount     int
-	eventCount    int
+	currentCombat   *CardCombat
+	cards           []*Card
+	potions         []*Potion
+	potionLimit     int
+	relics          []*Relic
+	actor           *CardActor
+	floor           *Floor
+	timingCallbacks map[int][]any
+	resourceDir     string
+	floorCount      int
+	shopCount       int
+	restCount       int
+	eventCount      int
+
+	// script
+	effects     map[int][]*Effect
+	effectRules strings.Builder
+	engine      *engine.Gengine
+	ruleBuilder *builder.RuleBuilder
 }
 
 type TowerParams struct {
@@ -107,18 +118,30 @@ func NewTower() *Tower {
 		floorCount:  1,
 		potionLimit: 3,
 	}
+	towerInstance = t
 	return t
+}
+
+var towerInstance *Tower
+
+func GetTower() *Tower {
+	if towerInstance == nil {
+		panic("tower is not create")
+	}
+	return towerInstance
 }
 
 func (t *Tower) Init(params *TowerParams) {
 	t.actor = params.Actor
 	t.resourceDir = params.Path.GetPath("card")
 	t.effects = make(map[int][]*Effect)
+	t.timingCallbacks = make(map[int][]any)
 
+	t.registerCardBindings()
 	t.loadData()
 	t.generateFloor()
 	t.PrepareCard()
-	t.initExport()
+	t.initScript()
 }
 
 func (t *Tower) Reset() {
@@ -134,13 +157,18 @@ func (t *Tower) Reset() {
 	t.actor = nil
 }
 
-func (t *Tower) initExport() {
-	t.export = Export{}
-	t.export.Life = &t.actor.Life
-	t.export.Strength = &t.actor.Strength
-	t.export.Defense = &t.actor.Defense
-	t.export.Energy = &t.actor.Energy
-	t.export.InitEnergy = &t.actor.InitEnergy
+func (t *Tower) initScript() {
+	dataContext := gctx.NewDataContext()
+	dataContext.Add("actor", t.actor)
+	dataContext.Add("t", t)
+	t.ruleBuilder = builder.NewRuleBuilder(dataContext)
+	err := t.ruleBuilder.BuildRuleFromString(t.effectRules.String())
+
+	if err != nil {
+		panic("initScirpt error")
+	}
+
+	t.engine = engine.NewGengine()
 }
 
 func (t *Tower) EnterNextFloor() *Floor {
@@ -181,6 +209,13 @@ func (t *Tower) HandleEvent(ev string) {
 		t.currentCombat.handCardEffect(&effect, t.actor)
 	}
 	t.currentCombat.requestUpdateUI()
+}
+
+func (t *Tower) regiserTimingCallback(timing int, callback any) {
+	if t.timingCallbacks[timing] == nil {
+		t.timingCallbacks[timing] = make([]any, 0)
+	}
+	t.timingCallbacks[timing] = append(t.timingCallbacks[timing], callback)
 }
 
 func (t *Tower) getCombatBonus() CombatBonus {
@@ -526,6 +561,17 @@ func (t *Tower) loadRelic() error {
 	if err := json.Unmarshal(data, &t.RelicMap); err != nil {
 		return fmt.Errorf("error unmarshaling relic.json: %w", err)
 	}
+
+	for k, v := range t.RelicMap {
+		for _, effect := range v.Effects {
+			effect.RuleName = k
+			t.effectRules.WriteString(fmt.Sprintf("rule \"%s\"\n", effect.RuleName))
+			t.effectRules.WriteString("begin\n")
+			t.effectRules.WriteString(effect.Rule)
+			t.effectRules.WriteString("\nend\n")
+			effect.Rule = ""
+		}
+	}
 	return nil
 }
 
@@ -555,7 +601,15 @@ func (t *Tower) OnWin() {
 }
 
 func (t *Tower) OnPlayCard(card *Card) {
-
+	timing := TIMING_PLAY_CARD
+	t.EffectOn(timing)
+	for _, v := range t.timingCallbacks[timing] {
+		callback := v.(func(*Card))
+		callback(card)
+	}
+	if card.Binding != nil {
+		card.Binding.Use(t, card)
+	}
 }
 
 func (t *Tower) OnDiscardCard(card *Card) {

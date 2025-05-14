@@ -5,18 +5,21 @@ go 1.23
 toolchain go1.24.1
 
 require (
-	github.com/Knetic/govaluate v3.0.1-0.20250325060307-7625b7f8c03d+incompatible
+	github.com/bilibili/gengine v1.5.7
 	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jinzhu/copier v0.4.0
+	github.com/samber/lo v1.50.0
 	github.com/spf13/cast v1.8.0
 	google.golang.org/grpc v1.72.0
 )
 
 require (
+	github.com/antlr/antlr4 v0.0.0-20210105192202-5c2b686f95e1 // indirect
+	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3 // indirect
+	github.com/google/martian v2.1.0+incompatible // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
-	github.com/samber/lo v1.50.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 )
 

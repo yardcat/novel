@@ -10,7 +10,7 @@
     "effects": [
       {
         "timing": "COMBAT_START",
-        "modifier": "c.Modify('Strength', 2)"
+        "rule": "actor.Strength += 2"
       }
     ]
   }

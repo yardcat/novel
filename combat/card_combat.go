@@ -12,18 +12,6 @@ import (
 )
 
 const (
-	CARD_TYPE_ATTACK = iota
-	CARD_TYPE_SKILL
-	CARD_TYPE_EFFECT
-)
-
-const (
-	CARD_RARITY_COMMON = iota
-	CARD_RARITY_UNCOMMON
-	CARD_RARITY_RARE
-)
-
-const (
 	EFFECT_DAMAGE = iota
 	EFFECT_VULNERABLE
 	EFFECT_DEFEND
@@ -54,17 +42,6 @@ const (
 type CardEffect struct {
 	Effect string `json:"effect"`
 	Value  any    `json:"value"`
-}
-
-type Card struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Type        int          `json:"type"`
-	Rarity      int          `json:"rarity"`
-	Cost        int          `json:"cost"`
-	Upgrade     []*Card      `json:"upgrade,omitempty"`
-	Effects     []CardEffect `json:"effects"`
-	Binding     any
 }
 
 type CardCareer struct {
@@ -492,7 +469,7 @@ func (c *CardCombat) EffectFromString(effect string) int {
 
 func (c *CardCombat) Use(card *Card, results map[string]any, target Combatable) {
 	for _, effect := range card.Effects {
-		c.handCardEffect(&effect, target)
+		c.handCardEffect(effect, target)
 	}
 	c.removeHandCard(card)
 	c.discard = append(c.discard, card)
