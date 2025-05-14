@@ -3,8 +3,6 @@ package combat
 import (
 	"encoding/json"
 	"reflect"
-
-	"github.com/jinzhu/copier"
 )
 
 const (
@@ -14,35 +12,40 @@ const (
 )
 
 const (
+	CARD_ATTACK_SINGLE = iota
+	CARD_ATTACK_ALL
+	CARD_RANDOM
+)
+
+const (
 	CARD_RARITY_COMMON = iota
 	CARD_RARITY_UNCOMMON
 	CARD_RARITY_RARE
 )
 
 type Card struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Type        int           `json:"type"`
-	Rarity      int           `json:"rarity"`
-	Cost        int           `json:"cost"`
-	Effects     []*CardEffect `json:"effects"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Type        int            `json:"type"`
+	Values      map[string]int `json:"values"`
+	Disposal    bool           `json:"disposal"`
+	Rarity      int            `json:"rarity"`
+	Cost        int            `json:"cost"`
+	Effects     []*Effect      `json:"effects"`
 	Binding     CardBinding
 }
 
 func (c *Card) UnmarshalJSON(data []byte) error {
+	type TmpCard Card
 	tmp := struct {
-		Name        string        `json:"name"`
-		Description string        `json:"description"`
-		Type        int           `json:"type"`
-		Rarity      int           `json:"rarity"`
-		Cost        int           `json:"cost"`
-		Effects     []*CardEffect `json:"effects"`
-		HasBind     bool          `json:"bind"`
-	}{}
+		*TmpCard
+		HasBind bool `json:"bind"`
+	}{
+		TmpCard: (*TmpCard)(c),
+	}
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	copier.Copy(c, &tmp)
 
 	if tmp.HasBind {
 		t := GetTower()

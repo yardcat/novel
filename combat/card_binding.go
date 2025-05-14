@@ -21,7 +21,7 @@ type fuhua struct {
 }
 
 func (f *fuhua) Use(t *Tower, card *Card) {
-	t.regiserTimingCallback(TIMING_PLAY_CARD, func(c *Card) {
+	t.regiserTimingCallback(TIMING_USE_CARD, func(c *Card) {
 		log.Info("fuhua take effect on %s", c.Name)
 	})
 }

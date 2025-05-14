@@ -105,6 +105,7 @@ type Tower struct {
 	effects     map[int][]*Effect
 	effectRules strings.Builder
 	engine      *engine.Gengine
+	dataContext *gctx.DataContext
 	ruleBuilder *builder.RuleBuilder
 }
 
@@ -158,10 +159,11 @@ func (t *Tower) Reset() {
 }
 
 func (t *Tower) initScript() {
-	dataContext := gctx.NewDataContext()
-	dataContext.Add("actor", t.actor)
-	dataContext.Add("t", t)
-	t.ruleBuilder = builder.NewRuleBuilder(dataContext)
+	t.dataContext = gctx.NewDataContext()
+	t.dataContext.Add("actor", t.actor)
+	t.dataContext.Add("t", t)
+	t.dataContext.Add("log", fmt.Println)
+	t.ruleBuilder = builder.NewRuleBuilder(t.dataContext)
 	err := t.ruleBuilder.BuildRuleFromString(t.effectRules.String())
 
 	if err != nil {
@@ -204,10 +206,7 @@ func (t *Tower) PrepareCard() {
 	t.cards = append(t.cards, career.InitCards...)
 }
 
-func (t *Tower) HandleEvent(ev string) {
-	for _, effect := range t.eventMap[ev].Effects {
-		t.currentCombat.handCardEffect(&effect, t.actor)
-	}
+func (t *Tower) HandleDestiny(ev string) {
 	t.currentCombat.requestUpdateUI()
 }
 
@@ -239,14 +238,15 @@ func (t *Tower) startCardCombat() *CardCombat {
 	}
 	t.currentCombat = NewCardCombat(&params)
 	t.currentCombat.Start()
+	t.dataContext.Add("combat", t.currentCombat)
 	t.onStartCombat()
 
 	return t.currentCombat
 }
 
 func (t *Tower) onStartCombat() {
-	t.AddRelic("test")
-	t.AddPotion("test")
+	t.AddRelic("relic_test")
+	t.AddPotion("potion_test")
 	t.EffectOn(TIMING_COMBAT_START)
 }
 
@@ -482,6 +482,9 @@ func (c *Tower) loadData() error {
 	if err := c.loadRelic(); err != nil {
 		panic(fmt.Errorf("failed to load relics: %w", err))
 	}
+	if err := c.loadScript(); err != nil {
+		panic(fmt.Errorf("failed to load script: %w", err))
+	}
 
 	return nil
 }
@@ -561,17 +564,22 @@ func (t *Tower) loadRelic() error {
 	if err := json.Unmarshal(data, &t.RelicMap); err != nil {
 		return fmt.Errorf("error unmarshaling relic.json: %w", err)
 	}
+	return nil
+}
 
-	for k, v := range t.RelicMap {
-		for _, effect := range v.Effects {
-			effect.RuleName = k
-			t.effectRules.WriteString(fmt.Sprintf("rule \"%s\"\n", effect.RuleName))
-			t.effectRules.WriteString("begin\n")
-			t.effectRules.WriteString(effect.Rule)
-			t.effectRules.WriteString("\nend\n")
-			effect.Rule = ""
-		}
+func (t *Tower) loadScript() error {
+	data, err := os.ReadFile(path.Join(t.resourceDir, "rule.gengine"))
+	if err != nil {
+		return fmt.Errorf("error reading rule.gengine: %w", err)
 	}
+	t.effectRules.Write(data)
+
+	data, err = os.ReadFile(path.Join(t.resourceDir, "upgrade.gengine"))
+	if err != nil {
+		return fmt.Errorf("error reading upgrade.gengine: %w", err)
+	}
+	t.effectRules.Write(data)
+
 	return nil
 }
 
@@ -583,6 +591,24 @@ func (t *Tower) GetCard(name string) *Card {
 		panic("card not exist")
 	}
 	return t.cardMap[name]
+}
+
+func (t *Tower) TriggerEffect(effect *Effect, bindings map[string]any) {
+	if len(bindings) > 0 {
+		for k, v := range bindings {
+			t.dataContext.Add(k, v)
+		}
+	}
+	t.UseEffect(effect)
+}
+
+func (t *Tower) TriggerTiming(timing int, bindings map[string]any) {
+	if len(bindings) > 0 {
+		for k, v := range bindings {
+			t.dataContext.Add(k, v)
+		}
+	}
+	t.EffectOn(timing)
 }
 
 func (t *Tower) OnLose() {
@@ -600,8 +626,8 @@ func (t *Tower) OnWin() {
 	t.EnterNextFloor()
 }
 
-func (t *Tower) OnPlayCard(card *Card) {
-	timing := TIMING_PLAY_CARD
+func (t *Tower) OnUseCard(card *Card) {
+	timing := TIMING_USE_CARD
 	t.EffectOn(timing)
 	for _, v := range t.timingCallbacks[timing] {
 		callback := v.(func(*Card))
@@ -651,7 +677,7 @@ func (t *Tower) OnActorTurnStart() {
 // grpc
 func (t *Tower) Welcome(ctx context.Context, request *pb.WelcomeRequest) (*pb.WelcomeResponse, error) {
 	t.enterRoom(ROOM_TYPE_FIGHT)
-	t.HandleEvent(request.Event)
+	t.HandleDestiny(request.Event)
 
 	return &pb.WelcomeResponse{
 		Result: "ok",

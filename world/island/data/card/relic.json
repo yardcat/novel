@@ -13,7 +13,7 @@
     "price": 10,
     "effects": [{ "timing": "COMBAT_START", "rule": "c.Draw(2)" }]
   },
-  "test": {
+  "relic_test": {
     "name": "test",
     "description": "test",
     "rarity": 2,
@@ -21,7 +21,7 @@
     "effects": [
       {
         "timing": "COMBAT_START",
-        "rule": "if actor.Life > actor.Life /2 { actor.Strength += 2 }"
+        "rule": "relic_test"
       }
     ]
   }

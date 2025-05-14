@@ -1,43 +1,36 @@
 {
-  "quan": {
-    "name": "quan",
-    "description": "quan",
-    "type": 0,
+  "strike": {
+    "name": "打击",
+    "description": "造成6点伤害",
+    "values": {
+      "attack": 6
+    },
     "cost": 1,
-    "effects": [{ "effect": "damage", "value": 8 }]
-  },
-  "zhang": {
-    "name": "zhang",
-    "description": "zhang",
     "type": 0,
-    "cost": 1,
-    "effects": [{ "effect": "damage", "value": 6 }]
-  },
-  "zhou": {
-    "name": "zhou",
-    "description": "zhou",
-    "type": 0,
-    "cost": 1,
-    "effects": [{ "effect": "damage", "value": 18 }]
-  },
-  "jiao": {
-    "name": "jiao",
-    "description": "jiao",
-    "type": 0,
-    "cost": 1,
-    "effects": [{ "effect": "damage", "value": 20 }]
+    "upgrade": "strike_upgrade",
+    "effects": [{ "rule": "attack" }]
   },
   "defense": {
-    "name": "defense",
-    "description": "防御",
-    "type": 2,
+    "name": "防御",
+    "description": "获得5点格挡",
+    "values": {
+      "defense": 5
+    },
     "cost": 1,
-    "effects": [{ "effect": "defend", "value": 5 }]
+    "type": 2,
+    "upgrade": "defense_upgrade",
+    "effects": [{ "rule": "defense" }]
   },
-  "fuhua": {
-    "name": "fuhua",
-    "description": "description",
-    "type": 0,
-    "bind": true
+  "bash": {
+    "name": "痛击",
+    "description": "造成8点伤害, 施加两层易伤",
+    "values": {
+      "attack": 8,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 2,
+    "upgrade": "defense_upgrade",
+    "effects": [{ "rule": "defense" }, { "rule": "vulnerable" }]
   }
 }

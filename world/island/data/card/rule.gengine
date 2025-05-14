@@ -1,0 +1,36 @@
+rule "relic_test"
+begin
+if actor.Life > actor.Life /2 {
+    actor.Strength = 0
+}
+end
+
+rule "potion_test"
+begin
+actor.Strength += 2
+end
+
+rule "attack"
+begin
+combat.Attack(card, target)
+end
+
+rule "attack_random"
+begin
+combat.AttackRandom(card)
+end
+
+rule "attack_all"
+begin
+combat.AttackAll(card)
+end
+
+rule "defense"
+begin
+combat.AddArmor(card)
+end
+
+rule "vulnerable"
+begin
+combat.AddVulnerable(card)
+end

@@ -12,11 +12,12 @@ const (
 )
 
 const (
-	TIMING_ACTOR_TURN_START = iota
+	TIMING_NONE = iota
+	TIMING_ACTOR_TURN_START
 	TIMING_ACTOR_TURN_END
 	TIMING_ENEMY_TURN_START
 	TIMING_ENEMY_TURN_END
-	TIMING_PLAY_CARD
+	TIMING_USE_CARD
 	TIMING_DISCARD_CARD
 	TIMING_COMBAT_START
 	TIMING_COMBAT_END
@@ -24,13 +25,16 @@ const (
 	TIMING_ENTER_SHOP
 	TIMING_ENTER_EVENT
 	TIMING_IMMEDIATE
+	TIMING_ADD_ARMOR
+	TIMING_ADD_BUFF
+	TIMING_ADD_DEBUFF
+	TIMING_ATTACK
 )
 
 type Effect struct {
 	CasterType int
 	CasterID   string
 	Timing     int
-	RuleName   string
 	Rule       string
 }
 
@@ -42,7 +46,6 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-
 	e.Rule = tmp.Rule
 
 	// TODO: 通过editor生成json, 使用init而非string
@@ -55,8 +58,8 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 		e.Timing = TIMING_ENEMY_TURN_START
 	case "ENEMY_TURN_END":
 		e.Timing = TIMING_ENEMY_TURN_END
-	case "PLAY_CARD":
-		e.Timing = TIMING_PLAY_CARD
+	case "USE_CARD":
+		e.Timing = TIMING_USE_CARD
 	case "DISCARD_CARD":
 		e.Timing = TIMING_DISCARD_CARD
 	case "COMBAT_START":
@@ -69,6 +72,8 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 		e.Timing = TIMING_ENTER_SHOP
 	case "ENTER_EVENT":
 		e.Timing = TIMING_ENTER_EVENT
+	default:
+		e.Timing = TIMING_NONE
 	}
 	return nil
 }
@@ -80,7 +85,7 @@ func (t *Tower) EffectOn(timing int) {
 }
 
 func (t *Tower) UseEffect(effect *Effect) {
-	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{effect.RuleName})
+	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{effect.Rule})
 
 	if t.currentCombat != nil {
 		t.currentCombat.requestUpdateUI()

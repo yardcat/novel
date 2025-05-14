@@ -2,7 +2,7 @@
   "damage": {},
   "strength": {},
   "draw_card": {},
-  "test": {
+  "potion_test": {
     "name": "test",
     "description": "test",
     "rarity": 2,
@@ -10,7 +10,7 @@
     "effects": [
       {
         "timing": "COMBAT_START",
-        "rule": "actor.Strength += 2"
+        "rule": "potion_test"
       }
     ]
   }

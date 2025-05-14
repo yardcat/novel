@@ -1,0 +1,11 @@
+rule "strike_upgrade"
+begin
+card.Value += 3
+card.Description = "造成"+ card.Value + "点伤害"
+end
+
+rule "defense_upgrade"
+begin
+card.Value += 3
+card.Description = "获得"+ card.Value + "点格挡"
+end

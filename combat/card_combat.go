@@ -9,19 +9,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
-)
-
-const (
-	EFFECT_DAMAGE = iota
-	EFFECT_VULNERABLE
-	EFFECT_DEFEND
-	EFFECT_ADD_CARD
-	EFFECT_MULTI_DAMAGE
-	EFFECT_DAMAGE_DEFENSE
-	EFFECT_WEAK
-	EFFECT_STRENGTH
-	EFFECT_HEAL
-	EFFECT_MAX_HEALTH
+	"github.com/samber/lo"
 )
 
 const (
@@ -175,7 +163,7 @@ func (c *CardCombat) UseCards(cards []int32, target int32) {
 		if c.actors[0].Energy >= card.Cost {
 			c.actors[0].Energy -= card.Cost
 			c.Use(card, results, c.enemies[target])
-			c.delegate.OnPlayCard(card)
+			c.delegate.OnUseCard(card)
 		}
 	}
 
@@ -392,6 +380,7 @@ func (c *CardCombat) AddCard(name string) {
 	card := c.delegate.GetCard(name)
 	c.delegate.OnAddCard(card)
 	c.hand = append(c.hand, card)
+	c.requestUpdateUI()
 }
 
 func (c *CardCombat) DrawCard(n int) []*Card {
@@ -440,110 +429,75 @@ func (c *CardCombat) ShuffleDeck() {
 	}
 }
 
-func (c *CardCombat) EffectFromString(effect string) int {
-	switch effect {
-	case "damage":
-		return EFFECT_DAMAGE
-	case "add_card":
-		return EFFECT_ADD_CARD
-	case "multi_damage":
-		return EFFECT_MULTI_DAMAGE
-	case "damage_defense":
-		return EFFECT_DAMAGE_DEFENSE
-	case "vulnerable":
-		return EFFECT_VULNERABLE
-	case "defend":
-		return EFFECT_DEFEND
-	case "weak":
-		return EFFECT_WEAK
-	case "strength":
-		return EFFECT_STRENGTH
-	case "heal":
-		return EFFECT_HEAL
-	case "max_health":
-		return EFFECT_MAX_HEALTH
-	default:
-		return 0
+func (c *CardCombat) Attack(card *Card, target *CardEnemy) {
+	c.actors[0].Attack = card.Values["attack"]
+	damage := c.cacDamage(c.actors[0], target)
+	armorStatus := target.GetArmorStatus()
+	if armorStatus != nil && armorStatus.Value <= 0 {
+		target.GetBase().RemoveStatus(STATUS_ARMOR)
+		c.requestUpdateUI()
+	}
+	target.OnDamage(damage, c.actors[0])
+	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.actors[0].GetName(), target.GetName(), damage)
+	c.checkDead(target)
+}
+
+func (c *CardCombat) AttackRadom(card *Card) {
+	target := lo.Sample(c.enemies)
+	c.Attack(card, target)
+}
+
+func (c *CardCombat) AttackAll(card *Card) {
+	c.actors[0].Attack = card.Values["attack"]
+	for _, v := range c.enemies {
+		c.Attack(card, v)
 	}
 }
 
-func (c *CardCombat) Use(card *Card, results map[string]any, target Combatable) {
+func (c *CardCombat) AddArmor(card *Card) {
+	armor := card.Values["defense"]
+	c.actors[0].AddStatus(Status{
+		Type:  STATUS_ARMOR,
+		Value: armor,
+		Turn:  2,
+	})
+
+	bindings := make(map[string]any)
+	bindings["armor"] = armor
+	c.delegate.TriggerTiming(TIMING_ADD_ARMOR, bindings)
+	c.requestUpdateUI()
+}
+
+func (c *CardCombat) AddVulnerable(card *Card, target *CardEnemy) {
+	value := card.Values["vulnerable"]
+	target.AddStatus(Status{
+		Type: STATUS_VULNERABLE,
+		Turn: value,
+	})
+
+	c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
+	c.requestUpdateUI()
+}
+
+func (c *CardCombat) AddWeak(turn int, target *CardEnemy) {
+	target.AddStatus(Status{
+		Type: STATUS_WEAK,
+		Turn: turn,
+	})
+
+	c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
+	c.requestUpdateUI()
+}
+
+func (c *CardCombat) Use(card *Card, results map[string]any, target *CardEnemy) {
 	for _, effect := range card.Effects {
-		c.handCardEffect(effect, target)
+		bindings := make(map[string]any)
+		bindings["target"] = target
+		bindings["card"] = card
+		c.delegate.TriggerEffect(effect, bindings)
 	}
 	c.removeHandCard(card)
 	c.discard = append(c.discard, card)
-}
-
-func (c *CardCombat) handCardEffect(effect *CardEffect, target Combatable) {
-	switch c.EffectFromString(effect.Effect) {
-	case EFFECT_DAMAGE:
-		value := util.Anytoi(effect.Value)
-		c.actors[0].Attack = value
-		damage := c.cacDamage(c.actors[0], target)
-		armorStatus := target.GetBase().GetArmorStatus()
-		if armorStatus != nil && armorStatus.Value <= 0 {
-			target.GetBase().RemoveStatus(STATUS_ARMOR)
-			c.requestUpdateUI()
-		}
-		target.OnDamage(damage, c.actors[0])
-		push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.actors[0].GetName(), target.GetName(), damage)
-		c.checkDead(target)
-	case EFFECT_VULNERABLE:
-		for _, enemy := range c.enemies {
-			enemy.AddStatus(Status{
-				Type: STATUS_VULNERABLE,
-				Turn: util.Anytoi(effect.Value),
-			})
-		}
-	case EFFECT_DEFEND:
-		for _, actor := range c.actors {
-			actor.AddStatus(Status{
-				Type:  STATUS_ARMOR,
-				Value: util.Anytoi(effect.Value),
-				Turn:  2,
-			})
-		}
-	case EFFECT_MULTI_DAMAGE:
-		n := util.Anytoi(effect.Value)
-		for i := 0; i < n; i++ {
-			for _, enemy := range c.enemies {
-				enemy.OnDamage(util.Anytoi(effect.Value), nil)
-			}
-		}
-	case EFFECT_DAMAGE_DEFENSE:
-		for _, enemy := range c.enemies {
-			enemy.OnDamage(util.Anytoi(effect.Value), nil)
-		}
-		for _, actor := range c.actors {
-			actor.AddStatus(Status{
-				Type: STATUS_ARMOR,
-				Turn: util.Anytoi(effect.Value),
-			})
-		}
-	case EFFECT_WEAK:
-		for _, enemy := range c.enemies {
-			enemy.AddStatus(Status{
-				Type: STATUS_WEAK,
-				Turn: util.Anytoi(effect.Value),
-			})
-		}
-	case EFFECT_STRENGTH:
-		value := util.Anytoi(effect.Value)
-		c.actors[0].Strength += value
-	case EFFECT_HEAL:
-		life := c.actors[0].Life + util.Anytoi(effect.Value)
-		c.actors[0].Life = max(life, c.actors[0].MaxLife)
-	case EFFECT_MAX_HEALTH:
-		c.actors[0].MaxLife += util.Anytoi(effect.Value)
-		c.actors[0].Life = c.actors[0].Life + util.Anytoi(effect.Value)
-	case EFFECT_ADD_CARD:
-		cards := effect.Value.([]any)
-		for _, card := range cards {
-			c.AddCard(card.(string))
-		}
-		c.requestUpdateUI()
-	}
 }
 
 func (c *CardCombat) removeHandCard(card *Card) {

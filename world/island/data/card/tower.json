@@ -7,7 +7,7 @@
   "actor": {
     "Life": 50,
     "Defense": 40,
-    "Strength": 40
+    "Strength": 0
   },
   "enemies": {
     "pig": {
@@ -15,14 +15,14 @@
       "Level": 1,
       "Life": 50,
       "Attack": 10,
-      "Defense": 2
+      "Defense": 0
     },
     "cat": {
       "Name": "cat",
       "Level": 1,
       "Life": 50,
       "Attack": 15,
-      "Defense": 2
+      "Defense": 0
     }
   },
   "group": {
