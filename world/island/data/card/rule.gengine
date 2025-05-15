@@ -15,6 +15,12 @@ begin
 combat.Attack(card, target)
 end
 
+rule "body_slam_attack"
+begin
+card.Values["attack"] = card.GetArm()
+combat.Attack(card, target)
+end
+
 rule "defense"
 begin
 combat.AddArmor(card)
@@ -29,4 +35,16 @@ rule "copy2discard"
 begin
 copy=t.GetCard(card.Name)
 c.PutCardDiscard(copy)
+end
+
+rule "clash_can_use"
+begin
+canUse := true
+forRange c := combat.hand {
+    if c.Type != 0 {
+        canUse = false
+        break
+    }
+}
+return canUse
 end

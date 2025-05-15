@@ -1,17 +1,16 @@
 {
   "kongfu": {
     "init_cards": [
-      "fuhua",
-      "quan",
-      "quan",
-      "zhou",
-      "zhou",
-      "jiao",
-      "quan",
-      "dang",
-      "dang",
-      "dang",
-      "jiao"
+      "strike",
+      "strike",
+      "strike",
+      "strike",
+      "strike",
+      "defense",
+      "defense",
+      "defense",
+      "defense",
+      "bash"
     ]
   }
 }

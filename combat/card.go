@@ -8,7 +8,7 @@ import (
 const (
 	CARD_TYPE_ATTACK = iota
 	CARD_TYPE_SKILL
-	CARD_TYPE_EFFECT
+	CARD_TYPE_POWER
 )
 
 const (
@@ -28,12 +28,14 @@ type Card struct {
 	Description string         `json:"description"`
 	Type        int            `json:"type"`
 	Values      map[string]int `json:"values"`
-	Disposal    bool           `json:"disposal"`
+	Exhaust     bool           `json:"exhaust"`
 	CanUse      string         `json:"can_use"`
 	Range       int            `json:"range"`
 	Rarity      int            `json:"rarity"`
 	Cost        int            `json:"cost"`
+	Price       int            `json:"price"`
 	Effects     []*Effect      `json:"effects"`
+	Upgraded    bool
 	Binding     CardBinding
 }
 

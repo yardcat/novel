@@ -40,6 +40,7 @@ begin
 		}else{
 			User.Name = "yyyy"
 		}
+		return 10
 end
 `
 

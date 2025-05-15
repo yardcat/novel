@@ -266,6 +266,16 @@ func (t *Tower) AddCard(name string) {
 	t.cards = append(t.cards, card)
 }
 
+func (t *Tower) UpgradeCard(card *Card) {
+	if card.Upgraded {
+		return
+	}
+	t.dataContext.Add("card", card)
+	upgradeRule := card.Name + "_upgrade"
+	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
+	t.EffectOn(TIMING_UPGRADE_CARD)
+}
+
 func (t *Tower) UpdatePotionUI() {
 	ev := event.CardUpdatePotion{}
 	copier.Copy(&ev.Potions, t.potions)
@@ -600,6 +610,15 @@ func (t *Tower) CanUse(card *Card) bool {
 	}
 	result, _ := t.engine.GetRulesResultMap()
 	return result["can_use"].(bool)
+}
+
+func (t *Tower) UpgradeCardInCombat(card *Card) {
+	if card.Upgraded {
+		return
+	}
+	t.dataContext.Add("card", card)
+	upgradeRule := card.Name + "_upgrade"
+	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
 }
 
 func (t *Tower) TriggerEffect(effect *Effect, bindings map[string]any) {

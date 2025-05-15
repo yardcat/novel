@@ -16,7 +16,7 @@
       "defense": 5
     },
     "cost": 1,
-    "type": 2,
+    "type": 1,
     "effects": [{ "rule": "defense" }]
   },
   "bash": {
@@ -27,7 +27,7 @@
       "vulnerable": 2
     },
     "cost": 1,
-    "type": 2,
+    "type": 0,
     "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
   },
   "anger": {
@@ -37,7 +37,7 @@
       "attack": 6
     },
     "cost": 1,
-    "type": 2,
+    "type": 0,
     "effects": [{ "rule": "attack" }, { "rule": "copy2discard" }]
   },
   "armaments": {
@@ -47,7 +47,51 @@
       "defense": 5
     },
     "cost": 1,
-    "type": 2,
+    "type": 1,
     "effects": [{ "rule": "defense" }, { "rule": "upgrade" }]
+  },
+  "body_slam": {
+    "name": "身体冲撞",
+    "description": "造成当前护甲值的伤害",
+    "values": {
+      "attack": 0
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "body_slame_attack" }]
+  },
+  "clash": {
+    "name": "交锋",
+    "description": "只有当前手牌全是攻击卡时才能打出, 造成14点伤害",
+    "values": {
+      "attack": 14
+    },
+    "cost": 0,
+    "type": 0,
+    "can_use": "clash_can_use",
+    "effects": [{ "rule": "attack" }]
+  },
+  "cleave": {
+    "name": "斩击",
+    "description": "对所有敌方单位造成8点伤害",
+    "values": {
+      "attack": 8
+    },
+    "range": 1,
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }]
+  },
+  "clothesline": {
+    "name": "上勾拳",
+    "description": "",
+    "values": {
+      "attack": 12,
+      "weak": 2
+    },
+    "range": 1,
+    "cost": 2,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "weak" }]
   }
 }

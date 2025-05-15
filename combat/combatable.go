@@ -176,3 +176,12 @@ func (c *CombatableBase) UpdateStatus() {
 		}
 	}
 }
+
+func (c *CombatableBase) GetAmor() int {
+	for _, v := range c.Statuses {
+		if v.Type == STATUS_ARMOR {
+			return v.Value
+		}
+	}
+	return 0
+}

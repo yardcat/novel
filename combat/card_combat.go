@@ -377,6 +377,10 @@ func (c *CardCombat) getHandString() []string {
 	return strs
 }
 
+func (c *CardCombat) upgradeCardInCombat(card *Card) {
+	c.delegate.UpgradeCardInCombat(card)
+}
+
 func (c *CardCombat) AddCard(name string) {
 	card := c.delegate.GetCard(name)
 	c.delegate.OnAddCard(card)
