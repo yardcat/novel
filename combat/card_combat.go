@@ -1,6 +1,7 @@
 package combat
 
 import (
+	"errors"
 	"my_test/event"
 	"my_test/log"
 	"my_test/push"
@@ -153,18 +154,17 @@ func (c *CardCombat) StartTurn() {
 	c.ai.PrepareAction(c.enemies, c.actors)
 }
 
-func (c *CardCombat) UseCards(cards []int32, target int32) {
-	cardsToUse := []*Card{}
-	for _, idx := range cards {
-		cardsToUse = append(cardsToUse, c.hand[idx])
-	}
-	results := make(map[string]any)
-	for _, card := range cardsToUse {
-		if c.actors[0].Energy >= card.Cost {
-			c.actors[0].Energy -= card.Cost
-			c.Use(card, results, c.enemies[target])
-			c.delegate.OnUseCard(card)
+func (c *CardCombat) UseCard(idx int32, target int32) error {
+	card := c.hand[idx]
+	if card == nil {
+		if c.delegate.CanUse(card) {
+			return errors.New(card.Name + " cannot be used")
 		}
+	}
+	if c.actors[0].Energy >= card.Cost {
+		c.actors[0].Energy -= card.Cost
+		c.Use(card, c.enemies[target])
+		c.delegate.OnUseCard(card)
 	}
 
 	c.requestUpdateUI()
@@ -409,11 +409,15 @@ func (c *CardCombat) DiscardCard(card *Card) {
 	c.delegate.OnDiscardCard(card)
 	for i, v := range c.hand {
 		if v == card {
-			c.hand = append(c.hand[:i], c.hand[i+1:]...)
+			c.hand = slices.Delete(c.hand, i, i+1)
 			c.discard = append(c.discard, card)
 			return
 		}
 	}
+}
+
+func (c *CardCombat) PutCardDiscard(card *Card) {
+	c.discard = append(c.discard, card)
 }
 
 func (c *CardCombat) RemoveCard(card *Card) {
@@ -489,7 +493,7 @@ func (c *CardCombat) AddWeak(turn int, target *CardEnemy) {
 	c.requestUpdateUI()
 }
 
-func (c *CardCombat) Use(card *Card, results map[string]any, target *CardEnemy) {
+func (c *CardCombat) Use(card *Card, target *CardEnemy) {
 	for _, effect := range card.Effects {
 		bindings := make(map[string]any)
 		bindings["target"] = target

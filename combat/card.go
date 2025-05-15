@@ -29,6 +29,7 @@ type Card struct {
 	Type        int            `json:"type"`
 	Values      map[string]int `json:"values"`
 	Disposal    bool           `json:"disposal"`
+	CanUse      string         `json:"can_use"`
 	Rarity      int            `json:"rarity"`
 	Cost        int            `json:"cost"`
 	Effects     []*Effect      `json:"effects"`

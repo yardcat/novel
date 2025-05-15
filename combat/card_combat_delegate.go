@@ -2,6 +2,7 @@ package combat
 
 type CardCombatDelegate interface {
 	GetCard(name string) *Card
+	CanUse(card *Card) bool
 	TriggerEffect(effect *Effect, binding map[string]any)
 	TriggerTiming(timing int, binding map[string]any)
 	OnWin()

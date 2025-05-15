@@ -7,7 +7,6 @@
     },
     "cost": 1,
     "type": 0,
-    "upgrade": "strike_upgrade",
     "effects": [{ "rule": "attack" }]
   },
   "defense": {
@@ -18,7 +17,6 @@
     },
     "cost": 1,
     "type": 2,
-    "upgrade": "defense_upgrade",
     "effects": [{ "rule": "defense" }]
   },
   "bash": {
@@ -30,7 +28,26 @@
     },
     "cost": 1,
     "type": 2,
-    "upgrade": "defense_upgrade",
-    "effects": [{ "rule": "defense" }, { "rule": "vulnerable" }]
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "anger": {
+    "name": "愤怒",
+    "description": "造成6点伤害, 复制一张本卡到弃牌堆",
+    "values": {
+      "attack": 6
+    },
+    "cost": 1,
+    "type": 2,
+    "effects": [{ "rule": "attack" }, { "rule": "copy2discard" }]
+  },
+  "armaments": {
+    "name": "武装",
+    "description": "升级一张手牌, 获得5点格挡",
+    "values": {
+      "defense": 5
+    },
+    "cost": 1,
+    "type": 2,
+    "effects": [{ "rule": "defense" }, { "rule": "upgrade" }]
   }
 }

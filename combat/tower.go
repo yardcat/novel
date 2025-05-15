@@ -593,6 +593,15 @@ func (t *Tower) GetCard(name string) *Card {
 	return t.cardMap[name]
 }
 
+func (t *Tower) CanUse(card *Card) bool {
+	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{card.CanUse})
+	if err != nil {
+		panic(err)
+	}
+	result, _ := t.engine.GetRulesResultMap()
+	return result["can_use"].(bool)
+}
+
 func (t *Tower) TriggerEffect(effect *Effect, bindings map[string]any) {
 	if len(bindings) > 0 {
 		for k, v := range bindings {
@@ -685,7 +694,14 @@ func (t *Tower) Welcome(ctx context.Context, request *pb.WelcomeRequest) (*pb.We
 }
 
 func (t *Tower) SendCard(ctx context.Context, request *pb.SendCardRequest) (*pb.SendCardResponse, error) {
-	t.currentCombat.UseCards(request.Cards, request.Target)
+	errList := make([]error, 0)
+	for _, v := range request.Cards {
+		err := t.currentCombat.UseCard(v, request.Target)
+		if err != nil {
+			errList = append(errList, err)
+			continue
+		}
+	}
 
 	return &pb.SendCardResponse{
 		Result: "ok",

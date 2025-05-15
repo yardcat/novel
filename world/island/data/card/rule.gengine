@@ -34,3 +34,9 @@ rule "vulnerable"
 begin
 combat.AddVulnerable(card)
 end
+
+rule "copy2discard"
+begin
+copy=t.GetCard(card.Name)
+c.PutCardDiscard(copy)
+end
