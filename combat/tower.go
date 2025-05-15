@@ -693,6 +693,13 @@ func (t *Tower) Welcome(ctx context.Context, request *pb.WelcomeRequest) (*pb.We
 	}, nil
 }
 
+func (t *Tower) CanUseCard(ctx context.Context, request *pb.CanUseRequest) (*pb.CanUseResponse, error) {
+	result := t.CanUse(t.currentCombat.hand[request.Card])
+	return &pb.CanUseResponse{
+		Result: result,
+	}, nil
+}
+
 func (t *Tower) SendCard(ctx context.Context, request *pb.SendCardRequest) (*pb.SendCardResponse, error) {
 	errList := make([]error, 0)
 	for _, v := range request.Cards {

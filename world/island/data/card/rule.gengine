@@ -15,16 +15,6 @@ begin
 combat.Attack(card, target)
 end
 
-rule "attack_random"
-begin
-combat.AttackRandom(card)
-end
-
-rule "attack_all"
-begin
-combat.AttackAll(card)
-end
-
 rule "defense"
 begin
 combat.AddArmor(card)

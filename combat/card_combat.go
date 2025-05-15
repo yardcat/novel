@@ -168,6 +168,7 @@ func (c *CardCombat) UseCard(idx int32, target int32) error {
 	}
 
 	c.requestUpdateUI()
+	return nil
 }
 
 func (c *CardCombat) DiscardCards(cards []int32) int {
@@ -432,30 +433,33 @@ func (c *CardCombat) ShuffleDeck() {
 		c.deck[i], c.deck[j] = c.deck[j], c.deck[i]
 	}
 }
+func (c *CardCombat) getTargetsFromRange(card *Card, target *CardEnemy) []*CardEnemy {
+	targets := make([]*CardEnemy, 0)
+	if card.Range == CARD_RANGE_SINGLE {
+		targets = append(targets, target)
+	} else if card.Range == CARD_RANGE_ALL {
+		targets = c.enemies
+	} else if card.Range == CARD_RANGE_RANDOM {
+		target := lo.Sample(c.enemies)
+		targets = append(targets, target)
+	}
+	return targets
+}
 
 func (c *CardCombat) Attack(card *Card, target *CardEnemy) {
-	c.actors[0].Attack = card.Values["attack"]
-	damage := c.cacDamage(c.actors[0], target)
-	armorStatus := target.GetArmorStatus()
-	if armorStatus != nil && armorStatus.Value <= 0 {
-		target.GetBase().RemoveStatus(STATUS_ARMOR)
-		c.requestUpdateUI()
+	targets := c.getTargetsFromRange(card, target)
+	for _, target := range targets {
+		c.actors[0].Attack = card.Values["attack"]
+		damage := c.cacDamage(c.actors[0], target)
+		armorStatus := target.GetArmorStatus()
+		if armorStatus != nil && armorStatus.Value <= 0 {
+			target.GetBase().RemoveStatus(STATUS_ARMOR)
+		}
+		target.OnDamage(damage, c.actors[0])
+		push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.actors[0].GetName(), target.GetName(), damage)
+		c.checkDead(target)
 	}
-	target.OnDamage(damage, c.actors[0])
-	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.actors[0].GetName(), target.GetName(), damage)
-	c.checkDead(target)
-}
-
-func (c *CardCombat) AttackRadom(card *Card) {
-	target := lo.Sample(c.enemies)
-	c.Attack(card, target)
-}
-
-func (c *CardCombat) AttackAll(card *Card) {
-	c.actors[0].Attack = card.Values["attack"]
-	for _, v := range c.enemies {
-		c.Attack(card, v)
-	}
+	c.requestUpdateUI()
 }
 
 func (c *CardCombat) AddArmor(card *Card) {
@@ -473,23 +477,30 @@ func (c *CardCombat) AddArmor(card *Card) {
 }
 
 func (c *CardCombat) AddVulnerable(card *Card, target *CardEnemy) {
-	value := card.Values["vulnerable"]
-	target.AddStatus(Status{
-		Type: STATUS_VULNERABLE,
-		Turn: value,
-	})
+	targets := c.getTargetsFromRange(card, target)
+	for _, target := range targets {
+		value := card.Values["vulnerable"]
+		target.AddStatus(Status{
+			Type: STATUS_VULNERABLE,
+			Turn: value,
+		})
 
-	c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
+		c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
+	}
 	c.requestUpdateUI()
 }
 
-func (c *CardCombat) AddWeak(turn int, target *CardEnemy) {
-	target.AddStatus(Status{
-		Type: STATUS_WEAK,
-		Turn: turn,
-	})
+func (c *CardCombat) AddWeak(card *Card, target *CardEnemy) {
+	targets := c.getTargetsFromRange(card, target)
+	for _, target := range targets {
+		value := card.Values["weak"]
+		target.AddStatus(Status{
+			Type: STATUS_WEAK,
+			Turn: value,
+		})
 
-	c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
+		c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
+	}
 	c.requestUpdateUI()
 }
 

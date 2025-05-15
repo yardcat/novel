@@ -37,6 +37,21 @@ func (w *Card) Welcome(c *gin.Context) {
 
 }
 
+func (w *Card) CanUse(c *gin.Context) {
+	response, err := w.client.CanUseCard(context.Background(), &event.CanUseRequest{
+		Card: cast.ToInt32(c.PostForm("card")),
+	})
+	if err != nil {
+		log.Info("can use err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+}
+
 func (w *Card) SendCards(c *gin.Context) {
 	strIdx := strings.Split(c.PostForm("cards"), ",")
 	target := cast.ToInt32(c.PostForm("target"))

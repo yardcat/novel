@@ -82,8 +82,17 @@ message buyResponse {
     string name = 2;
 }
 
+message canUseRequest {
+    int32 card = 1;
+}
+
+message canUseResponse {
+    bool result = 1;
+}
+
 service card {
     rpc welcome(welcomeRequest) returns(welcomeResponse);
+    rpc canUseCard(canUseRequest) returns(canUseResponse);
     rpc sendCard(sendCardRequest) returns(sendCardResponse);
     rpc discardCard(discardCardRequest) returns(discardCardResponse);
     rpc endTurn(endTurnRequest) returns(endTurnResponse);

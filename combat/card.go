@@ -12,9 +12,9 @@ const (
 )
 
 const (
-	CARD_ATTACK_SINGLE = iota
-	CARD_ATTACK_ALL
-	CARD_RANDOM
+	CARD_RANGE_SINGLE = iota
+	CARD_RANGE_ALL
+	CARD_RANGE_RANDOM
 )
 
 const (
@@ -30,6 +30,7 @@ type Card struct {
 	Values      map[string]int `json:"values"`
 	Disposal    bool           `json:"disposal"`
 	CanUse      string         `json:"can_use"`
+	Range       int            `json:"range"`
 	Rarity      int            `json:"rarity"`
 	Cost        int            `json:"cost"`
 	Effects     []*Effect      `json:"effects"`
