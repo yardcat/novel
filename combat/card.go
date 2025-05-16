@@ -2,7 +2,10 @@ package combat
 
 import (
 	"encoding/json"
+	"maps"
 	"reflect"
+
+	"github.com/jinzhu/copier"
 )
 
 const (
@@ -24,6 +27,7 @@ const (
 )
 
 type Card struct {
+	Id          string
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
 	Type        int            `json:"type"`
@@ -56,4 +60,11 @@ func (c *Card) UnmarshalJSON(data []byte) error {
 		c.Binding = reflect.New(t.cardBindingMap[c.Name]).Interface().(CardBinding)
 	}
 	return nil
+}
+
+func (c *Card) Copy() *Card {
+	newCard := &Card{}
+	copier.Copy(newCard, c)
+	maps.Copy(newCard.Values, c.Values)
+	return newCard
 }

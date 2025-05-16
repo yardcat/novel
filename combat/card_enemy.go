@@ -2,6 +2,9 @@ package combat
 
 type CardEnemy struct {
 	CombatableBase
+	Values  map[string]int `json:"values"`
+	Effects []*Effect      `json:"effects"`
+	Move    string         `json:"move"`
 }
 
 func NewCardEnemy(proto *CardEnemy) *CardEnemy {

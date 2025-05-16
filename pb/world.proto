@@ -1,6 +1,6 @@
 syntax = "proto3";
-option go_package = "./event";
-package event;
+option go_package = "./pb";
+package pb;
 
 message startCardRequest {
     string difficuty= 1;

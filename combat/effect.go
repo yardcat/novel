@@ -29,6 +29,7 @@ const (
 	TIMING_ADD_ARMOR
 	TIMING_ADD_DEBUFF
 	TIMING_ATTACK
+	TIMING_ENEMY_HURT
 )
 
 type Effect struct {
@@ -72,6 +73,8 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 		e.Timing = TIMING_ENTER_SHOP
 	case "ENTER_EVENT":
 		e.Timing = TIMING_ENTER_EVENT
+	case "TIMING_ENEMY_HURT":
+		e.Timing = TIMING_ENEMY_HURT
 	default:
 		e.Timing = TIMING_NONE
 	}

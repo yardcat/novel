@@ -1,0 +1,28 @@
+rule "e1_move"
+begin
+if combat.turnCount == 1 {
+    ai.SetAction("ritual")
+} else {
+    ai.SetAction("enemy_attack")
+}
+end
+
+rule "e2_move"
+begin
+combat.EnemyAttack(enemy)
+end
+
+rule "ritual"
+begin
+enemy.Strength += 1
+end
+
+rule "enemy_attack"
+begin
+combat.EnemyAttack(enemy)
+end
+
+rule "enemy_defense"
+begin
+combat.EnemyAddAmor(enemy)
+end

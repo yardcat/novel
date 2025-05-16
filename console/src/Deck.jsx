@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { message, Select, Badge, Card, Button, Tag, Radio } from 'antd';
+import { message, Card, Button } from 'antd';
 import { Panel } from './Panel';
 import { Config } from './Config';
 import { CallAPI } from './Net';
 import { socket } from './Socket';
+
+import cardJson from '../../world/island/data/card/card.json';
 
 class StartInfo {
   difficuty = '';
@@ -18,14 +20,17 @@ const MyCard = ({ name, isSelected, onClick }) => {
         width: '7vw',
         border: '1px solid black',
         margin: '1px',
-        textAlign: 'center',
-        lineHeight: '16vh',
         backgroundColor: isSelected ? 'lightblue' : 'white',
         cursor: 'pointer',
+        textAlign: 'center', // Center content horizontally
       }}
       onClick={onClick}
     >
-      {name}
+      <div style={{ marginTop: '10px ' }}>{name}</div>
+      <div style={{ marginTop: '30px ' }}>
+        <div style={{ fontSize: 'small' }}>{cardJson[name].description}</div>
+        <div style={{ fontSize: 'small' }}>energy: {cardJson[name].cost}</div>
+      </div>
     </div>
   );
 };

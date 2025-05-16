@@ -3,8 +3,8 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"my_test/event"
 	"my_test/log"
+	"my_test/pb"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -12,17 +12,17 @@ import (
 )
 
 type Card struct {
-	client event.CardClient
+	client pb.CardClient
 }
 
-func newCard(ca event.CardClient) *Card {
+func newCard(ca pb.CardClient) *Card {
 	return &Card{
 		client: ca,
 	}
 }
 
 func (w *Card) Welcome(c *gin.Context) {
-	response, err := w.client.Welcome(c.Request.Context(), &event.WelcomeRequest{
+	response, err := w.client.Welcome(c.Request.Context(), &pb.WelcomeRequest{
 		Event: c.PostForm("event"),
 	})
 	if err != nil {
@@ -38,7 +38,7 @@ func (w *Card) Welcome(c *gin.Context) {
 }
 
 func (w *Card) CanUse(c *gin.Context) {
-	response, err := w.client.CanUseCard(context.Background(), &event.CanUseRequest{
+	response, err := w.client.CanUseCard(context.Background(), &pb.CanUseRequest{
 		Card: cast.ToInt32(c.PostForm("card")),
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func (w *Card) SendCards(c *gin.Context) {
 	for i, v := range strIdx {
 		cards[i] = cast.ToInt32(v)
 	}
-	response, err := w.client.SendCard(context.Background(), &event.SendCardRequest{
+	response, err := w.client.SendCard(context.Background(), &pb.SendCardRequest{
 		Cards:  cards,
 		Target: target,
 	})
@@ -81,7 +81,7 @@ func (w *Card) DiscardCards(c *gin.Context) {
 	for i, v := range strIdx {
 		cards[i] = cast.ToInt32(v)
 	}
-	response, err := w.client.DiscardCard(c.Request.Context(), &event.DiscardCardRequest{
+	response, err := w.client.DiscardCard(c.Request.Context(), &pb.DiscardCardRequest{
 		Cards: cards,
 	})
 	if err != nil {
@@ -97,7 +97,7 @@ func (w *Card) DiscardCards(c *gin.Context) {
 }
 
 func (w *Card) EndTurn(c *gin.Context) {
-	response, err := w.client.EndTurn(c.Request.Context(), &event.EndTurnRequest{})
+	response, err := w.client.EndTurn(c.Request.Context(), &pb.EndTurnRequest{})
 	if err != nil {
 		log.Info("card end turn err %v", err)
 	}
@@ -111,7 +111,7 @@ func (w *Card) EndTurn(c *gin.Context) {
 }
 
 func (w *Card) NextFloor(c *gin.Context) {
-	response, err := w.client.NextFloor(c.Request.Context(), &event.NextFloorRequest{
+	response, err := w.client.NextFloor(c.Request.Context(), &pb.NextFloorRequest{
 		Room: cast.ToInt32(c.PostForm("room")),
 	})
 	if err != nil {
@@ -126,7 +126,7 @@ func (w *Card) NextFloor(c *gin.Context) {
 }
 
 func (w *Card) ChooseBonus(c *gin.Context) {
-	ev := event.ChooseBonusRequest{}
+	ev := pb.ChooseBonusRequest{}
 	bonus := c.PostForm("bonus")
 	err := json.Unmarshal([]byte(bonus), &ev.Bonus)
 	if err != nil {
@@ -145,7 +145,7 @@ func (w *Card) ChooseBonus(c *gin.Context) {
 }
 
 func (w *Card) UsePotion(c *gin.Context) {
-	ev := event.UsePotionRequest{
+	ev := pb.UsePotionRequest{
 		Name: c.PostForm("name"),
 	}
 	response, err := w.client.UsePotion(c.Request.Context(), &ev)
@@ -161,7 +161,7 @@ func (w *Card) UsePotion(c *gin.Context) {
 }
 
 func (w *Card) DiscardPotion(c *gin.Context) {
-	ev := event.UsePotionRequest{
+	ev := pb.UsePotionRequest{
 		Name: c.PostForm("name"),
 	}
 	response, err := w.client.UsePotion(c.Request.Context(), &ev)
@@ -177,7 +177,7 @@ func (w *Card) DiscardPotion(c *gin.Context) {
 }
 
 func (w *Card) Buy(c *gin.Context) {
-	ev := event.BuyRequest{
+	ev := pb.BuyRequest{
 		Type: cast.ToInt32(c.PostForm("type")),
 		Name: c.PostForm("name"),
 	}

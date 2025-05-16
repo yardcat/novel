@@ -1,7 +1,7 @@
 package http
 
 import (
-	"my_test/event"
+	"my_test/pb"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -24,7 +24,7 @@ func NewGinRouter(conn *grpc.ClientConn) *gin.Engine {
 		playerRouterGroup.POST("/collect", p.Collect)
 	}
 
-	worldClient := event.NewWorldClient(conn)
+	worldClient := pb.NewWorldClient(conn)
 	w := newWorld(worldClient)
 	worldRouterGroup := r.Group("/world")
 	{
@@ -32,7 +32,7 @@ func NewGinRouter(conn *grpc.ClientConn) *gin.Engine {
 		worldRouterGroup.POST("/card_start", w.CardStart)
 	}
 
-	cardClient := event.NewCardClient(conn)
+	cardClient := pb.NewCardClient(conn)
 	c := newCard(cardClient)
 	cardRouterGroup := r.Group("/card")
 	{

@@ -28,7 +28,12 @@ end
 
 rule "vulnerable"
 begin
-combat.AddVulnerable(card)
+combat.AddVulnerable(card, target)
+end
+
+rule "weak"
+begin
+combat.AddWeak(card, target)
 end
 
 rule "copy2discard"

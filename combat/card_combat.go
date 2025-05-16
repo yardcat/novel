@@ -11,6 +11,7 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/samber/lo"
+	"github.com/samber/lo/mutable"
 )
 
 const (
@@ -43,12 +44,12 @@ type CardEvent struct {
 	Effects     []CardEffect `json:"effects"`
 }
 
-type CardTurnInfo struct {
-	Cards        []string
-	DrawCount    int
-	DiscardCount int
-	RemoveCount  int
-	Energy       int
+type TurnInfo struct {
+	drawedCards    []*Card
+	usedCards      []*Card
+	discardCards   []*Card
+	exhaustedCards []*Card
+	costEnergy     int
 }
 
 type CardBonus struct {
@@ -73,7 +74,7 @@ type CardCombat struct {
 	deck            []*Card
 	hand            []*Card
 	discard         []*Card
-	remove          []*Card
+	exhaust         []*Card
 	initCardCount   int
 	initEnergy      int
 	turnCount       int
@@ -81,6 +82,7 @@ type CardCombat struct {
 	uiTimer         time.Ticker
 	finish          bool
 	hurtCount       int
+	turnInfo        TurnInfo
 }
 
 func NewCardCombat(p *CardCombatParams) *CardCombat {
@@ -108,7 +110,9 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 		c.combatables[i] = enemy
 		i++
 	}
-	copy(c.deck, p.Cards)
+	for i, card := range p.Cards {
+		c.deck[i] = card.Copy()
+	}
 
 	return c
 }
@@ -147,25 +151,33 @@ func (c *CardCombat) StartTurn() {
 	c.delegate.OnActorTurnStart()
 	c.actors[0].Energy = c.initEnergy
 	drawCount := c.initCardCount - len(c.hand)
+	mutable.Shuffle(c.deck)
 	c.DrawCard(drawCount)
 	for _, actor := range c.actors {
 		actor.UpdateStatus()
 	}
-	c.ai.PrepareAction(c.enemies, c.actors)
+	c.turnInfo = TurnInfo{}
+}
+
+func (c *CardCombat) PrepareIntent() {
+	c.delegate.TriggerPrepareIntent()
 }
 
 func (c *CardCombat) UseCard(idx int32, target int32) error {
 	card := c.hand[idx]
 	if card == nil {
-		if c.delegate.CanUse(card) {
-			return errors.New(card.Name + " cannot be used")
-		}
+		return errors.New("card not exist")
 	}
+	if !c.delegate.CanUse(card) {
+		return errors.New(card.Name + " cannot be used")
+	}
+
 	if c.actors[0].Energy >= card.Cost {
 		c.actors[0].Energy -= card.Cost
 		c.Use(card, c.enemies[target])
 		c.delegate.OnUseCard(card)
 	}
+	c.turnInfo.usedCards = append(c.turnInfo.usedCards, card)
 
 	c.requestUpdateUI()
 	return nil
@@ -206,6 +218,35 @@ func (c *CardCombat) EndTurn() {
 	}
 }
 
+func (c *CardCombat) EnemyAttack(enemy *CardEnemy) {
+	actor := c.actors[0]
+	enemy.Attack = enemy.Values["attack"]
+	damage := c.cacDamage(enemy, actor)
+	armorStatus := actor.GetArmorStatus()
+	if armorStatus != nil && armorStatus.Value <= 0 {
+		actor.RemoveStatus(STATUS_ARMOR)
+		c.requestUpdateUI()
+	}
+	if damage != 0 {
+		actor.OnDamage(damage, enemy)
+		c.checkDead(actor)
+		c.hurtCount++
+		c.delegate.OnEnenyDamage(enemy, damage)
+	}
+	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), actor.GetName(), damage)
+}
+
+func (c *CardCombat) EnemyAddAmor(enemy *CardEnemy) {
+	amor := enemy.Values["defense"]
+	enemy.AddStatus(Status{
+		Type:  STATUS_ARMOR,
+		Value: amor,
+		Turn:  2,
+	})
+	push.PushAction("%s 施加了护盾", enemy.GetName())
+
+}
+
 func (c *CardCombat) EnemyTurn() {
 	c.delegate.OnEnemyTurnStart()
 	for _, v := range c.enemies {
@@ -222,30 +263,9 @@ func (c *CardCombat) EnemyTurn() {
 			break
 		}
 		action := c.ai.EnemyAction(enemy)
-		if action.Action == ENEMY_BEHAVIOR_ATTACK {
-			actorIdx := action.Target
-			actor := c.actors[actorIdx]
-			damage := c.cacDamage(enemy, actor)
-			armorStatus := actor.GetArmorStatus()
-			if armorStatus != nil && armorStatus.Value <= 0 {
-				actor.RemoveStatus(STATUS_ARMOR)
-				c.requestUpdateUI()
-			}
-			if damage != 0 {
-				actor.OnDamage(damage, enemy)
-				c.checkDead(actor)
-				c.hurtCount++
-				c.delegate.OnEnenyDamage(enemy, damage)
-			}
-			push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), actor.GetName(), damage)
-		} else if action.Action == ENEMY_BEHAVIOR_DEFEND {
-			enemy.AddStatus(Status{
-				Type:  STATUS_ARMOR,
-				Value: 5,
-				Turn:  2,
-			})
-			push.PushAction("%s 施加了护盾", enemy.GetName())
-		}
+		bindings := make(map[string]any)
+		bindings["enemy"] = enemy
+		c.delegate.TriggerEnemyAction(action.Action, bindings)
 	}
 
 	c.delegate.OnEnemyTurnEnd()
@@ -355,24 +375,10 @@ func (c *CardCombat) onCombatFinish(win bool) {
 	push.PushAction("combat finish")
 }
 
-func (c *CardCombat) GetCardTurnInfo() *CardTurnInfo {
-	info := &CardTurnInfo{
-		Cards:        make([]string, len(c.hand)),
-		DrawCount:    len(c.deck),
-		DiscardCount: len(c.discard),
-		RemoveCount:  len(c.remove),
-		Energy:       c.actors[0].Energy,
-	}
-	for i, card := range c.hand {
-		info.Cards[i] = card.Name
-	}
-	return info
-}
-
 func (c *CardCombat) getHandString() []string {
 	strs := make([]string, 0, len(c.hand))
 	for _, card := range c.hand {
-		strs = append(strs, card.Name)
+		strs = append(strs, card.Id)
 	}
 	return strs
 }
@@ -406,6 +412,7 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 		c.hand = append(c.hand, card)
 		cards = append(cards, card)
 	}
+	c.turnInfo.drawedCards = append(c.turnInfo.drawedCards, cards...)
 
 	return cards
 }
@@ -419,15 +426,18 @@ func (c *CardCombat) DiscardCard(card *Card) {
 			return
 		}
 	}
+	c.turnInfo.discardCards = append(c.turnInfo.discardCards, card)
 }
 
 func (c *CardCombat) PutCardDiscard(card *Card) {
 	c.discard = append(c.discard, card)
+	c.turnInfo.discardCards = append(c.turnInfo.discardCards, card)
 }
 
-func (c *CardCombat) RemoveCard(card *Card) {
-	c.delegate.OnRemoveCard(card)
-	c.remove = append(c.remove, card)
+func (c *CardCombat) ExhaustCard(card *Card) {
+	c.delegate.OnExhaustCard(card)
+	c.exhaust = append(c.exhaust, card)
+	c.turnInfo.exhaustedCards = append(c.turnInfo.exhaustedCards, card)
 }
 
 func (c *CardCombat) ShuffleDeck() {
@@ -517,6 +527,7 @@ func (c *CardCombat) Use(card *Card, target *CardEnemy) {
 	}
 	c.removeHandCard(card)
 	c.discard = append(c.discard, card)
+	c.turnInfo.costEnergy += card.Cost
 }
 
 func (c *CardCombat) removeHandCard(card *Card) {

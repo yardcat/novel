@@ -2,8 +2,8 @@ package http
 
 import (
 	"encoding/json"
-	"my_test/event"
 	"my_test/log"
+	"my_test/pb"
 	"my_test/world"
 
 	"github.com/gin-gonic/gin"
@@ -11,14 +11,14 @@ import (
 
 type World struct {
 	uiConfig *UiConfig
-	client   event.WorldClient
+	client   pb.WorldClient
 }
 
 type UiConfig struct {
 	Collectable []string
 }
 
-func newWorld(cl event.WorldClient) *World {
+func newWorld(cl pb.WorldClient) *World {
 	return &World{
 		client: cl,
 	}
@@ -42,7 +42,7 @@ func (w *World) GetUiInfo(c *gin.Context) {
 }
 
 func (w *World) CardStart(c *gin.Context) {
-	response, err := w.client.StartCard(c.Request.Context(), &event.StartCardRequest{
+	response, err := w.client.StartCard(c.Request.Context(), &pb.StartCardRequest{
 		Difficuty: c.PostForm("difficuty"),
 	})
 	if err != nil {

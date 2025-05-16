@@ -7,6 +7,7 @@ import (
 	"my_test/combat"
 	"my_test/event"
 	"my_test/log"
+	"my_test/pb"
 	"my_test/push"
 	"my_test/util"
 	"net"
@@ -45,10 +46,10 @@ func (c *CombatSystem) initGrpc() error {
 		return err
 	}
 	c.server = grpc.NewServer()
-	event.RegisterWorldServer(c.server, c)
+	pb.RegisterWorldServer(c.server, c)
 
 	c.tower = combat.NewTower()
-	event.RegisterCardServer(c.server, c.tower)
+	pb.RegisterCardServer(c.server, c.tower)
 
 	go c.server.Serve(lis)
 	return nil
@@ -187,7 +188,7 @@ func (c *CombatSystem) loadDungeons() error {
 }
 
 // grpc
-func (c *CombatSystem) StartCard(context.Context, *event.StartCardRequest) (*event.StartCardResponse, error) {
+func (c *CombatSystem) StartCard(context.Context, *pb.StartCardRequest) (*pb.StartCardResponse, error) {
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewCardActor(player.GetCombatableBase())
@@ -198,7 +199,7 @@ func (c *CombatSystem) StartCard(context.Context, *event.StartCardRequest) (*eve
 	}
 	c.tower.Init(params)
 
-	response := &event.StartCardResponse{
+	response := &pb.StartCardResponse{
 		Choices: c.tower.GetWelcomeEvents(),
 	}
 	return response, nil

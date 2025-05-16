@@ -1,0 +1,24 @@
+{
+  "e1": {
+    "name": "e1",
+    "life": 50,
+    "values": {
+      "attack": 6
+    },
+    "move": "e1_move",
+    "effects": [{ "rule": "ritual" }, { "rule": "enemy_attack" }]
+  },
+  "e2": {
+    "name": "e2",
+    "life": 20,
+    "values": {
+      "attack": 6,
+      "defense": 5
+    },
+    "move": "e2_move",
+    "effects": [
+      { "rule": "enemy_attack" },
+      { "timing": "TIMING_ENEMY_HURT", "rule": "enemy_defense" }
+    ]
+  }
+}

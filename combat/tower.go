@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"my_test/event"
-	pb "my_test/event"
 	"my_test/log"
+	"my_test/pb"
 	"my_test/push"
 	"my_test/util"
 	"os"
@@ -73,13 +73,13 @@ type Floor struct {
 }
 
 type Tower struct {
-	FloorNum       int                   `json:"floor_num"`
-	RoomNum        int                   `json:"room_num"`
-	ShopNum        int                   `json:"shop_num"`
-	RestNum        int                   `json:"rest_num"`
-	EventNum       int                   `json:"event_num"`
-	EnemyMap       map[string]*CardEnemy `json:"enemies"`
-	EnemyGroupMap  map[int][]string      `json:"group"`
+	FloorNum       int              `json:"floor_num"`
+	RoomNum        int              `json:"room_num"`
+	ShopNum        int              `json:"shop_num"`
+	RestNum        int              `json:"rest_num"`
+	EventNum       int              `json:"event_num"`
+	EnemyGroupMap  map[int][]string `json:"group"`
+	EnemyMap       map[string]*CardEnemy
 	PotionMap      map[string]*Potion
 	RelicMap       map[string]*Relic
 	cardMap        map[string]*Card
@@ -154,6 +154,7 @@ func (t *Tower) Reset() {
 	t.relics = []*Relic{}
 	t.potions = []*Potion{}
 	t.effects = make(map[int][]*Effect)
+	t.timingCallbacks = make(map[int][]any)
 	t.currentCombat = nil
 	t.actor = nil
 }
@@ -492,6 +493,9 @@ func (c *Tower) loadData() error {
 	if err := c.loadRelic(); err != nil {
 		panic(fmt.Errorf("failed to load relics: %w", err))
 	}
+	if err := c.loadEnemy(); err != nil {
+		panic(fmt.Errorf("failed to load enemy: %w", err))
+	}
 	if err := c.loadScript(); err != nil {
 		panic(fmt.Errorf("failed to load script: %w", err))
 	}
@@ -517,6 +521,9 @@ func (t *Tower) loadCard() error {
 	}
 	if err := json.Unmarshal(data, &t.cardMap); err != nil {
 		return fmt.Errorf("error unmarshaling card.json: %w", err)
+	}
+	for k, v := range t.cardMap {
+		v.Id = k
 	}
 	return nil
 }
@@ -567,13 +574,28 @@ func (t *Tower) loadPotion() error {
 }
 
 func (t *Tower) loadRelic() error {
-	data, err := os.ReadFile(path.Join(t.resourceDir, "relic.json"))
+	fileName := "relic.json"
+	data, err := os.ReadFile(path.Join(t.resourceDir, fileName))
 	if err != nil {
-		return fmt.Errorf("error reading relic.json: %w", err)
+		return fmt.Errorf("error reading %s: %w", fileName, err)
 	}
 	if err := json.Unmarshal(data, &t.RelicMap); err != nil {
-		return fmt.Errorf("error unmarshaling relic.json: %w", err)
+		return fmt.Errorf("error unmarshaling %s : %w", fileName, err)
 	}
+	return nil
+}
+
+func (t *Tower) loadEnemy() error {
+	fileName := "enemy.json"
+	data, err := os.ReadFile(path.Join(t.resourceDir, fileName))
+	if err != nil {
+		return fmt.Errorf("error reading %s: %w", fileName, err)
+	}
+
+	if err := json.Unmarshal(data, &t.EnemyMap); err != nil {
+		return fmt.Errorf("error unmarshaling %s: %w", fileName, err)
+	}
+
 	return nil
 }
 
@@ -587,6 +609,12 @@ func (t *Tower) loadScript() error {
 	data, err = os.ReadFile(path.Join(t.resourceDir, "upgrade.gengine"))
 	if err != nil {
 		return fmt.Errorf("error reading upgrade.gengine: %w", err)
+	}
+	t.effectRules.Write(data)
+
+	data, err = os.ReadFile(path.Join(t.resourceDir, "enemy.gengine"))
+	if err != nil {
+		return fmt.Errorf("error reading enemy.gengine: %w", err)
 	}
 	t.effectRules.Write(data)
 
@@ -630,6 +658,15 @@ func (t *Tower) TriggerEffect(effect *Effect, bindings map[string]any) {
 	t.UseEffect(effect)
 }
 
+func (t *Tower) TriggerEnemyAction(action string, binding map[string]any) {
+	if len(binding) > 0 {
+		for k, v := range binding {
+			t.dataContext.Add(k, v)
+		}
+	}
+	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{action})
+}
+
 func (t *Tower) TriggerTiming(timing int, bindings map[string]any) {
 	if len(bindings) > 0 {
 		for k, v := range bindings {
@@ -637,6 +674,14 @@ func (t *Tower) TriggerTiming(timing int, bindings map[string]any) {
 		}
 	}
 	t.EffectOn(timing)
+}
+
+func (t *Tower) TriggerPrepareIntent() {
+	t.dataContext.Add("ai", t.currentCombat.ai)
+	for _, v := range t.currentCombat.enemies {
+		t.dataContext.Add("enemy", v)
+		t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{v.Move})
+	}
 }
 
 func (t *Tower) OnLose() {
@@ -672,7 +717,7 @@ func (t *Tower) OnDiscardCard(card *Card) {
 func (t *Tower) OnShuffle() {
 }
 
-func (t *Tower) OnRemoveCard(card *Card) {
+func (t *Tower) OnExhaustCard(card *Card) {
 }
 
 func (t *Tower) OnDrawCard(card *Card) {
@@ -727,6 +772,12 @@ func (t *Tower) SendCard(ctx context.Context, request *pb.SendCardRequest) (*pb.
 			errList = append(errList, err)
 			continue
 		}
+	}
+
+	if len(errList) > 0 {
+		return &pb.SendCardResponse{
+			Result: "error",
+		}, nil
 	}
 
 	return &pb.SendCardResponse{
