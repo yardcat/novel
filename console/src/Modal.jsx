@@ -31,7 +31,7 @@ const CardModal = ({ modal }) => {
           if (Array.isArray(group) && group.length > 0) {
             return (
               <div key={key}>
-                {key}
+                <div>{key}</div>
                 <Radio.Group onChange={handleTypeChange(key)} key={key}>
                   {group.map((item, index) => (
                     <Radio key={`${key}-${index}`} value={item}>

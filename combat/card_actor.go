@@ -17,6 +17,8 @@ func NewCardActor(base CombatableBase) *CardActor {
 	a.CombatType = ACTOR
 	a.Statuses = make([]*Status, 0)
 	a.MaxLife = a.Life
+	a.Defense = 0
+	a.Strength = 0
 	return a
 }
 

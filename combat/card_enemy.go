@@ -1,5 +1,11 @@
 package combat
 
+import (
+	"maps"
+
+	"github.com/jinzhu/copier"
+)
+
 type CardEnemy struct {
 	CombatableBase
 	Values  map[string]int `json:"values"`
@@ -10,10 +16,19 @@ type CardEnemy struct {
 func NewCardEnemy(proto *CardEnemy) *CardEnemy {
 	ret := &CardEnemy{
 		CombatableBase: proto.CombatableBase,
+		Values:         make(map[string]int, len(proto.Values)),
+		Effects:        make([]*Effect, len(proto.Effects)),
+		Move:           proto.Move,
 	}
 	ret.CombatType = ENEMY
 	ret.MaxLife = ret.Life
+	ret.Defense = 0
+	ret.Strength = 0
 	ret.Statuses = make([]*Status, 0)
+	maps.Copy(ret.Values, proto.Values)
+	for i, v := range ret.Effects {
+		copier.Copy(v, proto.Effects[i])
+	}
 	return ret
 }
 

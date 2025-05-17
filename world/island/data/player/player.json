@@ -7,7 +7,7 @@
   "Life": 50,
   "Attack": 8,
   "AttackSpeed": 5,
-  "Defense": 3,
+  "Defense": 0,
   "Strength": 30,
   "Dodge": 10,
   "LevelExp": 100,

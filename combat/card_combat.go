@@ -157,6 +157,7 @@ func (c *CardCombat) StartTurn() {
 		actor.UpdateStatus()
 	}
 	c.turnInfo = TurnInfo{}
+	c.PrepareIntent()
 }
 
 func (c *CardCombat) PrepareIntent() {
@@ -262,7 +263,7 @@ func (c *CardCombat) EnemyTurn() {
 		if c.finish {
 			break
 		}
-		action := c.ai.EnemyAction(enemy)
+		action := c.ai.GetAction(enemy)
 		bindings := make(map[string]any)
 		bindings["enemy"] = enemy
 		c.delegate.TriggerEnemyAction(action.Action, bindings)
@@ -306,7 +307,7 @@ func (c *CardCombat) UpdateUI() {
 			}
 			for i := range c.enemies {
 				copier.Copy(&ev.Enemy[i], &c.enemies[i])
-				copier.Copy(&ev.Enemy[i].Intent, c.ai.EnemyAction(c.enemies[i]))
+				copier.Copy(&ev.Enemy[i].Intent, c.ai.GetAction(c.enemies[i]))
 			}
 			push.PushEvent(*ev)
 			c.uiDirty = false
@@ -516,6 +517,17 @@ func (c *CardCombat) AddWeak(card *Card, target *CardEnemy) {
 		c.delegate.TriggerTiming(TIMING_ADD_DEBUFF, nil)
 	}
 	c.requestUpdateUI()
+}
+
+func (c *CardCombat) AddEnemyEffect(enemy *CardEnemy, timing string, rule string) {
+	effect := &Effect{
+		CasterType: ENEMY,
+		CasterID:   enemy.Name,
+		Rule:       rule,
+	}
+	effect.Timing = TimingStr2Int(timing)
+	c.delegate.AddEnemyEffect(effect)
+
 }
 
 func (c *CardCombat) Use(card *Card, target *CardEnemy) {

@@ -4,6 +4,7 @@ type CardCombatDelegate interface {
 	GetCard(name string) *Card
 	CanUse(card *Card) bool
 	UpgradeCardInCombat(card *Card)
+	AddEnemyEffect(effect *Effect)
 	TriggerEffect(effect *Effect, binding map[string]any)
 	TriggerEnemyAction(action string, binding map[string]any)
 	TriggerTiming(timing int, binding map[string]any)

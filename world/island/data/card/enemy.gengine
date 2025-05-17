@@ -1,9 +1,9 @@
 rule "e1_move"
 begin
 if combat.turnCount == 1 {
-    ai.SetAction("ritual")
+    ai.SetAction(enemy, "ritual", 0)
 } else {
-    ai.SetAction("enemy_attack")
+    ai.SetAction(enemy, "enemy_attack", enemy.Strength + enemy.Attack)
 }
 end
 
@@ -13,6 +13,11 @@ combat.EnemyAttack(enemy)
 end
 
 rule "ritual"
+begin
+combat.AddEnemyEffect(enemy, "ENEMY_TURN_START","add_enemy_strength")
+end
+
+rule "add_enemy_strength"
 begin
 enemy.Strength += 1
 end

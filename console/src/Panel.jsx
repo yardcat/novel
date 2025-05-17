@@ -41,7 +41,6 @@ const Panel = ({ role, info, isSelected, onClick }) => {
         HP: {info.HP} / {info.maxHP}
       </p>
       <p> strength: {info.strength} </p>
-      <p> defense: {info.defense} </p>
       {role == 'actor' && <p> energy: {info.energy} </p>}
       {role == 'enemy' && (
         <strong>

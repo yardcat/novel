@@ -3,6 +3,7 @@ package combat
 import (
 	"container/list"
 	"my_test/log"
+	"strings"
 )
 
 const (
@@ -16,8 +17,9 @@ type CardEnemyBehavior struct {
 }
 
 type EnemyAction struct {
-	Action string
-	Target int
+	Action      string
+	ActionValue int
+	Target      int
 }
 
 type EnemyAI struct {
@@ -39,18 +41,23 @@ func NewEnemyAI(enemy []*CardEnemy) *EnemyAI {
 	return ai
 }
 
-func (e *EnemyAI) SetAction(enemy *CardEnemy, rule string) {
+func (e *EnemyAI) SetAction(enemy *CardEnemy, rule string, value int) {
 	action := EnemyAction{
-		Action: rule,
-		Target: 0,
+		ActionValue: value,
+		Action:      rule,
+		Target:      0,
+	}
+	if strings.Contains(rule, "attack") {
+		action.ActionValue = enemy.Values["attack"] + enemy.Strength
 	}
 	e.currentTurnAction[enemy] = action
 	e.history[enemy].PushFront(action)
 }
 
-func (e *EnemyAI) EnemyAction(enemy *CardEnemy) EnemyAction {
+func (e *EnemyAI) GetAction(enemy *CardEnemy) EnemyAction {
 	if e.history[enemy].Front() == nil {
 		log.Error("no history")
+		return EnemyAction{}
 	}
 	return e.history[enemy].Front().Value.(EnemyAction)
 }

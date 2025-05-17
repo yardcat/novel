@@ -157,6 +157,7 @@ func (t *Tower) Reset() {
 	t.timingCallbacks = make(map[int][]any)
 	t.currentCombat = nil
 	t.actor = nil
+	t.initScript()
 }
 
 func (t *Tower) initScript() {
@@ -238,8 +239,9 @@ func (t *Tower) startCardCombat() *CardCombat {
 		Cards:              t.cards,
 	}
 	t.currentCombat = NewCardCombat(&params)
-	t.currentCombat.Start()
 	t.dataContext.Add("combat", t.currentCombat)
+	t.dataContext.Add("turn", t.currentCombat.turnInfo)
+	t.currentCombat.Start()
 	t.onStartCombat()
 
 	return t.currentCombat
@@ -273,7 +275,12 @@ func (t *Tower) UpgradeCard(card *Card) {
 	}
 	t.dataContext.Add("card", card)
 	upgradeRule := card.Name + "_upgrade"
-	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
+	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
+	if err != nil {
+		log.Error("upgrade card %s error: %s", card.Name, err)
+		panic(err)
+	}
+	card.Upgraded = true
 	t.EffectOn(TIMING_UPGRADE_CARD)
 }
 
@@ -632,6 +639,9 @@ func (t *Tower) GetCard(name string) *Card {
 }
 
 func (t *Tower) CanUse(card *Card) bool {
+	if card.CanUse == "" {
+		return true
+	}
 	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{card.CanUse})
 	if err != nil {
 		panic(err)
@@ -646,7 +656,16 @@ func (t *Tower) UpgradeCardInCombat(card *Card) {
 	}
 	t.dataContext.Add("card", card)
 	upgradeRule := card.Name + "_upgrade"
-	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
+	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
+	if err != nil {
+		log.Error("upgrade card %s error: %s", card.Name, err)
+		panic(err)
+	}
+	card.Upgraded = true
+}
+
+func (t *Tower) AddEnemyEffect(effect *Effect) {
+	t.effects[effect.Timing] = append(t.effects[effect.Timing], effect)
 }
 
 func (t *Tower) TriggerEffect(effect *Effect, bindings map[string]any) {
@@ -664,7 +683,11 @@ func (t *Tower) TriggerEnemyAction(action string, binding map[string]any) {
 			t.dataContext.Add(k, v)
 		}
 	}
-	t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{action})
+	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{action})
+	if err != nil {
+		log.Error("execute enemy action %s error: %s", action, err)
+		panic(err)
+	}
 }
 
 func (t *Tower) TriggerTiming(timing int, bindings map[string]any) {
@@ -680,7 +703,11 @@ func (t *Tower) TriggerPrepareIntent() {
 	t.dataContext.Add("ai", t.currentCombat.ai)
 	for _, v := range t.currentCombat.enemies {
 		t.dataContext.Add("enemy", v)
-		t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{v.Move})
+		err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{v.Move})
+		if err != nil {
+			log.Error("execute enemy move %s error: %s", v.Move, err)
+			panic(err)
+		}
 	}
 }
 
