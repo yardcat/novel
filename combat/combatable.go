@@ -1,6 +1,10 @@
 package combat
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/samber/lo"
+)
 
 const (
 	ACTOR = 1
@@ -26,18 +30,20 @@ type Combatable interface {
 }
 
 type CombatableBase struct {
-	Name        string
-	AttackSpeed int
-	AttackRange int
-	AttackStep  float64
-	Attack      int
-	Life        int
-	MaxLife     int
-	Dodge       int
-	CombatType  int
-	Strength    int
-	Defense     int
-	Statuses    []*Status
+	Name             string
+	AttackSpeed      int
+	AttackRange      int
+	AttackStep       float64
+	Attack           int
+	Life             int
+	MaxLife          int
+	Dodge            int
+	CombatType       int
+	Strength         int
+	Defense          int
+	Statuses         []*Status
+	WeakFactor       int
+	VulnerableFactor int
 }
 
 func NewCombatableBase(id int, name string) *CombatableBase {
@@ -145,6 +151,12 @@ func (c *CombatableBase) RemoveStatus(statusType int) {
 	}
 }
 
+func (c *CombatableBase) HasStatus(statusType int) bool {
+	return lo.ContainsBy(c.Statuses, func(v *Status) bool {
+		return v.Type == statusType
+	})
+}
+
 func (c *CombatableBase) GetArmorStatus() *Status {
 	for _, v := range c.Statuses {
 		if v.Type == STATUS_ARMOR {
@@ -177,7 +189,7 @@ func (c *CombatableBase) UpdateStatus() {
 	}
 }
 
-func (c *CombatableBase) GetAmor() int {
+func (c *CombatableBase) GetArmor() int {
 	for _, v := range c.Statuses {
 		if v.Type == STATUS_ARMOR {
 			return v.Value

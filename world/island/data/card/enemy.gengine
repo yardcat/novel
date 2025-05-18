@@ -1,9 +1,12 @@
 rule "e1_move"
 begin
 if combat.turnCount == 1 {
-    ai.SetAction(enemy, "ritual", 0)
+    ai.SetAction(enemy, "ritual", "")
 } else {
-    ai.SetAction(enemy, "enemy_attack", enemy.Strength + enemy.Attack)
+    enemy.Attack = enemy.GetValue("attack")
+    damage := combat.CacDamage(enemy, actor)
+    value := Sprintf("%d x %d", enemy.GetValue("attack_times") ,damage)
+    ai.SetAction(enemy, "enemy_multi_attack", value)
 }
 end
 
@@ -14,7 +17,7 @@ end
 
 rule "ritual"
 begin
-combat.AddEnemyEffect(enemy, "ENEMY_TURN_START","add_enemy_strength")
+combat.AddEnemyBuff(enemy, "ENEMY_TURN_END","add_enemy_strength")
 end
 
 rule "add_enemy_strength"
@@ -27,7 +30,12 @@ begin
 combat.EnemyAttack(enemy)
 end
 
+rule "enemy_multi_attack"
+begin
+combat.EnemyMultiAttack(enemy)
+end
+
 rule "enemy_defense"
 begin
-combat.EnemyAddAmor(enemy)
+combat.EnemyAddArmor(enemy)
 end

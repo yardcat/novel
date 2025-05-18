@@ -165,6 +165,7 @@ func (t *Tower) initScript() {
 	t.dataContext.Add("actor", t.actor)
 	t.dataContext.Add("t", t)
 	t.dataContext.Add("log", fmt.Println)
+	t.dataContext.Add("Sprintf", fmt.Sprintf)
 	t.ruleBuilder = builder.NewRuleBuilder(t.dataContext)
 	err := t.ruleBuilder.BuildRuleFromString(t.effectRules.String())
 
@@ -668,6 +669,16 @@ func (t *Tower) AddEnemyEffect(effect *Effect) {
 	t.effects[effect.Timing] = append(t.effects[effect.Timing], effect)
 }
 
+func (t *Tower) EnableBuff() {
+	for _, v := range t.effects {
+		for _, effect := range v {
+			if effect.Type == EFFECT_TYPE_BUFF {
+				effect.Enabled = true
+			}
+		}
+	}
+}
+
 func (t *Tower) TriggerEffect(effect *Effect, bindings map[string]any) {
 	if len(bindings) > 0 {
 		for k, v := range bindings {
@@ -760,6 +771,7 @@ func (t *Tower) OnEnemyTurnStart() {
 }
 
 func (t *Tower) OnEnemyTurnEnd() {
+	t.EffectOn(TIMING_ENEMY_TURN_END)
 }
 
 func (t *Tower) OnEnenyDamage(enemy *CardEnemy, damage int) {

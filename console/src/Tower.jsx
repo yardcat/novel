@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { message, Select, Button } from 'antd';
-import _ from 'lodash';
+import _, { set } from 'lodash';
 import { socket } from './Socket';
 import { CallAPI } from './Net';
 import { Deck } from './Deck';
@@ -160,6 +160,8 @@ const Tower = () => {
         break;
       case Scene.DESTINY:
         setScene(<Destiny />);
+      case Scene.NONE:
+        setScene(<div></div>);
         break;
     }
   };

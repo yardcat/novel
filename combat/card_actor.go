@@ -19,6 +19,8 @@ func NewCardActor(base CombatableBase) *CardActor {
 	a.MaxLife = a.Life
 	a.Defense = 0
 	a.Strength = 0
+	a.WeakFactor = 75
+	a.VulnerableFactor = 150
 	return a
 }
 

@@ -3,10 +3,11 @@
     "name": "e1",
     "life": 50,
     "values": {
-      "attack": 6
+      "attack": 6,
+      "attack_times": 3
     },
     "move": "e1_move",
-    "effects": [{ "rule": "ritual" }, { "rule": "enemy_attack" }]
+    "effects": [{ "rule": "ritual" }, { "rule": "enemy_multi_attack" }]
   },
   "e2": {
     "name": "e2",

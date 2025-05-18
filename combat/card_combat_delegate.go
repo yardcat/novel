@@ -5,6 +5,7 @@ type CardCombatDelegate interface {
 	CanUse(card *Card) bool
 	UpgradeCardInCombat(card *Card)
 	AddEnemyEffect(effect *Effect)
+	EnableBuff()
 	TriggerEffect(effect *Effect, binding map[string]any)
 	TriggerEnemyAction(action string, binding map[string]any)
 	TriggerTiming(timing int, binding map[string]any)
@@ -23,7 +24,7 @@ type CardCombatDelegate interface {
 	// OnDead(enemy *CardEnemy)
 	// OnCurse(enemy *CardEnemy)
 	// OnStrickBack(enemy *CardEnemy)
-	// OnGetAmor(armor int)
+	// OnGetArmor(armor int)
 	// OnGetStrength(armor int)
 	OnEnemyDead(enemy *CardEnemy)
 	OnEnemyTurnStart()

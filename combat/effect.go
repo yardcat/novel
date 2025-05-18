@@ -6,6 +6,11 @@ import (
 )
 
 const (
+	EFFECT_TYPE_NONE = iota
+	EFFECT_TYPE_BUFF
+)
+
+const (
 	CASTER_TYPE_CARD = iota
 	CASTER_TYPE_POTION
 	CASTER_TYPE_RELIC
@@ -34,6 +39,8 @@ const (
 )
 
 type Effect struct {
+	Type       int
+	Enabled    bool
 	CasterType int
 	CasterID   string
 	Timing     int
@@ -49,6 +56,9 @@ func (e *Effect) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	e.Rule = tmp.Rule
+
+	// Buff会在下一个回合开始生效
+	e.Enabled = true
 
 	// TODO: 通过editor生成json, 使用init而非string
 	e.Timing = TimingStr2Int(tmp.Timing)
@@ -95,6 +105,10 @@ func (t *Tower) EffectOn(timing int) {
 }
 
 func (t *Tower) UseEffect(effect *Effect) {
+	if effect.Enabled == false {
+		return
+	}
+
 	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{effect.Rule})
 	if err != nil {
 		log.Error("use effect %s err %v", effect.Rule, err)

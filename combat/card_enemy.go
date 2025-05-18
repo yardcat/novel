@@ -25,6 +25,8 @@ func NewCardEnemy(proto *CardEnemy) *CardEnemy {
 	ret.Defense = 0
 	ret.Strength = 0
 	ret.Statuses = make([]*Status, 0)
+	ret.WeakFactor = 75
+	ret.VulnerableFactor = 150
 	maps.Copy(ret.Values, proto.Values)
 	for i, v := range ret.Effects {
 		copier.Copy(v, proto.Effects[i])
@@ -34,4 +36,8 @@ func NewCardEnemy(proto *CardEnemy) *CardEnemy {
 
 func (a *CardEnemy) GetBase() *CombatableBase {
 	return &a.CombatableBase
+}
+
+func (a *CardEnemy) GetValue(key string) int {
+	return a.Values[key]
 }

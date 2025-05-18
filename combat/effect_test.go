@@ -40,7 +40,7 @@ begin
 		}else{
 			User.Name = "yyyy"
 		}
-		return 10
+		return Sprintf("%s xxxxx %d",User.Name,User.Age)
 end
 `
 
@@ -54,6 +54,7 @@ func Test_Multi(t *testing.T) {
 	dataContext := context.NewDataContext()
 	//注入初始化的结构体
 	dataContext.Add("User", user)
+	dataContext.Add("Sprintf", fmt.Sprintf)
 
 	//init rule engine
 	ruleBuilder := builder.NewRuleBuilder(dataContext)

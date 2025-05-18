@@ -82,6 +82,7 @@ type CardCombat struct {
 	uiTimer         time.Ticker
 	finish          bool
 	hurtCount       int
+	attackCount     int
 	turnInfo        TurnInfo
 }
 
@@ -97,9 +98,10 @@ func NewCardCombat(p *CardCombatParams) *CardCombat {
 		initCardCount:   p.Actors[0].InitCardCount,
 		initEnergy:      p.Actors[0].InitEnergy,
 		uiDirty:         false,
-		uiTimer:         *time.NewTicker(time.Millisecond * 500),
+		uiTimer:         *time.NewTicker(time.Millisecond * 300),
 		finish:          false,
 		hurtCount:       0,
+		attackCount:     0,
 	}
 	i := 0
 	for _, actor := range p.Actors {
@@ -148,6 +150,7 @@ func (c *CardCombat) Combatables() []Combatable {
 
 func (c *CardCombat) StartTurn() {
 	c.turnCount++
+	c.EnableBuff()
 	c.delegate.OnActorTurnStart()
 	c.actors[0].Energy = c.initEnergy
 	drawCount := c.initCardCount - len(c.hand)
@@ -158,6 +161,10 @@ func (c *CardCombat) StartTurn() {
 	}
 	c.turnInfo = TurnInfo{}
 	c.PrepareIntent()
+}
+
+func (c *CardCombat) EnableBuff() {
+	c.delegate.EnableBuff()
 }
 
 func (c *CardCombat) PrepareIntent() {
@@ -222,26 +229,27 @@ func (c *CardCombat) EndTurn() {
 func (c *CardCombat) EnemyAttack(enemy *CardEnemy) {
 	actor := c.actors[0]
 	enemy.Attack = enemy.Values["attack"]
-	damage := c.cacDamage(enemy, actor)
-	armorStatus := actor.GetArmorStatus()
-	if armorStatus != nil && armorStatus.Value <= 0 {
-		actor.RemoveStatus(STATUS_ARMOR)
-		c.requestUpdateUI()
-	}
+	damage := c.CastDamage(enemy, actor)
 	if damage != 0 {
-		actor.OnDamage(damage, enemy)
-		c.checkDead(actor)
 		c.hurtCount++
 		c.delegate.OnEnenyDamage(enemy, damage)
 	}
-	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", enemy.GetName(), actor.GetName(), damage)
 }
 
-func (c *CardCombat) EnemyAddAmor(enemy *CardEnemy) {
-	amor := enemy.Values["defense"]
+func (c *CardCombat) EnemyMultiAttack(enemy *CardEnemy) {
+	times := enemy.Values["attack_times"]
+	for i := 0; i < times; i++ {
+		if !c.finish {
+			c.EnemyAttack(enemy)
+		}
+	}
+}
+
+func (c *CardCombat) EnemyAddArmor(enemy *CardEnemy) {
+	armor := enemy.Values["defense"]
 	enemy.AddStatus(Status{
 		Type:  STATUS_ARMOR,
-		Value: amor,
+		Value: armor,
 		Turn:  2,
 	})
 	push.PushAction("%s 施加了护盾", enemy.GetName())
@@ -266,6 +274,7 @@ func (c *CardCombat) EnemyTurn() {
 		action := c.ai.GetAction(enemy)
 		bindings := make(map[string]any)
 		bindings["enemy"] = enemy
+		push.PushAction("%s action: %s", enemy.Name, action.Action)
 		c.delegate.TriggerEnemyAction(action.Action, bindings)
 	}
 
@@ -315,17 +324,31 @@ func (c *CardCombat) UpdateUI() {
 	}
 }
 
-func (c *CardCombat) cacDamage(attacker Combatable, defender Combatable) int {
-	attack := attacker.GetAttack() + attacker.GetBase().Strength
-	defense := defender.GetDefense() + defender.GetBase().Defense
-	damage := attack - defense
+func (c *CardCombat) CastDamage(attacker Combatable, defender Combatable) int {
+	damage := c.CacDamage(attacker, defender)
 	armorStatus := defender.GetBase().GetArmorStatus()
-	var armor int = 0
 	if armorStatus != nil {
-		armor = armorStatus.Value
 		armorStatus.Value -= damage
+		if armorStatus.Value < 0 {
+			defender.GetBase().RemoveStatus(STATUS_ARMOR)
+		}
 	}
-	damage -= armor
+	defender.OnDamage(damage, attacker)
+	if damage > 0 {
+		c.checkDead(defender)
+	}
+	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", attacker.GetName(), defender.GetName(), damage)
+	return damage
+}
+
+func (c *CardCombat) CacDamage(attacker Combatable, defender Combatable) int {
+	damage := attacker.GetAttack() + attacker.GetBase().Strength
+	if attacker.GetBase().HasStatus(STATUS_WEAK) {
+		damage = damage * attacker.GetBase().WeakFactor / 100
+	}
+	if defender.GetBase().HasStatus(STATUS_VULNERABLE) {
+		damage = damage * defender.GetBase().VulnerableFactor / 100
+	}
 	return max(damage, 0)
 }
 
@@ -465,14 +488,10 @@ func (c *CardCombat) Attack(card *Card, target *CardEnemy) {
 	targets := c.getTargetsFromRange(card, target)
 	for _, target := range targets {
 		c.actors[0].Attack = card.Values["attack"]
-		damage := c.cacDamage(c.actors[0], target)
-		armorStatus := target.GetArmorStatus()
-		if armorStatus != nil && armorStatus.Value <= 0 {
-			target.GetBase().RemoveStatus(STATUS_ARMOR)
+		damage := c.CastDamage(c.actors[0], target)
+		if damage != 0 {
+			c.attackCount++
 		}
-		target.OnDamage(damage, c.actors[0])
-		push.PushAction("%s 攻击了 %s 造成 %d 点伤害", c.actors[0].GetName(), target.GetName(), damage)
-		c.checkDead(target)
 	}
 	c.requestUpdateUI()
 }
@@ -527,7 +546,18 @@ func (c *CardCombat) AddEnemyEffect(enemy *CardEnemy, timing string, rule string
 	}
 	effect.Timing = TimingStr2Int(timing)
 	c.delegate.AddEnemyEffect(effect)
+}
 
+func (c *CardCombat) AddEnemyBuff(enemy *CardEnemy, timing string, rule string) {
+	effect := &Effect{
+		Type:       EFFECT_TYPE_BUFF,
+		Enabled:    false,
+		CasterType: ENEMY,
+		CasterID:   enemy.Name,
+		Rule:       rule,
+	}
+	effect.Timing = TimingStr2Int(timing)
+	c.delegate.AddEnemyEffect(effect)
 }
 
 func (c *CardCombat) Use(card *Card, target *CardEnemy) {
