@@ -4,6 +4,11 @@ const (
 	MAX_STEP = 100.0
 )
 
+const (
+	STATUS_BUFF = iota
+	STATUS_DEBUFF
+)
+
 type CombatClient interface {
 	OnLose()
 	OnWin()
@@ -43,7 +48,8 @@ type Combat interface {
 }
 
 type Status struct {
-	Type  int
-	Value int
-	Turn  int
+	BuffType int
+	Type     int
+	Value    int
+	Turn     int
 }

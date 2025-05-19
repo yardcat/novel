@@ -66,5 +66,8 @@ func (c *Card) Copy() *Card {
 	newCard := &Card{}
 	copier.Copy(newCard, c)
 	maps.Copy(newCard.Values, c.Values)
+	for i, v := range c.Effects {
+		copier.Copy(v, c.Effects[i])
+	}
 	return newCard
 }

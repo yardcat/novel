@@ -53,3 +53,8 @@ forRange c := combat.hand {
 }
 return canUse
 end
+
+rule "add_strength"
+begin
+
+end

@@ -41,17 +41,15 @@ type CombatableBase struct {
 	CombatType       int
 	Strength         int
 	Defense          int
-	Statuses         []*Status
+	Buffs            []*Status
 	WeakFactor       int
 	VulnerableFactor int
 }
 
 func NewCombatableBase(id int, name string) *CombatableBase {
 	return &CombatableBase{
-		Name:     name,
-		Statuses: make([]*Status, 0),
-		MaxLife:  100,
-		Life:     100,
+		Name:  name,
+		Buffs: make([]*Status, 0),
 	}
 }
 
@@ -94,20 +92,6 @@ func (c *CombatableBase) OnAttack(defender Combatable) {
 }
 
 func (c *CombatableBase) OnDamage(damage int, attacker Combatable) {
-	vulnerable := c.GetStatusValue(STATUS_VULNERABLE)
-	if vulnerable > 0 {
-		damage = int(float64(damage) * 1.5)
-	}
-
-	weak := c.GetStatusValue(STATUS_WEAK)
-	if weak > 0 {
-		damage = int(float64(damage) * 0.75)
-	}
-
-	defense := c.GetStatusValue(STATUS_ARMOR)
-	damage = max(0, damage-defense)
-
-	c.Life -= damage
 }
 
 func (c *CombatableBase) OnDead(Combatable) {
@@ -120,13 +104,13 @@ func (c *CombatableBase) OnKill(Combatable) {
 
 func (c *CombatableBase) AddStatus(status Status) {
 	var idx int = -1
-	for i, v := range c.Statuses {
+	for i, v := range c.Buffs {
 		if status.Type == v.Type {
 			idx = i
 		}
 	}
 	if idx != -1 {
-		v := c.Statuses[idx]
+		v := c.Buffs[idx]
 		switch v.Type {
 		case STATUS_VULNERABLE:
 		case STATUS_WEAK:
@@ -139,26 +123,26 @@ func (c *CombatableBase) AddStatus(status Status) {
 		}
 	}
 	if idx == -1 {
-		c.Statuses = append(c.Statuses, &status)
+		c.Buffs = append(c.Buffs, &status)
 	}
 }
 
 func (c *CombatableBase) RemoveStatus(statusType int) {
-	for i, v := range c.Statuses {
+	for i, v := range c.Buffs {
 		if v.Type == statusType {
-			c.Statuses = slices.Delete(c.Statuses, i, i+1)
+			c.Buffs = slices.Delete(c.Buffs, i, i+1)
 		}
 	}
 }
 
 func (c *CombatableBase) HasStatus(statusType int) bool {
-	return lo.ContainsBy(c.Statuses, func(v *Status) bool {
+	return lo.ContainsBy(c.Buffs, func(v *Status) bool {
 		return v.Type == statusType
 	})
 }
 
 func (c *CombatableBase) GetArmorStatus() *Status {
-	for _, v := range c.Statuses {
+	for _, v := range c.Buffs {
 		if v.Type == STATUS_ARMOR {
 			return v
 		}
@@ -167,7 +151,7 @@ func (c *CombatableBase) GetArmorStatus() *Status {
 }
 
 func (c *CombatableBase) GetStatusValue(statusType int) int {
-	for _, v := range c.Statuses {
+	for _, v := range c.Buffs {
 		if v.Type == statusType {
 			return v.Value
 		}
@@ -176,21 +160,13 @@ func (c *CombatableBase) GetStatusValue(statusType int) int {
 }
 
 func (c *CombatableBase) UpdateStatus() {
-	for i, v := range c.Statuses {
-		switch v.Type {
-		case STATUS_POISON:
-			c.OnDamage(v.Value, nil)
-		}
-
-		v.Turn--
-		if v.Turn <= 0 {
-			c.Statuses = slices.Delete(c.Statuses, i, i+1)
-		}
-	}
+	c.Buffs = lo.Filter(c.Buffs, func(v *Status, _ int) bool {
+		return v.Turn > 0
+	})
 }
 
 func (c *CombatableBase) GetArmor() int {
-	for _, v := range c.Statuses {
+	for _, v := range c.Buffs {
 		if v.Type == STATUS_ARMOR {
 			return v.Value
 		}

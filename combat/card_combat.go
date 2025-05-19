@@ -560,6 +560,9 @@ func (c *CardCombat) AddEnemyBuff(enemy *CardEnemy, timing string, rule string) 
 	c.delegate.AddEnemyEffect(effect)
 }
 
+func (c *CardCombat) AddBuff() {
+}
+
 func (c *CardCombat) Use(card *Card, target *CardEnemy) {
 	for _, effect := range card.Effects {
 		bindings := make(map[string]any)

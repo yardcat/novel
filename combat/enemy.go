@@ -11,7 +11,7 @@ func CreateEnemy(proto *Enemy) *Enemy {
 	ret.CombatType = ENEMY
 	ret.AttackStep = 0
 	ret.MaxLife = ret.Life
-	ret.Statuses = make([]*Status, 0)
+	ret.Buffs = make([]*Status, 0)
 	return ret
 }
 

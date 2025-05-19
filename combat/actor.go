@@ -19,7 +19,7 @@ func NewActor(base CombatableBase, c ActorClient) *Actor {
 		Magic:          100,
 		client:         c,
 	}
-	a.Statuses = make([]*Status, 0)
+	a.Buffs = make([]*Status, 0)
 	a.MaxLife = a.Life
 	return a
 }

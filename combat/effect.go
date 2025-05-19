@@ -41,6 +41,7 @@ const (
 type Effect struct {
 	Type       int
 	Enabled    bool
+	Turn       int
 	CasterType int
 	CasterID   string
 	Timing     int

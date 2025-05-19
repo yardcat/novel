@@ -15,7 +15,7 @@ func NewCardActor(base CombatableBase) *CardActor {
 		InitCardCount:  5,
 	}
 	a.CombatType = ACTOR
-	a.Statuses = make([]*Status, 0)
+	a.Buffs = make([]*Status, 0)
 	a.MaxLife = a.Life
 	a.Defense = 0
 	a.Strength = 0

@@ -4,7 +4,7 @@
     "life": 50,
     "values": {
       "attack": 6,
-      "attack_times": 3
+      "attack_times": 2
     },
     "move": "e1_move",
     "effects": [{ "rule": "ritual" }, { "rule": "enemy_multi_attack" }]

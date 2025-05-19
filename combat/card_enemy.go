@@ -24,7 +24,7 @@ func NewCardEnemy(proto *CardEnemy) *CardEnemy {
 	ret.MaxLife = ret.Life
 	ret.Defense = 0
 	ret.Strength = 0
-	ret.Statuses = make([]*Status, 0)
+	ret.Buffs = make([]*Status, 0)
 	ret.WeakFactor = 75
 	ret.VulnerableFactor = 150
 	maps.Copy(ret.Values, proto.Values)
