@@ -22,11 +22,16 @@ const (
 )
 
 const (
-	STATUS_VULNERABLE = iota
-	STATUS_WEAK
-	STATUS_STRENGTH
-	STATUS_ARMOR
-	STATUS_POISON
+	TYPE_BUFF = iota
+	TYPE_DEBUFF
+)
+
+const (
+	BUFF_VULNERABLE = "vulnerable"
+	BUFF_WEAK       = "weak"
+	BUFF_STRENGTH   = "strength"
+	BUFF_ARMOR      = "armor"
+	BUFF_POISON     = "poison"
 )
 
 type CardEffect struct {
@@ -157,7 +162,7 @@ func (c *CardCombat) StartTurn() {
 	mutable.Shuffle(c.deck)
 	c.DrawCard(drawCount)
 	for _, actor := range c.actors {
-		actor.UpdateStatus()
+		actor.UpdateBuffs()
 	}
 	c.turnInfo = TurnInfo{}
 	c.PrepareIntent()
@@ -247,10 +252,10 @@ func (c *CardCombat) EnemyMultiAttack(enemy *CardEnemy) {
 
 func (c *CardCombat) EnemyAddArmor(enemy *CardEnemy) {
 	armor := enemy.Values["defense"]
-	enemy.AddStatus(Status{
-		Type:  STATUS_ARMOR,
+	enemy.AddBuff(Buff{
+		Name:  BUFF_ARMOR,
+		Type:  TYPE_BUFF,
 		Value: armor,
-		Turn:  2,
 	})
 	push.PushAction("%s 施加了护盾", enemy.GetName())
 
@@ -259,7 +264,7 @@ func (c *CardCombat) EnemyAddArmor(enemy *CardEnemy) {
 func (c *CardCombat) EnemyTurn() {
 	c.delegate.OnEnemyTurnStart()
 	for _, v := range c.enemies {
-		v.UpdateStatus()
+		v.UpdateBuffs()
 		c.checkDead(v)
 	}
 
@@ -307,8 +312,6 @@ func (c *CardCombat) UpdateUI() {
 					DrawCount:    len(c.deck),
 					DiscardCount: len(c.discard),
 					HandCards:    c.getHandString(),
-					// NextAction:   c.nextAction,
-					// ActionValue:  c.actionValue,
 				},
 			}
 			for i := range c.actors {
@@ -326,16 +329,19 @@ func (c *CardCombat) UpdateUI() {
 
 func (c *CardCombat) CastDamage(attacker Combatable, defender Combatable) int {
 	damage := c.CacDamage(attacker, defender)
-	armorStatus := defender.GetBase().GetArmorStatus()
-	if armorStatus != nil {
-		armorStatus.Value -= damage
-		if armorStatus.Value < 0 {
-			defender.GetBase().RemoveStatus(STATUS_ARMOR)
+	armorBuff := defender.GetBase().GetArmorBuff()
+	if armorBuff != nil {
+		armorValue := armorBuff.Value
+		armorBuff.Value -= damage
+		if armorBuff.Value < 0 {
+			defender.GetBase().RemoveBuff(BUFF_ARMOR)
 		}
+		damage = max(damage-armorValue, 0)
 	}
-	defender.OnDamage(damage, attacker)
 	if damage > 0 {
 		c.checkDead(defender)
+		defender.GetBase().Life -= damage
+		defender.OnDamage(damage, attacker)
 	}
 	push.PushAction("%s 攻击了 %s 造成 %d 点伤害", attacker.GetName(), defender.GetName(), damage)
 	return damage
@@ -343,10 +349,10 @@ func (c *CardCombat) CastDamage(attacker Combatable, defender Combatable) int {
 
 func (c *CardCombat) CacDamage(attacker Combatable, defender Combatable) int {
 	damage := attacker.GetAttack() + attacker.GetBase().Strength
-	if attacker.GetBase().HasStatus(STATUS_WEAK) {
+	if attacker.GetBase().HasBuff(BUFF_WEAK) {
 		damage = damage * attacker.GetBase().WeakFactor / 100
 	}
-	if defender.GetBase().HasStatus(STATUS_VULNERABLE) {
+	if defender.GetBase().HasBuff(BUFF_VULNERABLE) {
 		damage = damage * defender.GetBase().VulnerableFactor / 100
 	}
 	return max(damage, 0)
@@ -498,10 +504,10 @@ func (c *CardCombat) Attack(card *Card, target *CardEnemy) {
 
 func (c *CardCombat) AddArmor(card *Card) {
 	armor := card.Values["defense"]
-	c.actors[0].AddStatus(Status{
-		Type:  STATUS_ARMOR,
+	c.actors[0].AddBuff(Buff{
+		Name:  BUFF_ARMOR,
+		Type:  EFFECT_TYPE_BUFF,
 		Value: armor,
-		Turn:  2,
 	})
 
 	bindings := make(map[string]any)
@@ -514,8 +520,9 @@ func (c *CardCombat) AddVulnerable(card *Card, target *CardEnemy) {
 	targets := c.getTargetsFromRange(card, target)
 	for _, target := range targets {
 		value := card.Values["vulnerable"]
-		target.AddStatus(Status{
-			Type: STATUS_VULNERABLE,
+		target.AddBuff(Buff{
+			Name: BUFF_VULNERABLE,
+			Type: TYPE_DEBUFF,
 			Turn: value,
 		})
 
@@ -528,8 +535,9 @@ func (c *CardCombat) AddWeak(card *Card, target *CardEnemy) {
 	targets := c.getTargetsFromRange(card, target)
 	for _, target := range targets {
 		value := card.Values["weak"]
-		target.AddStatus(Status{
-			Type: STATUS_WEAK,
+		target.AddBuff(Buff{
+			Name: BUFF_WEAK,
+			Type: TYPE_DEBUFF,
 			Turn: value,
 		})
 
@@ -560,7 +568,13 @@ func (c *CardCombat) AddEnemyBuff(enemy *CardEnemy, timing string, rule string) 
 	c.delegate.AddEnemyEffect(effect)
 }
 
-func (c *CardCombat) AddBuff() {
+func (c *CardCombat) AddBuff(target Combatable, name string, typ, value int, turn int) {
+	target.GetBase().AddBuff(Buff{
+		Name:  name,
+		Type:  typ,
+		Value: value,
+		Turn:  turn,
+	})
 }
 
 func (c *CardCombat) Use(card *Card, target *CardEnemy) {

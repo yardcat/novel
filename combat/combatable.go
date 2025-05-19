@@ -1,9 +1,8 @@
 package combat
 
 import (
-	"slices"
-
 	"github.com/samber/lo"
+	"github.com/samber/lo/mutable"
 )
 
 const (
@@ -41,7 +40,7 @@ type CombatableBase struct {
 	CombatType       int
 	Strength         int
 	Defense          int
-	Buffs            []*Status
+	Buffs            []*Buff
 	WeakFactor       int
 	VulnerableFactor int
 }
@@ -49,7 +48,7 @@ type CombatableBase struct {
 func NewCombatableBase(id int, name string) *CombatableBase {
 	return &CombatableBase{
 		Name:  name,
-		Buffs: make([]*Status, 0),
+		Buffs: make([]*Buff, 0),
 	}
 }
 
@@ -102,72 +101,76 @@ func (c *CombatableBase) OnKill(Combatable) {
 
 }
 
-func (c *CombatableBase) AddStatus(status Status) {
+func (c *CombatableBase) AddBuff(buff Buff) {
 	var idx int = -1
 	for i, v := range c.Buffs {
-		if status.Type == v.Type {
+		if buff.Type == v.Type {
 			idx = i
 		}
 	}
 	if idx != -1 {
 		v := c.Buffs[idx]
-		switch v.Type {
-		case STATUS_VULNERABLE:
-		case STATUS_WEAK:
-			v.Turn = max(v.Turn, status.Turn)
-		case STATUS_STRENGTH:
-		case STATUS_ARMOR:
-			v.Value += status.Value
-		case STATUS_POISON:
+		switch v.Name {
+		case BUFF_VULNERABLE:
+			fallthrough
+		case BUFF_WEAK:
+			v.Turn = max(v.Turn, buff.Turn)
+		case BUFF_STRENGTH:
+			fallthrough
+		case BUFF_ARMOR:
+			fallthrough
+		case BUFF_POISON:
 			idx = -1
 		}
 	}
 	if idx == -1 {
-		c.Buffs = append(c.Buffs, &status)
-	}
-}
-
-func (c *CombatableBase) RemoveStatus(statusType int) {
-	for i, v := range c.Buffs {
-		if v.Type == statusType {
-			c.Buffs = slices.Delete(c.Buffs, i, i+1)
+		if buff.Turn == 0 {
+			buff.Turn = 1
 		}
+		c.Buffs = append(c.Buffs, &buff)
 	}
 }
 
-func (c *CombatableBase) HasStatus(statusType int) bool {
-	return lo.ContainsBy(c.Buffs, func(v *Status) bool {
-		return v.Type == statusType
+func (c *CombatableBase) RemoveBuff(name string) {
+	c.Buffs = mutable.Filter(c.Buffs, func(v *Buff) bool {
+		return v.Name != name
 	})
 }
 
-func (c *CombatableBase) GetArmorStatus() *Status {
+func (c *CombatableBase) HasBuff(name string) bool {
+	return lo.ContainsBy(c.Buffs, func(v *Buff) bool {
+		return v.Name == name
+	})
+}
+
+func (c *CombatableBase) GetArmorBuff() *Buff {
 	for _, v := range c.Buffs {
-		if v.Type == STATUS_ARMOR {
+		if v.Name == BUFF_ARMOR {
 			return v
 		}
 	}
 	return nil
 }
 
-func (c *CombatableBase) GetStatusValue(statusType int) int {
+func (c *CombatableBase) GetBuffValue(name string) int {
 	for _, v := range c.Buffs {
-		if v.Type == statusType {
+		if v.Name == name {
 			return v.Value
 		}
 	}
 	return 0
 }
 
-func (c *CombatableBase) UpdateStatus() {
-	c.Buffs = lo.Filter(c.Buffs, func(v *Status, _ int) bool {
+func (c *CombatableBase) UpdateBuffs() {
+	c.Buffs = lo.Filter(c.Buffs, func(v *Buff, _ int) bool {
+		v.Turn--
 		return v.Turn > 0
 	})
 }
 
 func (c *CombatableBase) GetArmor() int {
 	for _, v := range c.Buffs {
-		if v.Type == STATUS_ARMOR {
+		if v.Name == BUFF_ARMOR {
 			return v.Value
 		}
 	}

@@ -222,11 +222,11 @@ func (t *Tower) regiserTimingCallback(timing int, callback any) {
 
 func (t *Tower) getCombatBonus() CombatBonus {
 	return CombatBonus{
-		Cards:             []string{"dang", "quan", "jiao"},
+		Cards:             []string{"flex", "cleave", "clash"},
 		CardChooseCount:   1,
-		Potions:           []string{""},
+		Potions:           []string{"test"},
 		PotionChooseCount: 1,
-		Relics:            []string{""},
+		Relics:            []string{"test"},
 		RelicChooseCount:  1,
 	}
 }
@@ -249,8 +249,6 @@ func (t *Tower) startCardCombat() *CardCombat {
 }
 
 func (t *Tower) onStartCombat() {
-	t.AddRelic("relic_test")
-	t.AddPotion("potion_test")
 	t.EffectOn(TIMING_COMBAT_START)
 }
 
@@ -476,7 +474,7 @@ func (t *Tower) enterRoom(typ int) {
 
 func (t *Tower) showShopItems() {
 	push.PushEvent(event.CardUpdateShopUI{
-		Cards:   []string{"dang", "quan", "jiao"},
+		Cards:   []string{"flex", "cleave", "clash"},
 		Potions: []string{"test"},
 		Relics:  []string{"test"},
 	})

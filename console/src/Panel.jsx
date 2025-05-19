@@ -1,13 +1,10 @@
 import { Tag } from 'antd';
 
-const Types = ['vulnerable', 'weak', 'strength', 'armor'];
-
-const Buff = ({ type, value, turn }) => {
-  let name = Types[type];
+const Buff = ({ name, value, turn }) => {
   return (
     <>
       <Tag bordered={false} color="success">
-        {name} : {value} ({turn})
+        {name} : {value == 0 ? '' : value} ({turn})
       </Tag>
     </>
   );
@@ -52,8 +49,8 @@ const Panel = ({ role, info, isSelected, onClick }) => {
         {info.buffs &&
           info.buffs.map((buff) => (
             <Buff
-              key={buff.type}
-              type={buff.type}
+              key={buff.name}
+              name={buff.name}
               value={buff.value}
               turn={buff.turn}
             />

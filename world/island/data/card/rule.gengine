@@ -54,7 +54,15 @@ forRange c := combat.hand {
 return canUse
 end
 
+<<<<<<< HEAD
 rule "add_strength"
 begin
 
 end
+=======
+rule "add_strength_buff"
+begin
+value := card.GetValue("strength")
+combat.AddBuff(actor, "strength", 1, value, 1)
+end
+>>>>>>> 38a931f (refine buff)

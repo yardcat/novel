@@ -47,9 +47,9 @@ type Combat interface {
 	Combatables() []Combatable
 }
 
-type Status struct {
-	BuffType int
-	Type     int
-	Value    int
-	Turn     int
+type Buff struct {
+	Type  int
+	Name  string
+	Value int
+	Turn  int
 }
