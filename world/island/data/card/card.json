@@ -44,7 +44,9 @@
     "name": "武装",
     "description": "升级一张手牌, 获得5点格挡",
     "values": {
-      "defense": 5
+      "defense": 5,
+      "choose_count": 1,
+      "choose_from": 0
     },
     "cost": 1,
     "type": 1,

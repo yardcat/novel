@@ -176,7 +176,7 @@ func (c *CardCombat) PrepareIntent() {
 	c.delegate.TriggerPrepareIntent()
 }
 
-func (c *CardCombat) UseCard(idx int32, target int32) error {
+func (c *CardCombat) UseCard(idx int32, choosenIdx []int32, target int32) error {
 	card := c.hand[idx]
 	if card == nil {
 		return errors.New("card not exist")
@@ -185,9 +185,26 @@ func (c *CardCombat) UseCard(idx int32, target int32) error {
 		return errors.New(card.Name + " cannot be used")
 	}
 
+	var choosen []*Card
+	if choosenIdx != nil && len(choosenIdx) > 0 {
+		choosen = make([]*Card, len(choosenIdx))
+		for i, idx := range choosenIdx {
+			switch card.Values["choose_from"] {
+			case CARD_CHOOSE_FROM_HAND:
+				choosen[i] = c.hand[idx]
+			case CARD_CHOOSE_FROM_DRAW:
+				choosen[i] = c.deck[idx]
+			case CARD_CHOOSE_FROM_DISCARD:
+				choosen[i] = c.discard[idx]
+			case CARD_CHOOSE_FROM_EXHAUST:
+				choosen[i] = c.exhaust[idx]
+			}
+		}
+	}
+
 	if c.actors[0].Energy >= card.Cost {
 		c.actors[0].Energy -= card.Cost
-		c.Use(card, c.enemies[target])
+		c.Use(card, choosen, c.enemies[target])
 		c.delegate.OnUseCard(card)
 	}
 	c.turnInfo.usedCards = append(c.turnInfo.usedCards, card)
@@ -210,6 +227,7 @@ func (c *CardCombat) DiscardCards(cards []int32) int {
 	}
 	c.hand = newHand
 
+	c.requestUpdateUI()
 	push.PushAction("discard %d cards", len(cards))
 	return len(c.discard)
 }
@@ -311,6 +329,7 @@ func (c *CardCombat) UpdateUI() {
 				Deck: event.DeckUI{
 					DrawCount:    len(c.deck),
 					DiscardCount: len(c.discard),
+					ExhaustCount: len(c.exhaust),
 					HandCards:    c.getHandString(),
 				},
 			}
@@ -413,7 +432,14 @@ func (c *CardCombat) getHandString() []string {
 	return strs
 }
 
-func (c *CardCombat) upgradeCardInCombat(card *Card) {
+func (c *CardCombat) UpgradeCards(cards []*Card) {
+	for _, card := range cards {
+		c.upgradeCard(card)
+	}
+}
+
+func (c *CardCombat) upgradeCard(card *Card) {
+	card.Name = card.Name + "+"
 	c.delegate.UpgradeCardInCombat(card)
 }
 
@@ -577,11 +603,14 @@ func (c *CardCombat) AddBuff(target Combatable, name string, typ, value int, tur
 	})
 }
 
-func (c *CardCombat) Use(card *Card, target *CardEnemy) {
+func (c *CardCombat) Use(card *Card, choosen []*Card, target *CardEnemy) {
 	for _, effect := range card.Effects {
 		bindings := make(map[string]any)
 		bindings["target"] = target
 		bindings["card"] = card
+		if choosen != nil && len(choosen) > 0 {
+			bindings["choosen_cards"] = choosen
+		}
 		c.delegate.TriggerEffect(effect, bindings)
 	}
 	c.removeHandCard(card)

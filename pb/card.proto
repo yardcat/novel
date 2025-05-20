@@ -11,8 +11,9 @@ message welcomeResponse {
 }
 
 message sendCardRequest {
-    repeated int32 cards = 1;
-    int32 target = 2;
+    int32 card = 1;
+    repeated int32 choosen = 2;
+    int32 target = 3;
 }
 
 message sendCardResponse {

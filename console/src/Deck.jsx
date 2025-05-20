@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import { message, Card, Button } from 'antd';
 import { Panel } from './Panel';
-import { Config } from './Config';
 import { CallAPI } from './Net';
 import { MyCard } from './MyCard';
 import { CardView } from './CardView';
 import { socket } from './Socket';
+
+import cardJson from '../../world/island/data/card/card.json';
+
+const ChooseFrom = {
+  HAND: 0,
+  DRAW: 1,
+  DISCARD: 2,
+  EXHAUST: 3,
+};
 
 class StartInfo {
   difficuty = '';
@@ -20,16 +28,20 @@ const PanelContainerStyle = {
   border: '1px',
 };
 
-const Deck = ({ modal }) => {
+const Deck = () => {
   const [handCards, setHandCards] = useState([]);
   const [drawCount, setDrawCount] = useState(0);
   const [discardCount, setDiscardCount] = useState(0);
+  const [exhaustCount, setExhaustCount] = useState(0);
   const [selectedCards, setSelectedCards] = useState([]);
   const [actorPanelInfo, setActorPanelInfo] = useState([]);
   const [enemyPanelInfo, setEnemyPanelInfo] = useState([]);
   const [selectedEnemy, setSelectedEnemy] = useState(null);
-  const [showCardView, setShowCardView] = useState(false);
-  const [cardsToShow, setCardsToShow] = useState([]);
+  const [cardViewConfig, setCardViewConfig] = useState({
+    visible: false,
+    cards: [],
+    onOk: null,
+  });
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -43,12 +55,31 @@ const Deck = ({ modal }) => {
     setSelectedEnemy(selectedEnemy === index ? null : index);
   };
 
+  const getDrawCards = (finishFunc) => {
+    CallAPI('card/show_draw_cards', {}, (reply) => {
+      showCardView(reply.cards, finishFunc);
+    });
+  };
+
+  const getDiscardCards = (finishFunc) => {
+    CallAPI('card/show_discard_cards', {}, (reply) => {
+      showCardView(reply.cards, finishFunc);
+    });
+  };
+
+  const getExhaustCards = (finishFunc) => {
+    CallAPI('card/show_exhaust_cards', {}, (reply) => {
+      showCardView(reply.cards, finishFunc);
+    });
+  };
+
   useEffect(() => {
     const updateUI = (ev) => {
       setActorPanelInfo(ev.actorUI);
       setEnemyPanelInfo(ev.enemyUI);
       setDrawCount(ev.deckUI.drawCount);
       setDiscardCount(ev.deckUI.discardCount);
+      setExhaustCount(ev.deckUI.exhaustCount);
       setHandCards(ev.deckUI.handCards);
     };
 
@@ -57,17 +88,10 @@ const Deck = ({ modal }) => {
     });
   }, []);
 
-  const sendCards = (cards) => {
-    if (selectedCards.length == 0) {
-      message.info('no card selected');
-      return;
-    } else if (actorPanelInfo[0].energy <= 0) {
-      message.info('no energy');
-      return;
-    }
-
+  const sendCardWithChoosen = (card, choosen) => {
     const params = {
-      cards: cards.join(','),
+      card: card,
+      choosen: choosen.join(','),
     };
     if (selectedEnemy == null && enemyPanelInfo.length == 1) {
       setSelectedEnemy('enemy-0');
@@ -77,11 +101,68 @@ const Deck = ({ modal }) => {
     }
 
     CallAPI('card/send_cards', params, (reply) => {
-      setHandCards(
-        handCards.filter((card, idx) => !selectedCards.includes(idx)),
-      );
+      setHandCards(handCards.filter((c, idx) => idx != card));
       setSelectedCards([]);
     });
+  };
+
+  const sendCard = (cards) => {
+    if (selectedCards.length == 0) {
+      message.info('no card selected');
+      return;
+    } else if (actorPanelInfo[0].energy <= 0) {
+      setSelectedCards([]);
+      message.info('no energy');
+      return;
+    }
+
+    let cardIdx = cards[0];
+    let cardId = handCards[cards[0]];
+    let cardInfo = cardJson[cardId];
+    if (cardInfo.cost > actorPanelInfo[0].energy) {
+      message.info('energy not enough');
+      setSelectedCards([]);
+      return;
+    }
+
+    if (cardInfo.values['choose_count'] != null) {
+      let count = cardInfo.values['choose_count'];
+      let from = Number(cardInfo.values['choose_from']);
+      message.info(`select ${count} cards`);
+      switch (from) {
+        case ChooseFrom.HAND:
+          let chooseCards = handCards.filter(
+            (_, idx) => !selectedCards.includes(idx),
+          );
+          showCardView(chooseCards, (selected) => {
+            sendCardWithChoosen(cardIdx, selected);
+          });
+          break;
+        case ChooseFrom.DRAW:
+          getDrawCards((reply) => {
+            showCardView(reply.cards, (selected) => {
+              sendCardWithChoosen(cardIdx, selected);
+            });
+          });
+          break;
+        case ChooseFrom.DISCARD:
+          getDiscardCards((reply) => {
+            showCardView(reply.cards, (selected) => {
+              sendCardWithChoosen(cardIdx, selected);
+            });
+          });
+          break;
+        case ChooseFrom.EXHAUST:
+          getExhaustCards((reply) => {
+            showCardView(reply.cards, (selected) => {
+              sendCardWithChoosen(cardIdx, selected);
+            });
+          });
+          break;
+      }
+    } else {
+      sendCardWithChoosen(cardIdx, []);
+    }
   };
 
   const discardCards = (cards) => {
@@ -92,12 +173,16 @@ const Deck = ({ modal }) => {
   };
 
   const endTurn = () => {
-    const sendTurnInfo = new EndTurn();
     CallAPI('card/end_turn', {}, (reply) => {});
+  };
+
+  const showCardView = (cards, onOk) => {
+    setCardViewConfig({ visible: true, cards, onOk });
   };
 
   return (
     <Card>
+      {/* enemy region */}
       <div style={PanelContainerStyle}>
         {actorPanelInfo.map((info, index) => (
           <Panel role="actor" info={info} key={index} />
@@ -112,13 +197,17 @@ const Deck = ({ modal }) => {
           />
         ))}
       </div>
+
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+        {/* draw cards region */}
         <Card
           style={{ width: '6vw' }}
           onClick={() => {
-            CallAPI('card/show_draw_cards', {}, (reply) => {
-              setCardsToShow(reply.cards);
-              setShowCardView(true);
+            getDrawCards((reply) => {
+              showCardView(reply.cards, (selected) => {
+                console.log('selected draw cards', selected);
+                setCardViewConfig({ ...cardViewConfig, visible: false });
+              });
             });
           }}
         >
@@ -126,6 +215,7 @@ const Deck = ({ modal }) => {
           <h3>{drawCount}</h3>
         </Card>
 
+        {/* cards region */}
         <div
           style={{
             display: 'flex',
@@ -145,23 +235,46 @@ const Deck = ({ modal }) => {
             ))}
         </div>
 
-        <Card
-          tyle={{ width: '5vw' }}
-          onClick={() => {
-            CallAPI('card/show_discard_cards', {}, (reply) => {
-              setCardsToShow(reply.cards);
-              setShowCardView(true);
-            });
-          }}
-        >
-          discard
-          <h3>{discardCount}</h3>
-        </Card>
+        {/* discard and exhaust region */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Card
+            tyle={{ width: '5vw' }}
+            size="small"
+            onClick={() => {
+              getDiscardCards((reply) => {
+                showCardView(reply.cards, (selected) => {
+                  console.log('selected discard cards', selected);
+                  setCardViewConfig({ ...cardViewConfig, visible: false });
+                });
+              });
+            }}
+          >
+            discard
+            <h3>{discardCount}</h3>
+          </Card>
+          <Card
+            tyle={{ width: '5vw' }}
+            size="small"
+            onClick={() => {
+              getExhaustCards((reply) => {
+                showCardView(reply.cards, (selected) => {
+                  console.log('selected exhaust cards', selected);
+                  setCardViewConfig({ ...cardViewConfig, visible: false });
+                });
+              });
+            }}
+          >
+            exhaust
+            <h3>{exhaustCount}</h3>
+          </Card>
+        </div>
       </div>
+
+      {/* action region */}
       <Card>
         <Button
           onClick={() => {
-            sendCards(selectedCards);
+            sendCard(selectedCards);
           }}
         >
           Send
@@ -179,11 +292,20 @@ const Deck = ({ modal }) => {
         </Button>
         <Button onClick={endTurn}>End</Button>
       </Card>
-      <CardView
-        cards={cardsToShow}
-        visible={showCardView}
-        onCancel={() => setShowCardView(false)}
-      />
+
+      {cardViewConfig.visible && (
+        <CardView
+          cards={cardViewConfig.cards}
+          visible={cardViewConfig.visible}
+          onCancel={() =>
+            setCardViewConfig({ ...cardViewConfig, visible: false })
+          }
+          onOk={(selected) => {
+            if (cardViewConfig.onOk) cardViewConfig.onOk(selected);
+            setCardViewConfig({ ...cardViewConfig, visible: false });
+          }}
+        />
+      )}
     </Card>
   );
 };

@@ -51,16 +51,18 @@ func (w *Card) CanUse(c *gin.Context) {
 	c.JSON(200, string(jsonStr))
 }
 
-func (w *Card) SendCards(c *gin.Context) {
-	strIdx := strings.Split(c.PostForm("cards"), ",")
+func (w *Card) SendCard(c *gin.Context) {
+	cardIdx := cast.ToInt32(c.PostForm("card"))
 	target := cast.ToInt32(c.PostForm("target"))
-	cards := make([]int32, len(strIdx))
-	for i, v := range strIdx {
-		cards[i] = cast.ToInt32(v)
+	choosenIdx := strings.Split(c.PostForm("choosen"), ",")
+	choosen := make([]int32, len(choosenIdx))
+	for i, v := range choosenIdx {
+		choosen[i] = cast.ToInt32(v)
 	}
 	response, err := w.client.SendCard(context.Background(), &pb.SendCardRequest{
-		Cards:  cards,
-		Target: target,
+		Card:    cardIdx,
+		Choosen: choosen,
+		Target:  target,
 	})
 	if err != nil {
 		log.Info("card send err %v", err)

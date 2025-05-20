@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Modal } from 'antd';
+/* eslint-disable react/prop-types */
+import { useState } from 'react';
+import { Modal, Button } from 'antd';
+import { MyCard } from './MyCard';
 
-const CardView = ({ cards, visible }) => {
+// eslint-disable-next-line react/prop-types
+const CardView = ({ cards, onOk, onCancel }) => {
   const [selectedCards, setSelectedCards] = useState([]);
+  const visible = cards && cards.length > 0;
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -11,13 +15,30 @@ const CardView = ({ cards, visible }) => {
       setSelectedCards([...selectedCards, card]);
     }
   };
+
   return (
-    <Modal open={visible} onCancel={() => {}}>
+    <Modal
+      width={'60vw'}
+      open={visible}
+      onCancel={onCancel}
+      afterClose={() => {
+        setSelectedCards([]);
+      }}
+      footer={[
+        <Button key="ok" type="primary" onClick={() => onOk(selectedCards)}>
+          OK
+        </Button>,
+        <Button key="back" onClick={onCancel}>
+          Cancel
+        </Button>,
+      ]}
+    >
       <div
         style={{
           display: 'flex',
           flexDirection: 'row',
           width: '90vw',
+          height: '50vh',
           flexFlow: 'wrap',
         }}
       >

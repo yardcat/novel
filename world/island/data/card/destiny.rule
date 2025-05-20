@@ -1,0 +1,15 @@
+rule "add_strength"
+begin
+actor.Strength += 1
+end
+
+rule "add_max_health"
+begin
+actor.MaxLife += 5
+actor.Life += 5
+end
+
+rule "draw_card"
+begin
+combat.DrawCard(3)
+end

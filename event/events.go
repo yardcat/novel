@@ -37,6 +37,7 @@ type EnemyCardUI struct {
 type DeckUI struct {
 	DrawCount    int      `json:"drawCount"`
 	DiscardCount int      `json:"discardCount"`
+	ExhaustCount int      `json:"exhaustCount"`
 	HandCards    []string `json:"handCards"`
 }
 

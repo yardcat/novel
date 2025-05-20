@@ -242,7 +242,7 @@ func (t *Tower) GetRoomTypeChoices() []int {
 }
 
 func (t *Tower) GetWelcomeEvents() []string {
-	return []string{"strength", "max_health", "draw_card"}
+	return []string{"add_strength", "add_max_health", "draw_card"}
 }
 
 func (t *Tower) PrepareCard() {
@@ -316,10 +316,10 @@ func (t *Tower) UpgradeCard(card *Card) {
 		return
 	}
 	t.dataContext.Add("card", card)
-	upgradeRule := card.Name + "_upgrade"
+	upgradeRule := card.Id + "_upgrade"
 	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
 	if err != nil {
-		log.Error("upgrade card %s error: %s", card.Name, err)
+		log.Error("upgrade card %s error: %s", card.Id, err)
 		panic(err)
 	}
 	card.Upgraded = true
@@ -694,10 +694,10 @@ func (t *Tower) UpgradeCardInCombat(card *Card) {
 		return
 	}
 	t.dataContext.Add("card", card)
-	upgradeRule := card.Name + "_upgrade"
+	upgradeRule := card.Id + "_upgrade"
 	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{upgradeRule})
 	if err != nil {
-		log.Error("upgrade card %s error: %s", card.Name, err)
+		log.Error("upgrade card %s error: %s", card.Id, err)
 		panic(err)
 	}
 	card.Upgraded = true
@@ -842,16 +842,8 @@ func (t *Tower) CanUseCard(ctx context.Context, request *pb.CanUseRequest) (*pb.
 }
 
 func (t *Tower) SendCard(ctx context.Context, request *pb.SendCardRequest) (*pb.SendCardResponse, error) {
-	errList := make([]error, 0)
-	for _, v := range request.Cards {
-		err := t.currentCombat.UseCard(v, request.Target)
-		if err != nil {
-			errList = append(errList, err)
-			continue
-		}
-	}
-
-	if len(errList) > 0 {
+	err := t.currentCombat.UseCard(request.Card, request.Choosen, request.Target)
+	if err != nil {
 		return &pb.SendCardResponse{
 			Result: "error",
 		}, nil
@@ -873,8 +865,8 @@ func (t *Tower) DiscardCard(ctx context.Context,
 
 func (t *Tower) ShowDiscardCards(context.Context, *pb.ShowDiscardCardsRequest) (*pb.ShowDiscardCardsResponse, error) {
 	cards := make([]string, len(t.currentCombat.discard))
-	for _, v := range t.currentCombat.discard {
-		cards = append(cards, v.Name)
+	for i, v := range t.currentCombat.discard {
+		cards[i] = v.Id
 	}
 
 	return &pb.ShowDiscardCardsResponse{Cards: cards}, nil
@@ -882,8 +874,8 @@ func (t *Tower) ShowDiscardCards(context.Context, *pb.ShowDiscardCardsRequest) (
 
 func (t *Tower) ShowDrawCards(context.Context, *pb.ShowDrawCardsRequest) (*pb.ShowDrawCardsResponse, error) {
 	cards := make([]string, len(t.currentCombat.deck))
-	for _, v := range t.currentCombat.deck {
-		cards = append(cards, v.Name)
+	for i, v := range t.currentCombat.deck {
+		cards[i] = v.Id
 	}
 
 	return &pb.ShowDrawCardsResponse{Cards: cards}, nil
@@ -891,8 +883,8 @@ func (t *Tower) ShowDrawCards(context.Context, *pb.ShowDrawCardsRequest) (*pb.Sh
 
 func (t *Tower) ShowExhaustCards(context.Context, *pb.ShowExhaustCardsRequest) (*pb.ShowExhaustCardsResponse, error) {
 	cards := make([]string, len(t.currentCombat.exhaust))
-	for _, v := range t.currentCombat.exhaust {
-		cards = append(cards, v.Name)
+	for i, v := range t.currentCombat.exhaust {
+		cards[i] = v.Id
 	}
 
 	return &pb.ShowExhaustCardsResponse{Cards: cards}, nil

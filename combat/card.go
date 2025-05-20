@@ -26,6 +26,13 @@ const (
 	CARD_RARITY_RARE
 )
 
+const (
+	CARD_CHOOSE_FROM_HAND = iota
+	CARD_CHOOSE_FROM_DRAW
+	CARD_CHOOSE_FROM_DISCARD
+	CARD_CHOOSE_FROM_EXHAUST
+)
+
 type Card struct {
 	Id          string
 	Name        string         `json:"name"`
@@ -65,9 +72,12 @@ func (c *Card) UnmarshalJSON(data []byte) error {
 func (c *Card) Copy() *Card {
 	newCard := &Card{}
 	copier.Copy(newCard, c)
+	newCard.Values = make(map[string]int, len(c.Values))
+	newCard.Effects = make([]*Effect, len(c.Effects))
 	maps.Copy(newCard.Values, c.Values)
 	for i, v := range c.Effects {
-		copier.Copy(v, c.Effects[i])
+		newCard.Effects[i] = &Effect{}
+		copier.Copy(newCard.Effects[i], v)
 	}
 	return newCard
 }

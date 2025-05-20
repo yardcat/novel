@@ -6,7 +6,8 @@ const MyCard = ({ name, isSelected, onClick }) => {
   return (
     <div
       style={{
-        width: '7vw',
+        width: '120px',
+        height: '150px',
         border: '1px solid black',
         margin: '1px',
         backgroundColor: isSelected ? 'lightblue' : 'white',
