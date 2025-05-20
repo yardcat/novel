@@ -23,8 +23,29 @@ message discardCardRequest {
     repeated int32 cards = 1;
 }
 
- message discardCardResponse {
+message discardCardResponse {
     string result = 1;
+}
+
+message showDrawCardsRequest {
+}
+
+message showDrawCardsResponse {
+    repeated string cards = 1;
+}
+
+message showDiscardCardsRequest {
+}
+
+message showDiscardCardsResponse {
+    repeated string cards = 1;
+}
+
+message showExhaustCardsRequest {
+}
+
+message showExhaustCardsResponse {
+    repeated string cards = 1;
 }
 
 message endTurnRequest {
@@ -95,6 +116,9 @@ service card {
     rpc canUseCard(canUseRequest) returns(canUseResponse);
     rpc sendCard(sendCardRequest) returns(sendCardResponse);
     rpc discardCard(discardCardRequest) returns(discardCardResponse);
+    rpc showDrawCards(showDrawCardsRequest) returns(showDrawCardsResponse);
+    rpc showDiscardCards(showDiscardCardsRequest) returns(showDiscardCardsResponse);
+    rpc showExhaustCards(showExhaustCardsRequest) returns(showExhaustCardsResponse);
     rpc endTurn(endTurnRequest) returns(endTurnResponse);
     rpc nextFloor(nextFloorRequest) returns(nextFloorResponse);
     rpc chooseBonus(chooseBonusRequest) returns(chooseBonusResponse);

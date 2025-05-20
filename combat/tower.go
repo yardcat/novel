@@ -11,6 +11,7 @@ import (
 	"my_test/util"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -73,6 +74,7 @@ type Floor struct {
 }
 
 type Tower struct {
+	hasInit        bool
 	FloorNum       int              `json:"floor_num"`
 	RoomNum        int              `json:"room_num"`
 	ShopNum        int              `json:"shop_num"`
@@ -143,6 +145,11 @@ func (t *Tower) Init(params *TowerParams) {
 	t.generateFloor()
 	t.PrepareCard()
 	t.initScript()
+	t.hasInit = true
+}
+
+func (t *Tower) HasInit() bool {
+	return t.hasInit
 }
 
 func (t *Tower) Reset() {
@@ -157,7 +164,7 @@ func (t *Tower) Reset() {
 	t.timingCallbacks = make(map[int][]any)
 	t.currentCombat = nil
 	t.actor = nil
-	t.initScript()
+	t.effectRules.Reset()
 }
 
 func (t *Tower) initScript() {
@@ -174,6 +181,41 @@ func (t *Tower) initScript() {
 	}
 
 	t.engine = engine.NewGengine()
+}
+
+func (t *Tower) EffectOn(timing int) {
+	for _, v := range t.effects[timing] {
+		t.UseEffect(v)
+	}
+}
+
+func (t *Tower) UseEffect(effect *Effect) {
+	if effect.Enabled == false {
+		return
+	}
+
+	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{effect.Rule})
+	if err != nil {
+		log.Error("use effect %s err %v", effect.Rule, err)
+		panic(err)
+	}
+
+	if t.currentCombat != nil {
+		t.currentCombat.requestUpdateUI()
+	}
+}
+
+func (t *Tower) UseRule(name string, bindings map[string]any) {
+	if len(bindings) > 0 {
+		for k, v := range bindings {
+			t.dataContext.Add(k, v)
+		}
+	}
+	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{name})
+	if err != nil {
+		log.Error("use rule %s err %v", name, err)
+		panic(err)
+	}
 }
 
 func (t *Tower) EnterNextFloor() *Floor {
@@ -210,6 +252,7 @@ func (t *Tower) PrepareCard() {
 }
 
 func (t *Tower) HandleDestiny(ev string) {
+	t.UseRule(ev, nil)
 	t.currentCombat.requestUpdateUI()
 }
 
@@ -606,24 +649,21 @@ func (t *Tower) loadEnemy() error {
 }
 
 func (t *Tower) loadScript() error {
-	data, err := os.ReadFile(path.Join(t.resourceDir, "rule.gengine"))
+	files, err := os.ReadDir(t.resourceDir)
 	if err != nil {
-		return fmt.Errorf("error reading rule.gengine: %w", err)
+		log.Error("read script dir %v", err)
+		return err
 	}
-	t.effectRules.Write(data)
 
-	data, err = os.ReadFile(path.Join(t.resourceDir, "upgrade.gengine"))
-	if err != nil {
-		return fmt.Errorf("error reading upgrade.gengine: %w", err)
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".rule" {
+			data, err := os.ReadFile(path.Join(t.resourceDir, file.Name()))
+			if err != nil {
+				return fmt.Errorf("error reading %s: %w", file, err)
+			}
+			t.effectRules.Write(data)
+		}
 	}
-	t.effectRules.Write(data)
-
-	data, err = os.ReadFile(path.Join(t.resourceDir, "enemy.gengine"))
-	if err != nil {
-		return fmt.Errorf("error reading enemy.gengine: %w", err)
-	}
-	t.effectRules.Write(data)
-
 	return nil
 }
 
@@ -829,6 +869,33 @@ func (t *Tower) DiscardCard(ctx context.Context,
 	return &pb.DiscardCardResponse{
 		Result: "ok",
 	}, nil
+}
+
+func (t *Tower) ShowDiscardCards(context.Context, *pb.ShowDiscardCardsRequest) (*pb.ShowDiscardCardsResponse, error) {
+	cards := make([]string, len(t.currentCombat.discard))
+	for _, v := range t.currentCombat.discard {
+		cards = append(cards, v.Name)
+	}
+
+	return &pb.ShowDiscardCardsResponse{Cards: cards}, nil
+}
+
+func (t *Tower) ShowDrawCards(context.Context, *pb.ShowDrawCardsRequest) (*pb.ShowDrawCardsResponse, error) {
+	cards := make([]string, len(t.currentCombat.deck))
+	for _, v := range t.currentCombat.deck {
+		cards = append(cards, v.Name)
+	}
+
+	return &pb.ShowDrawCardsResponse{Cards: cards}, nil
+}
+
+func (t *Tower) ShowExhaustCards(context.Context, *pb.ShowExhaustCardsRequest) (*pb.ShowExhaustCardsResponse, error) {
+	cards := make([]string, len(t.currentCombat.exhaust))
+	for _, v := range t.currentCombat.exhaust {
+		cards = append(cards, v.Name)
+	}
+
+	return &pb.ShowExhaustCardsResponse{Cards: cards}, nil
 }
 
 func (t *Tower) EndTurn(ctx context.Context, request *pb.EndTurnRequest) (*pb.EndTurnResponse, error) {

@@ -189,6 +189,9 @@ func (c *CombatSystem) loadDungeons() error {
 
 // grpc
 func (c *CombatSystem) StartCard(context.Context, *pb.StartCardRequest) (*pb.StartCardResponse, error) {
+	if c.tower.HasInit() {
+		c.tower.Reset()
+	}
 	player := c.story.GetPlayer("0")
 	player.AddCareer("doctor")
 	actor := combat.NewCardActor(player.GetCombatableBase())

@@ -34,7 +34,6 @@ func (w *Card) Welcome(c *gin.Context) {
 		log.Info("CardChooseEvent json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
-
 }
 
 func (w *Card) CanUse(c *gin.Context) {
@@ -72,7 +71,6 @@ func (w *Card) SendCards(c *gin.Context) {
 		log.Info("CardTurnStart json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
-
 }
 
 func (w *Card) DiscardCards(c *gin.Context) {
@@ -93,7 +91,45 @@ func (w *Card) DiscardCards(c *gin.Context) {
 		log.Info("CardTurnStart json marshal err %v", err)
 	}
 	c.JSON(200, string(jsonStr))
+}
 
+func (w *Card) ShowDrawCards(c *gin.Context) {
+	response, err := w.client.ShowDrawCards(c.Request.Context(), &pb.ShowDrawCardsRequest{})
+	if err != nil {
+		log.Info("show draw cards err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+}
+
+func (w *Card) ShowDiscardCards(c *gin.Context) {
+	response, err := w.client.ShowDiscardCards(c.Request.Context(), &pb.ShowDiscardCardsRequest{})
+	if err != nil {
+		log.Info("show discard cards err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
+}
+
+func (w *Card) ShowExhaustCards(c *gin.Context) {
+	response, err := w.client.ShowExhaustCards(c.Request.Context(), &pb.ShowExhaustCardsRequest{})
+	if err != nil {
+		log.Info("show exhaust cards err %v", err)
+	}
+
+	jsonStr, err := json.Marshal(response)
+	if err != nil {
+		log.Info("CardTurnStart json marshal err %v", err)
+	}
+	c.JSON(200, string(jsonStr))
 }
 
 func (w *Card) EndTurn(c *gin.Context) {

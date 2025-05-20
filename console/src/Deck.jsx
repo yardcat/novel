@@ -3,37 +3,15 @@ import { message, Card, Button } from 'antd';
 import { Panel } from './Panel';
 import { Config } from './Config';
 import { CallAPI } from './Net';
+import { MyCard } from './MyCard';
+import { CardView } from './CardView';
 import { socket } from './Socket';
-
-import cardJson from '../../world/island/data/card/card.json';
 
 class StartInfo {
   difficuty = '';
 }
 
 class EndTurn {}
-
-const MyCard = ({ name, isSelected, onClick }) => {
-  return (
-    <div
-      style={{
-        width: '7vw',
-        border: '1px solid black',
-        margin: '1px',
-        backgroundColor: isSelected ? 'lightblue' : 'white',
-        cursor: 'pointer',
-        textAlign: 'center', // Center content horizontally
-      }}
-      onClick={onClick}
-    >
-      <div style={{ marginTop: '10px ' }}>{name}</div>
-      <div style={{ marginTop: '30px ' }}>
-        <div style={{ fontSize: 'small' }}>{cardJson[name].description}</div>
-        <div style={{ fontSize: 'small' }}>energy: {cardJson[name].cost}</div>
-      </div>
-    </div>
-  );
-};
 
 const PanelContainerStyle = {
   display: 'flex',
@@ -50,6 +28,8 @@ const Deck = ({ modal }) => {
   const [actorPanelInfo, setActorPanelInfo] = useState([]);
   const [enemyPanelInfo, setEnemyPanelInfo] = useState([]);
   const [selectedEnemy, setSelectedEnemy] = useState(null);
+  const [showCardView, setShowCardView] = useState(false);
+  const [cardsToShow, setCardsToShow] = useState([]);
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
@@ -133,7 +113,15 @@ const Deck = ({ modal }) => {
         ))}
       </div>
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
-        <Card style={{ width: '6vw' }}>
+        <Card
+          style={{ width: '6vw' }}
+          onClick={() => {
+            CallAPI('card/show_draw_cards', {}, (reply) => {
+              setCardsToShow(reply.cards);
+              setShowCardView(true);
+            });
+          }}
+        >
           draw
           <h3>{drawCount}</h3>
         </Card>
@@ -157,7 +145,15 @@ const Deck = ({ modal }) => {
             ))}
         </div>
 
-        <Card tyle={{ width: '5vw' }}>
+        <Card
+          tyle={{ width: '5vw' }}
+          onClick={() => {
+            CallAPI('card/show_discard_cards', {}, (reply) => {
+              setCardsToShow(reply.cards);
+              setShowCardView(true);
+            });
+          }}
+        >
           discard
           <h3>{discardCount}</h3>
         </Card>
@@ -183,6 +179,11 @@ const Deck = ({ modal }) => {
         </Button>
         <Button onClick={endTurn}>End</Button>
       </Card>
+      <CardView
+        cards={cardsToShow}
+        visible={showCardView}
+        onCancel={() => setShowCardView(false)}
+      />
     </Card>
   );
 };

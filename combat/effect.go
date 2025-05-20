@@ -2,7 +2,6 @@ package combat
 
 import (
 	"encoding/json"
-	"my_test/log"
 )
 
 const (
@@ -97,26 +96,4 @@ func TimingStr2Int(timing string) int {
 		ret = TIMING_NONE
 	}
 	return ret
-}
-
-func (t *Tower) EffectOn(timing int) {
-	for _, v := range t.effects[timing] {
-		t.UseEffect(v)
-	}
-}
-
-func (t *Tower) UseEffect(effect *Effect) {
-	if effect.Enabled == false {
-		return
-	}
-
-	err := t.engine.ExecuteSelectedRules(t.ruleBuilder, []string{effect.Rule})
-	if err != nil {
-		log.Error("use effect %s err %v", effect.Rule, err)
-		panic(err)
-	}
-
-	if t.currentCombat != nil {
-		t.currentCombat.requestUpdateUI()
-	}
 }
