@@ -367,7 +367,8 @@ func (c *CardCombat) CastDamage(attacker Combatable, defender Combatable) int {
 }
 
 func (c *CardCombat) CacDamage(attacker Combatable, defender Combatable) int {
-	damage := attacker.GetAttack() + attacker.GetBase().Strength
+	buffStrength := attacker.GetBase().GetBuffValue(BUFF_STRENGTH)
+	damage := attacker.GetAttack() + attacker.GetBase().Strength + buffStrength
 	if attacker.GetBase().HasBuff(BUFF_WEAK) {
 		damage = damage * attacker.GetBase().WeakFactor / 100
 	}

@@ -81,3 +81,7 @@ func (c *Card) Copy() *Card {
 	}
 	return newCard
 }
+
+func (c *Card) GetValue(key string) int {
+	return c.Values[key]
+}
