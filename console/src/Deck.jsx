@@ -7,6 +7,7 @@ import { CardView } from './CardView';
 import { socket } from './Socket';
 
 import cardJson from '../../world/island/data/card/card.json';
+import cardUpgradeJson from '../../world/island/data/card/card_upgrade.json';
 
 const ChooseFrom = {
   HAND: 0,
@@ -118,7 +119,8 @@ const Deck = () => {
 
     let cardIdx = cards[0];
     let cardId = handCards[cards[0]];
-    let cardInfo = cardJson[cardId];
+    let upgraded = cardId[cardId.length - 1] === '+';
+    let cardInfo = upgraded ? cardUpgradeJson[cardId] : cardJson[cardId];
     if (cardInfo.cost > actorPanelInfo[0].energy) {
       message.info('energy not enough');
       setSelectedCards([]);
@@ -131,9 +133,9 @@ const Deck = () => {
       message.info(`select ${count} cards`);
       switch (from) {
         case ChooseFrom.HAND:
-          let chooseCards = handCards.filter(
-            (_, idx) => !selectedCards.includes(idx),
-          );
+          let chooseCards = handCards.map((_, idx) => {
+            return idx == cardIdx ? null : handCards[idx];
+          });
           showCardView(chooseCards, (selected) => {
             sendCardWithChoosen(cardIdx, selected);
           });

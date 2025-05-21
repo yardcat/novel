@@ -3,6 +3,7 @@ package combat
 import (
 	"encoding/json"
 	"maps"
+	"my_test/util"
 	"reflect"
 
 	"github.com/jinzhu/copier"
@@ -84,4 +85,8 @@ func (c *Card) Copy() *Card {
 
 func (c *Card) GetValue(key string) int {
 	return c.Values[key]
+}
+
+func (c *Card) GetDescription() string {
+	return util.FormatString(c.Description, c.Values)
 }

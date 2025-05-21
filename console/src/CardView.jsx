@@ -43,14 +43,17 @@ const CardView = ({ cards, onOk, onCancel }) => {
         }}
       >
         {cards &&
-          cards.map((name, idx) => (
-            <MyCard
-              key={idx}
-              name={name}
-              isSelected={selectedCards.includes(idx)}
-              onClick={() => toggleCardSelection(idx)}
-            />
-          ))}
+          cards.map(
+            (name, idx) =>
+              name != null && (
+                <MyCard
+                  key={idx}
+                  name={name}
+                  isSelected={selectedCards.includes(idx)}
+                  onClick={() => toggleCardSelection(idx)}
+                />
+              ),
+          )}
       </div>
     </Modal>
   );

@@ -322,6 +322,8 @@ func (t *Tower) UpgradeCard(card *Card) {
 		log.Error("upgrade card %s error: %s", card.Id, err)
 		panic(err)
 	}
+	card.Id = card.Id + "+"
+	card.Name = card.Name + "+"
 	card.Upgraded = true
 	t.EffectOn(TIMING_UPGRADE_CARD)
 }
@@ -700,7 +702,10 @@ func (t *Tower) UpgradeCardInCombat(card *Card) {
 		log.Error("upgrade card %s error: %s", card.Id, err)
 		panic(err)
 	}
+	card.Id = card.Id + "+"
+	card.Name = card.Name + "+"
 	card.Upgraded = true
+	t.currentCombat.requestUpdateUI()
 }
 
 func (t *Tower) AddEnemyEffect(effect *Effect) {

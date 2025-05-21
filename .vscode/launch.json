@@ -5,11 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Package",
+            "name": "novel",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}"
+        },
+        {
+            "name": "card_upgrader",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/tool/card_upgrader",
+            "args": ["${workspaceFolder}"]
+
         }
     ]
 }

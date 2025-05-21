@@ -1,7 +1,7 @@
 {
   "strike": {
     "name": "打击",
-    "description": "造成6点伤害",
+    "description": "造成{attack}点伤害",
     "values": {
       "attack": 6
     },
@@ -11,7 +11,7 @@
   },
   "defense": {
     "name": "防御",
-    "description": "获得5点格挡",
+    "description": "获得{defense}点格挡",
     "values": {
       "defense": 5
     },
@@ -21,7 +21,7 @@
   },
   "bash": {
     "name": "痛击",
-    "description": "造成8点伤害, 施加两层易伤",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
     "values": {
       "attack": 8,
       "vulnerable": 2
@@ -32,7 +32,7 @@
   },
   "anger": {
     "name": "愤怒",
-    "description": "造成6点伤害, 复制一张本卡到弃牌堆",
+    "description": "造成{attck}点伤害, 复制1张本卡到弃牌堆",
     "values": {
       "attack": 6
     },
@@ -42,7 +42,7 @@
   },
   "armaments": {
     "name": "武装",
-    "description": "升级一张手牌, 获得5点格挡",
+    "description": "升级{choose_count}张手牌, 获得{defense}点格挡",
     "values": {
       "defense": 5,
       "choose_count": 1,
@@ -54,7 +54,7 @@
   },
   "body_slam": {
     "name": "身体冲撞",
-    "description": "造成当前护甲值的伤害",
+    "description": "造成当前护甲值{attack}的伤害",
     "values": {
       "attack": 0
     },
@@ -64,7 +64,7 @@
   },
   "clash": {
     "name": "交锋",
-    "description": "只有当前手牌全是攻击卡时才能打出, 造成14点伤害",
+    "description": "只有当前手牌全是攻击卡时才能打出, 造成{attack}点伤害",
     "values": {
       "attack": 14
     },
@@ -75,7 +75,7 @@
   },
   "cleave": {
     "name": "斩击",
-    "description": "对所有敌方单位造成8点伤害",
+    "description": "对所有敌方单位造成{attack}点伤害",
     "values": {
       "attack": 8
     },
@@ -86,7 +86,7 @@
   },
   "clothesline": {
     "name": "上勾拳",
-    "description": "",
+    "description": "造成{attack}点伤害, 施加{weak}层虚弱",
     "values": {
       "attack": 12,
       "weak": 2
@@ -98,7 +98,7 @@
   },
   "flex": {
     "name": "肌肉强化",
-    "description": "当前回合获得2点力量",
+    "description": "当前回合获得{strength}点力量",
     "values": {
       "strength": 2
     },

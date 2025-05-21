@@ -8,9 +8,10 @@ type ActorCardUI struct {
 	Strength int    `json:"strength"`
 	Defense  int    `json:"defense"`
 	Buffs    []struct {
-		Type  int `json:"type"`
-		Value int `json:"value"`
-		Turn  int `json:"turn"`
+		Name  string `json:"name"`
+		Type  int    `json:"type"`
+		Value int    `json:"value"`
+		Turn  int    `json:"turn"`
 	} `json:"buffs"`
 }
 

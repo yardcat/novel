@@ -118,7 +118,7 @@ func (c *CombatableBase) AddBuff(buff Buff) {
 		case BUFF_STRENGTH:
 			fallthrough
 		case BUFF_ARMOR:
-			fallthrough
+			v.Value += buff.Value
 		case BUFF_POISON:
 			idx = -1
 		}
