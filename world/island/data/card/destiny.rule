@@ -1,15 +1,15 @@
-rule "add_strength"
+rule "add_strength_event"
 begin
 actor.Strength += 1
 end
 
-rule "add_max_health"
+rule "add_max_health_event"
 begin
 actor.MaxLife += 5
 actor.Life += 5
 end
 
-rule "draw_card"
+rule "draw_card_event"
 begin
 combat.DrawCard(3)
 end

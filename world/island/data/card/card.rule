@@ -17,7 +17,7 @@ end
 
 rule "body_slam_attack"
 begin
-card.Values["attack"] = card.GetArm()
+card.Values["attack"] = actor.GetArmor()
 combat.Attack(card, target)
 end
 
@@ -26,32 +26,32 @@ begin
 combat.AddArmor(card)
 end
 
-rule "vulnerable"
+rule "cast_vulnerable"
 begin
 combat.AddVulnerable(card, target)
 end
 
-rule "weak"
+rule "cast_weak"
 begin
 combat.AddWeak(card, target)
 end
 
-rule "copy2discard"
+rule "anger"
 begin
-copy=t.GetCard(card.Name)
-c.PutCardDiscard(copy)
+copy=t.GetCard(card.Id)
+combat.PutCardDiscard(copy)
 end
 
 rule "clash_can_use"
 begin
-canUse := true
-forRange c := combat.hand {
-    if c.Type != 0 {
-        canUse = false
-        break
+cards := combat.GetHandCards()
+forRange i := cards {
+    c := cards[i]
+    if !c.IsAttack() {
+        return false
     }
 }
-return canUse
+return true
 end
 
 rule "add_strength_buff"
@@ -63,4 +63,22 @@ end
 rule "upgrade"
 begin
 combat.UpgradeCards(choosen_cards)
+end
+
+rule "head_butt"
+begin
+cards := combat.DrawFromDiscard(choosen_cards)
+combat.PutOnDeck(cards)
+end
+
+rule "heavy_attack"
+begin
+card.Values["attack"] += actor.Strength * card.GetValue("factor")
+combat.Attack(card, target)
+end
+
+rule "draw_card"
+begin
+count := card.Values["draw_count"]
+combat.DrawCards(count)
 end

@@ -1,9 +1,30 @@
 rule "strike_upgrade"
 begin
-card.Values["attack"] += 3
+card.Values["attack"] = 9
 end
 
 rule "defense_upgrade"
 begin
-card.Values["defense"] += 3
+card.Values["defense"] = 8
+end
+
+rule "bash_upgrade"
+begin
+card.Values["attack"] = 10
+card.Values["vulnerable"] = 3
+end
+
+rule "anger_upgrade"
+begin
+card.Values["attack"] = 12
+end
+
+rule "armaments_upgrade"
+begin
+card.Values["choose_count"] = 0
+end
+
+rule "body_slam_upgrade"
+begin
+card.Cost = 0
 end

@@ -46,9 +46,9 @@ const Deck = () => {
 
   const toggleCardSelection = (card) => {
     if (selectedCards.includes(card)) {
-      setSelectedCards(selectedCards.filter((c) => c !== card));
+      setSelectedCards([]);
     } else {
-      setSelectedCards([...selectedCards, card]);
+      setSelectedCards([card]);
     }
   };
 
@@ -102,6 +102,10 @@ const Deck = () => {
     }
 
     CallAPI('card/send_cards', params, (reply) => {
+      if (reply.result != 'ok') {
+        message.info("card can't be used");
+        return;
+      }
       setHandCards(handCards.filter((c, idx) => idx != card));
       setSelectedCards([]);
     });

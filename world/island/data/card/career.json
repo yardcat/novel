@@ -3,13 +3,13 @@
     "init_cards": [
       "strike",
       "strike",
-      "strike",
-      "strike",
-      "strike",
+      "defense",
+      "defense",
+      "defense",
       "flex",
-      "defense",
-      "defense",
-      "defense",
+      "anger",
+      "clash",
+      "body_slam",
       "armaments"
     ]
   }

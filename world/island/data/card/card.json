@@ -28,17 +28,17 @@
     },
     "cost": 1,
     "type": 0,
-    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+    "effects": [{ "rule": "attack" }, { "rule": "cast_vulnerable" }]
   },
   "anger": {
     "name": "愤怒",
-    "description": "造成{attck}点伤害, 复制1张本卡到弃牌堆",
+    "description": "造成{attack}点伤害, 复制1张本卡到弃牌堆",
     "values": {
       "attack": 6
     },
-    "cost": 1,
+    "cost": 0,
     "type": 0,
-    "effects": [{ "rule": "attack" }, { "rule": "copy2discard" }]
+    "effects": [{ "rule": "attack" }, { "rule": "anger" }]
   },
   "armaments": {
     "name": "武装",
@@ -60,7 +60,7 @@
     },
     "cost": 1,
     "type": 1,
-    "effects": [{ "rule": "body_slame_attack" }]
+    "effects": [{ "rule": "body_slam_attack" }]
   },
   "clash": {
     "name": "交锋",
@@ -105,5 +105,677 @@
     "cost": 0,
     "type": 1,
     "effects": [{ "rule": "add_strength_buff" }]
+  },
+  "havoc": {
+    "name": "破灭",
+    "description": "打出抽卡顶部的牌",
+    "values": {
+      "use_count": 1
+    },
+    "cost": 0,
+    "type": 1,
+    "exhaust": true,
+    "effects": [{ "rule": "use_draw_top" }]
+  },
+  "head_butt": {
+    "name": "头槌",
+    "description": "造成{attack}点伤害, 将弃牌堆一张牌放回牌组顶端",
+    "values": {
+      "attack": 9,
+      "use_count": 1
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "headbutt" }]
+  },
+  "heavy_blade": {
+    "name": "重击",
+    "description": "造成{attack}点伤害, 额外造成{factor}倍伤害",
+    "values": {
+      "attack": 14,
+      "factor": 3
+    },
+    "cost": 2,
+    "type": 0,
+    "effects": [{ "rule": "heavy_attack" }]
+  },
+  "iron_wave": {
+    "name": "铁流",
+    "description": "造成{attack}点伤害, 获得{defense}点格挡",
+    "values": {
+      "attack": 5,
+      "defense": 5
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "defense" }, { "rule": "attack" }]
+  },
+  "shrug_it_off": {
+    "name": "耸肩",
+    "description": "获得{defense}点格挡, 抽{draw_count}张牌",
+    "values": {
+      "defense": 8,
+      "draw_count": 8
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "draw_card" }]
+  },
+  "sword_boomerang": {
+    "name": "剑飞",
+    "description": "对随机敌人造成{attack_count}次{attack}点伤害",
+    "values": {
+      "attack": 3,
+      "attack_times": 3
+    },
+    "range": 1,
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }]
+  },
+  "thunderclap": {
+    "name": "雷霆一击",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 5,
+      "vulnerable": 1
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "cast_vulnerable" }]
+  },
+  "twin_strike": {
+    "name": "双重打击",
+    "description": "造成{attack}点伤害, 攻击2次",
+    "values": {
+      "attack": 5,
+      "attack_times": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }]
+  },
+  "warcry": {
+    "name": "呐喊",
+    "description": "抽2张牌, 丢弃1张牌",
+    "values": {
+      "use_count": 2
+    },
+    "cost": 0,
+    "type": 1,
+    "effects": [{ "rule": "draw_card" }, { "rule": "discard" }]
+  },
+  "wild_strike": {
+    "name": "狂野打击",
+    "description": "造成{attack}点伤害, 将一张混乱放入手牌",
+    "values": {
+      "attack": 12,
+      "card": "chaos"
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "add_card" }]
+  },
+  "battle_trance": {
+    "name": "战斗狂热",
+    "description": "抽3张牌, 丢弃1张牌",
+    "values": {
+      "use_count": 3
+    },
+    "cost": 0,
+    "type": 1,
+    "effects": [{ "rule": "draw_card" }, { "rule": "discard" }]
+  },
+  "blood_for_blood": {
+    "name": "血债血偿",
+    "description": "造成{attack}点伤害, 如果本回合打出过攻击卡, 则费用为0",
+    "values": {
+      "attack": 7
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "blood_for_blood" }]
+  },
+  "bloodletting": {
+    "name": "放血",
+    "description": "造成{attack}点伤害, 失去{hp}点生命值",
+    "values": {
+      "attack": 3,
+      "hp": 3
+    },
+    "cost": 0,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "lose_hp" }]
+  },
+  "burning_pact": {
+    "name": "燃烧契约",
+    "description": "抽2张牌, 丢弃1张牌, 失去{hp}点生命值",
+    "values": {
+      "use_count": 2,
+      "hp": 3
+    },
+    "cost": 0,
+    "type": 1,
+    "effects": [
+      { "rule": "draw_card" },
+      { "rule": "discard" },
+      { "rule": "lose_hp" }
+    ]
+  },
+  "carnage": {
+    "name": "狂暴",
+    "description": "造成{attack}点伤害, 失去{hp}点生命值",
+    "values": {
+      "attack": 6,
+      "hp": 3
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "lose_hp" }]
+  },
+  "combust": {
+    "name": "自燃",
+    "description": "造成{attack}点伤害, 施加{burn}层灼烧",
+    "values": {
+      "attack": 6,
+      "burn": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "burn" }]
+  },
+  "dark_embrace": {
+    "name": "黑暗拥抱",
+    "description": "抽1张牌, 丢弃1张牌, 获得{strength}点力量",
+    "values": {
+      "strength": 2
+    },
+    "cost": 0,
+    "type": 1,
+    "effects": [
+      { "rule": "draw_card" },
+      { "rule": "discard" },
+      { "rule": "add_strength_buff" }
+    ]
+  },
+  "disarm": {
+    "name": "解除武装",
+    "description": "造成{attack}点伤害, 施加{weak}层虚弱",
+    "values": {
+      "attack": 6,
+      "weak": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "weak" }]
+  },
+  "dropkick": {
+    "name": "飞踢",
+    "description": "造成{attack}点伤害, 施加{weak}层虚弱",
+    "values": {
+      "attack": 14,
+      "weak": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "weak" }]
+  },
+  "dual_wield": {
+    "name": "双持",
+    "description": "复制1张本卡到手牌",
+    "values": {
+      "use_count": 1
+    },
+    "cost": 0,
+    "type": 1,
+    "effects": [{ "rule": "copy2hand" }]
+  },
+  "entrench": {
+    "name": "束缚",
+    "description": "造成{attack}点伤害, 施加{entrench}层束缚",
+    "values": {
+      "attack": 6,
+      "entrench": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "entrench" }]
+  },
+  "evolve": {
+    "name": "进化",
+    "description": "升级{choose_count}张手牌, 获得{defense}点格挡",
+    "values": {
+      "defense": 5,
+      "choose_count": 1,
+      "choose_from": 0
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "upgrade" }]
+  },
+  "fire_breathing": {
+    "name": "火焰吐息",
+    "description": "造成{attack}点伤害, 施加{burn}层灼烧",
+    "values": {
+      "attack": 6,
+      "burn": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "burn" }]
+  },
+  "flame_breathing": {
+    "name": "火焰吐息",
+    "description": "造成{attack}点伤害, 施加{burn}层灼烧",
+    "values": {
+      "attack": 6,
+      "burn": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "burn" }]
+  },
+  "ghostly_armor": {
+    "name": "幽灵盔甲",
+    "description": "获得{defense}点格挡, 失去{hp}点生命值",
+    "values": {
+      "defense": 6,
+      "hp": 3
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "lose_hp" }]
+  },
+  "hemokinesis": {
+    "name": "血液动力学",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "infernal_blade": {
+    "name": "地狱之刃",
+    "description": "造成{attack}点伤害, 施加{burn}层灼烧",
+    "values": {
+      "attack": 6,
+      "burn": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "burn" }]
+  },
+  "inflame": {
+    "name": "火焰冲击",
+    "description": "造成{attack}点伤害, 施加{burn}层灼烧",
+    "values": {
+      "attack": 6,
+      "burn": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "burn" }]
+  },
+  "intimidate": {
+    "name": "恐吓",
+    "description": "施加{weak}层虚弱, 获得{defense}点格挡",
+    "values": {
+      "weak": 2,
+      "defense": 5
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "cast_weak" }]
+  },
+  "mentallicize": {
+    "name": "精神集中",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "power_through": {
+    "name": "强力穿透",
+    "description": "获得{defense}点格挡, 丢弃1张牌",
+    "values": {
+      "defense": 5
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "discard" }]
+  },
+  "pummel_strike": {
+    "name": "重击",
+    "description": "造成{attack}点伤害, 抽1张牌",
+    "values": {
+      "attack": 6
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "draw_card" }]
+  },
+  "rage": {
+    "name": "狂怒",
+    "description": "造成{attack}点伤害, 获得{strength}点力量",
+    "values": {
+      "attack": 6,
+      "strength": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "add_strength_buff" }]
+  },
+  "rampage": {
+    "name": "冲击",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "reckless_charge": {
+    "name": "鲁莽冲锋",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "rupture": {
+    "name": "破裂",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "searing_blow": {
+    "name": "灼烧一击",
+    "description": "造成{attack}点伤害, 施加{burn}层灼烧",
+    "values": {
+      "attack": 6,
+      "burn": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "burn" }]
+  },
+  "second_wind": {
+    "name": "第二风",
+    "description": "丢弃{choose_count}张牌, 获得{defense}点格挡",
+    "values": {
+      "defense": 5,
+      "choose_count": 1,
+      "choose_from": 0
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "discard" }]
+  },
+  "seeing_red": {
+    "name": "红色预见",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "sentinel": {
+    "name": "哨兵",
+    "description": "获得{defense}点格挡, 施加{vulnerable}层易伤",
+    "values": {
+      "defense": 5,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "vulnerable" }]
+  },
+  "sever_soul": {
+    "name": "割裂灵魂",
+    "description": "消耗所有手牌, 造成{attack}点伤害",
+    "values": {
+      "attack": 18
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "exhaust_all" }, { "rule": "attack" }]
+  },
+  "shockwave": {
+    "name": "冲击波",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "weak": 6,
+      "vulnerable": 2,
+      "turn": 3
+    },
+    "cost": 2,
+    "type": 1,
+    "effects": [{ "rule": "cast_vulnerable" }, { "rule": "cast_weak" }]
+  },
+  "spot_weakness": {
+    "name": "弱点",
+    "description": "如果敌人的意图是攻击, 则增加{strength}点力量",
+    "values": {
+      "strength": 2
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "check_intent" }]
+  },
+  "uppercut": {
+    "name": "上勾拳",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "whirlwind": {
+    "name": "旋风斩",
+    "description": "对所有敌方单位造成{attack}点伤害, 攻击{attack_count}次",
+    "values": {
+      "attack": 5,
+      "attack_times": 0
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "whirlwind_attack_count" }, { "rule": "attack" }]
+  },
+  "barricade": {
+    "name": "防御",
+    "description": "获得{defense}点格挡, 施加{vulnerable}层易伤",
+    "values": {
+      "defense": 5,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "vulnerable" }]
+  },
+  "berserk": {
+    "name": "狂暴",
+    "description": "获得{vulnerable}层易伤, 每回合开始增加1点能量",
+    "values": {
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 2,
+    "effects": [
+      { "rule": "get_vulnerable" },
+      { "timing": "TIMING_ACTOR_TURN_START", "rule": "add_energy" }
+    ]
+  },
+  "bludgeon": {
+    "name": "重击",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "brutality": {
+    "name": "残暴",
+    "description": "每当失去生命值时, 获得{strength}点力量",
+    "values": {
+      "strength": 2
+    },
+    "cost": 1,
+    "type": 2,
+    "effects": [{ "timing": "TIMING_LOSE_LIFE", "rule": "vulnerable" }]
+  },
+  "corruption": {
+    "name": "腐化",
+    "description": "使用skill卡消耗的能量变为0，卡被使用后消耗",
+    "values": {
+      "type": 1,
+      "exhaust": true
+    },
+    "cost": 3,
+    "type": 3,
+    "effects": [{ "rule": "zero_energy" }]
+  },
+  "demon_form": {
+    "name": "恶魔形态",
+    "description": "每回合开始时获得{strength}点力量",
+    "values": {
+      "strength": 2
+    },
+    "cost": 3,
+    "type": 2,
+    "effects": [{ "timing": "TIMING_ACTOR_TURN_START", "rule": "attack" }]
+  },
+  "double_tap": {
+    "name": "双重打击",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "exhume": {
+    "name": "复生",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "feed": {
+    "name": "进食",
+    "description": "造成{attack}点伤害, 增加{hp}点最大生命值",
+    "values": {
+      "attack": 4,
+      "hp": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "add_max_hp" }]
+  },
+  "fiend_fire": {
+    "name": "恶魔之火",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "immolate": {
+    "name": "焚烧",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "impervious": {
+    "name": "无敌",
+    "description": "获得{defense}点格挡, 施加{vulnerable}层易伤",
+    "values": {
+      "defense": 5,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 1,
+    "effects": [{ "rule": "defense" }, { "rule": "vulnerable" }]
+  },
+  "juggernaut": {
+    "name": "冲击",
+    "description": "造成{attack}点伤害, 施加{vulnerable}层易伤",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 1,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
+  },
+  "limit_break": {
+    "name": "极限突破",
+    "description": "将当前力量值翻倍",
+    "cost": 1,
+    "exhaust": true,
+    "type": 2,
+    "effects": [{ "rule": "double_strength" }]
+  },
+  "offering": {
+    "name": "献祭",
+    "description": "失去6点生命值, 抽{draw_count}张牌, 获得{enerny}点能量",
+    "values": {
+      "hp": 6,
+      "energy": 3,
+      "draw_count": 2
+    },
+    "cost": 0,
+    "type": 1,
+    "effects": [{ "rule": "lose_hp" }, { "rule": "draw_card" }]
+  },
+  "reaper": {
+    "name": "收割者",
+    "description": "造成{attack}点伤害, 造成的的真实伤害会转化为生命值",
+    "values": {
+      "attack": 6,
+      "vulnerable": 2
+    },
+    "cost": 2,
+    "type": 0,
+    "effects": [{ "rule": "attack" }, { "rule": "vulnerable" }]
   }
 }

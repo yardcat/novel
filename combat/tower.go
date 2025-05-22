@@ -252,7 +252,7 @@ func (t *Tower) PrepareCard() {
 }
 
 func (t *Tower) HandleDestiny(ev string) {
-	t.UseRule(ev, nil)
+	t.UseRule(ev+"_event", nil)
 	t.currentCombat.requestUpdateUI()
 }
 
@@ -688,7 +688,7 @@ func (t *Tower) CanUse(card *Card) bool {
 		panic(err)
 	}
 	result, _ := t.engine.GetRulesResultMap()
-	return result["can_use"].(bool)
+	return result[card.CanUse].(bool)
 }
 
 func (t *Tower) UpgradeCardInCombat(card *Card) {

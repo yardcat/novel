@@ -54,7 +54,11 @@ func (w *Card) CanUse(c *gin.Context) {
 func (w *Card) SendCard(c *gin.Context) {
 	cardIdx := cast.ToInt32(c.PostForm("card"))
 	target := cast.ToInt32(c.PostForm("target"))
-	choosenIdx := strings.Split(c.PostForm("choosen"), ",")
+	choosenIdx := []string{}
+	choosenStr := c.PostForm("choosen")
+	if choosenStr != "" {
+		choosenIdx = strings.Split(choosenStr, ",")
+	}
 	choosen := make([]int32, len(choosenIdx))
 	for i, v := range choosenIdx {
 		choosen[i] = cast.ToInt32(v)

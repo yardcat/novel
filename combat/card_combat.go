@@ -189,7 +189,7 @@ func (c *CardCombat) UseCard(idx int32, choosenIdx []int32, target int32) error 
 	if choosenIdx != nil && len(choosenIdx) > 0 {
 		choosen = make([]*Card, len(choosenIdx))
 		for i, idx := range choosenIdx {
-			switch card.Values["choose_from"] {
+			switch card.GetValue("choose_from") {
 			case CARD_CHOOSE_FROM_HAND:
 				choosen[i] = c.hand[idx]
 			case CARD_CHOOSE_FROM_DRAW:
@@ -200,6 +200,13 @@ func (c *CardCombat) UseCard(idx int32, choosenIdx []int32, target int32) error 
 				choosen[i] = c.exhaust[idx]
 			}
 		}
+	}
+
+	// when choose_count is 0, choosen is all cards but used card in hand
+	if card.HasValue("choose_count") && card.GetValue("choose_count") == 0 {
+		choosen = lo.Filter(c.hand, func(c *Card, i int) bool {
+			return i != int(idx)
+		})
 	}
 
 	if c.actors[0].Energy >= card.Cost {
@@ -251,7 +258,7 @@ func (c *CardCombat) EndTurn() {
 
 func (c *CardCombat) EnemyAttack(enemy *CardEnemy) {
 	actor := c.actors[0]
-	enemy.Attack = enemy.Values["attack"]
+	enemy.Attack = enemy.GetValue("attack")
 	damage := c.CastDamage(enemy, actor)
 	if damage != 0 {
 		c.hurtCount++
@@ -260,7 +267,7 @@ func (c *CardCombat) EnemyAttack(enemy *CardEnemy) {
 }
 
 func (c *CardCombat) EnemyMultiAttack(enemy *CardEnemy) {
-	times := enemy.Values["attack_times"]
+	times := enemy.GetValue("attack_times")
 	for i := 0; i < times; i++ {
 		if !c.finish {
 			c.EnemyAttack(enemy)
@@ -269,7 +276,7 @@ func (c *CardCombat) EnemyMultiAttack(enemy *CardEnemy) {
 }
 
 func (c *CardCombat) EnemyAddArmor(enemy *CardEnemy) {
-	armor := enemy.Values["defense"]
+	armor := enemy.GetValue("defense")
 	enemy.AddBuff(Buff{
 		Name:  BUFF_ARMOR,
 		Type:  TYPE_BUFF,
@@ -474,6 +481,24 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 	return cards
 }
 
+func (c *CardCombat) PutOnDeck(cards []*Card) {
+	for _, card := range cards {
+		c.deck = append(c.deck, card)
+	}
+}
+
+func (c *CardCombat) DrawFromDiscard(indexes []int) []*Card {
+	cards := make([]*Card, 0, len(indexes))
+	for _, idx := range indexes {
+		cards = append(cards, c.discard[idx])
+		c.discard[idx] = nil
+	}
+	c.discard = slices.DeleteFunc(c.discard, func(c *Card) bool {
+		return c == nil
+	})
+	return cards
+}
+
 func (c *CardCombat) DiscardCard(card *Card) {
 	c.delegate.OnDiscardCard(card)
 	for i, v := range c.hand {
@@ -504,6 +529,11 @@ func (c *CardCombat) ShuffleDeck() {
 		c.deck[i], c.deck[j] = c.deck[j], c.deck[i]
 	}
 }
+
+func (c *CardCombat) GetHandCards() []*Card {
+	return c.hand
+}
+
 func (c *CardCombat) getTargetsFromRange(card *Card, target *CardEnemy) []*CardEnemy {
 	targets := make([]*CardEnemy, 0)
 	if card.Range == CARD_RANGE_SINGLE {
@@ -520,7 +550,7 @@ func (c *CardCombat) getTargetsFromRange(card *Card, target *CardEnemy) []*CardE
 func (c *CardCombat) Attack(card *Card, target *CardEnemy) {
 	targets := c.getTargetsFromRange(card, target)
 	for _, target := range targets {
-		c.actors[0].Attack = card.Values["attack"]
+		c.actors[0].Attack = card.GetValue("attack")
 		damage := c.CastDamage(c.actors[0], target)
 		if damage != 0 {
 			c.attackCount++
@@ -529,8 +559,17 @@ func (c *CardCombat) Attack(card *Card, target *CardEnemy) {
 	c.requestUpdateUI()
 }
 
+func (c *CardCombat) MultiAttack(card *Card, target *CardEnemy) {
+	times := card.GetValue("attack_times")
+	for i := 0; i < times; i++ {
+		if !c.finish {
+			c.Attack(card, target)
+		}
+	}
+}
+
 func (c *CardCombat) AddArmor(card *Card) {
-	armor := card.Values["defense"]
+	armor := card.GetValue("defense")
 	c.actors[0].AddBuff(Buff{
 		Name:  BUFF_ARMOR,
 		Type:  EFFECT_TYPE_BUFF,
@@ -546,7 +585,7 @@ func (c *CardCombat) AddArmor(card *Card) {
 func (c *CardCombat) AddVulnerable(card *Card, target *CardEnemy) {
 	targets := c.getTargetsFromRange(card, target)
 	for _, target := range targets {
-		value := card.Values["vulnerable"]
+		value := card.GetValue("vulnerable")
 		target.AddBuff(Buff{
 			Name: BUFF_VULNERABLE,
 			Type: TYPE_DEBUFF,
@@ -561,7 +600,7 @@ func (c *CardCombat) AddVulnerable(card *Card, target *CardEnemy) {
 func (c *CardCombat) AddWeak(card *Card, target *CardEnemy) {
 	targets := c.getTargetsFromRange(card, target)
 	for _, target := range targets {
-		value := card.Values["weak"]
+		value := card.GetValue("weak")
 		target.AddBuff(Buff{
 			Name: BUFF_WEAK,
 			Type: TYPE_DEBUFF,
