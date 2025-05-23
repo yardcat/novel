@@ -11,5 +11,5 @@ end
 
 rule "draw_card_event"
 begin
-combat.DrawCard(3)
+combat.DrawCards(3)
 end

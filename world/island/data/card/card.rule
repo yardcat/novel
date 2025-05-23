@@ -65,9 +65,9 @@ begin
 combat.UpgradeCards(choosen_cards)
 end
 
-rule "head_butt"
+rule "headbutt"
 begin
-cards := combat.DrawFromDiscard(choosen_cards)
+cards := combat.FetchFromDiscard(choosen_cards)
 combat.PutOnDeck(cards)
 end
 
@@ -81,4 +81,9 @@ rule "draw_card"
 begin
 count := card.Values["draw_count"]
 combat.DrawCards(count)
+end
+
+rule "use_draw_top"
+begin
+combat.UseDeckTop()
 end

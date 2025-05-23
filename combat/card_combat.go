@@ -130,7 +130,7 @@ func (c *CardCombat) Start() {
 	push.PushAction("战斗开始")
 	c.requestUpdateUI()
 
-	go c.UpdateUI()
+	go c.updateUI()
 }
 
 func (c *CardCombat) Enemies() []Combatable {
@@ -160,7 +160,7 @@ func (c *CardCombat) StartTurn() {
 	c.actors[0].Energy = c.initEnergy
 	drawCount := c.initCardCount - len(c.hand)
 	mutable.Shuffle(c.deck)
-	c.DrawCard(drawCount)
+	c.DrawCards(drawCount)
 	for _, actor := range c.actors {
 		actor.UpdateBuffs()
 	}
@@ -326,7 +326,7 @@ func (c *CardCombat) requestUpdateUI() {
 }
 
 // TODO: 线程安全问题
-func (c *CardCombat) UpdateUI() {
+func (c *CardCombat) updateUI() {
 	for {
 		<-c.uiTimer.C
 		if c.uiDirty {
@@ -458,22 +458,13 @@ func (c *CardCombat) AddCard(name string) {
 	c.requestUpdateUI()
 }
 
-func (c *CardCombat) DrawCard(n int) []*Card {
+func (c *CardCombat) DrawCards(n int) []*Card {
 	cards := make([]*Card, 0, n)
-
 	for i := 0; i < n; i++ {
-		if len(c.deck) == 0 {
-			if len(c.discard) == 0 {
-				break
-			}
-			c.deck = append(c.deck, c.discard...)
-			c.discard = make([]*Card, 0)
-			c.ShuffleDeck()
+		card := c.DrawCard()
+		if card == nil {
+			break
 		}
-		card := c.deck[0]
-		c.delegate.OnDrawCard(card)
-		c.deck = c.deck[1:]
-		c.hand = append(c.hand, card)
 		cards = append(cards, card)
 	}
 	c.turnInfo.drawedCards = append(c.turnInfo.drawedCards, cards...)
@@ -481,13 +472,50 @@ func (c *CardCombat) DrawCard(n int) []*Card {
 	return cards
 }
 
+func (c *CardCombat) DrawCard() *Card {
+	if len(c.deck) == 0 {
+		if len(c.discard) == 0 {
+			return nil
+		}
+		c.deck = append(c.deck, c.discard...)
+		c.discard = c.discard[:0]
+		c.ShuffleDeck()
+	}
+	top := len(c.deck) - 1
+	card := c.FetchFromDeck(top)
+	c.delegate.OnDrawCard(card)
+	c.hand = append(c.hand, card)
+	return card
+}
+
+func (c *CardCombat) FetchFromDeck(index int) *Card {
+	if index < 0 || index >= len(c.deck) {
+		return nil
+	}
+	card := c.deck[index]
+	c.deck = slices.Delete(c.deck, index, index+1)
+	return card
+}
+
+func (c *CardCombat) UseDeckTop() bool {
+	if len(c.deck) == 0 {
+		return false
+	}
+	top := len(c.deck) - 1
+	card := c.FetchFromDeck(top)
+	ramdomEnemy := lo.Sample(c.enemies)
+	c.Use(card, nil, ramdomEnemy)
+	return true
+}
+
 func (c *CardCombat) PutOnDeck(cards []*Card) {
 	for _, card := range cards {
 		c.deck = append(c.deck, card)
 	}
+	c.requestUpdateUI()
 }
 
-func (c *CardCombat) DrawFromDiscard(indexes []int) []*Card {
+func (c *CardCombat) FetchFromDiscard(indexes []int) []*Card {
 	cards := make([]*Card, 0, len(indexes))
 	for _, idx := range indexes {
 		cards = append(cards, c.discard[idx])

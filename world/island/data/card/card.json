@@ -85,7 +85,7 @@
     "effects": [{ "rule": "attack" }]
   },
   "clothesline": {
-    "name": "上勾拳",
+    "name": "绞杀",
     "description": "造成{attack}点伤害, 施加{weak}层虚弱",
     "values": {
       "attack": 12,
@@ -109,20 +109,18 @@
   "havoc": {
     "name": "破灭",
     "description": "打出抽卡顶部的牌",
-    "values": {
-      "use_count": 1
-    },
     "cost": 0,
     "type": 1,
     "exhaust": true,
     "effects": [{ "rule": "use_draw_top" }]
   },
-  "head_butt": {
+  "headbutt": {
     "name": "头槌",
     "description": "造成{attack}点伤害, 将弃牌堆一张牌放回牌组顶端",
     "values": {
       "attack": 9,
-      "use_count": 1
+      "choose_count": 1,
+      "choose_from": 2
     },
     "cost": 1,
     "type": 0,

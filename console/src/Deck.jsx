@@ -58,19 +58,19 @@ const Deck = () => {
 
   const getDrawCards = (finishFunc) => {
     CallAPI('card/show_draw_cards', {}, (reply) => {
-      showCardView(reply.cards, finishFunc);
+      finishFunc(reply);
     });
   };
 
   const getDiscardCards = (finishFunc) => {
     CallAPI('card/show_discard_cards', {}, (reply) => {
-      showCardView(reply.cards, finishFunc);
+      finishFunc(reply);
     });
   };
 
   const getExhaustCards = (finishFunc) => {
     CallAPI('card/show_exhaust_cards', {}, (reply) => {
-      showCardView(reply.cards, finishFunc);
+      finishFunc(reply);
     });
   };
 
